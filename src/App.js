@@ -5,6 +5,7 @@ import { themes } from './themes/themes';
 import './index.css'
 import StatsCards from './components/StatsCards';
 import AddItemForm from './components/AddItemForm';
+import RecentSales from './components/RecentSales';
 
 export default function CS2TradingTracker() {
   const [items, setItems] = useState([]);
@@ -672,60 +673,17 @@ export default function CS2TradingTracker() {
 
           {/* Main Content Area */}
           <div className="space-y-4">
-            {/* Add New Item Form + Recent Sales - Side by Side */}
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
-              {/* Add New Item Form - Left side */}
               <AddItemForm
                 formData={formData}
                 setFormData={setFormData}
                 handleAddItem={handleAddItem}
                 t={t}
               />
-              {/* Recent Sales Preview - Right side */}
-              <div className={`${t.panel} backdrop-blur-sm rounded-xl p-5 border ${t.panelBorder} h-full`}>
-                <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-                  <TrendingUp size={18} className="text-emerald-400" />
-                  Recent Sales
-                </h3>
-                <div className="space-y-3">
-                  {items
-                    .filter(i => i.sold)
-                    .sort((a, b) => {
-                      const aDate = a.dateSold ? new Date(a.dateSold).getTime() : 0;
-                      const bDate = b.dateSold ? new Date(b.dateSold).getTime() : 0;
-                      return bDate - aDate;
-                    })
-                    .slice(0, 5)
-                    .map(item => (
-                      <div key={item.id} className={`${t.soldCard} rounded-lg p-3 border`}>
-                        <div className="text-sm font-medium text-white truncate mb-1">
-                          {item.itemName}
-                        </div>
-                        <div className="flex justify-between items-center text-xs mb-1">
-                          <span className="text-slate-400">
-                            ${item.purchasePrice.toFixed(2)} → ${item.salePrice.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className={`font-semibold text-sm ${item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {item.profit >= 0 ? '+' : ''}${item.profit.toFixed(2)} ({item.profit >= 0 ? '+' : ''}{item.profitPercent.toFixed(1)}%)
-                          </span>
-                          {item.dateSold && (
-                            <span className="text-xs text-slate-500">
-                              {new Date(item.dateSold).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  {items.filter(i => i.sold).length === 0 && (
-                    <div className="text-center py-8 text-slate-400">
-                      <TrendingUp size={32} className="mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">No sales yet</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <RecentSales
+                items={items}
+                t={t}
+              />
             </div>
 
         {/* Tabs and Search */}
