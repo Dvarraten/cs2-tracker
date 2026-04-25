@@ -7,7 +7,6 @@ import { Trash2, TrendingUp, Package, Link as LinkIcon,
 import { LineChart, Line, XAxis, YAxis, CartesianGrid,
          Tooltip, ResponsiveContainer
        } from 'recharts';
-//import { HeaderNavigationBase } from './components/application/app-navigation/header-navigation'
 import { themes } from './themes/themes';
 import './index.css'
 import StatsCards from './components/StatsCards';
@@ -19,6 +18,7 @@ import CurrencyConverter from './components/Sidebar/CurrencyConverter';
 import QuickLinks from './components/Sidebar/QuickLinks';
 import ThemePicker from './components/ThemePicker';
 import TabsAndSearchbar from './components/TabsAndSearchbar';
+import Header from './components/Header';
 
 export default function CS2TradingTracker() {
   const [items, setItems] = useState([]);
@@ -387,8 +387,7 @@ export default function CS2TradingTracker() {
       <div className="max-w-[1800px] mx-auto">
         {/* Header */}
         <div className="mb-8 relative">
-          <h1 className="text-5xl font-bold text-white mb-2 text-center tracking-tight">CS2 Trading Tracker</h1>
-          <p className={`text-base ${t.subtext} text-center`}>Made by Dvichen</p>
+          <Header />
 
           {/* Theme Picker */}
           <ThemePicker
@@ -446,7 +445,16 @@ export default function CS2TradingTracker() {
             <div className="space-y-3 mt-6">
               <button
                 onClick={() => setShowAnalytics(!showAnalytics)}
-                className={`w-full ${t.card} hover:bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border ${t.cardBorder} text-white transition-all flex items-center gap-3`}
+                className={
+                  `w-full ${t.card}
+                hover:bg-white/20
+                  backdrop-blur-sm
+                  rounded-lg
+                  px-4 py-3
+                  border ${t.cardBorder}
+                  text-white transition-all 
+                  flex items-center
+                  gap-3`}
               >
                 <BarChart3 size={18} />
                 <span className="text-sm">{showAnalytics ? 'Hide Analytics' : 'Show Analytics'}</span>
@@ -454,7 +462,9 @@ export default function CS2TradingTracker() {
               
               <button
                 onClick={exportToCSV}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-lg flex items-center gap-3 transition-all"
+                className="w-full bg-indigo-600/50 hover:bg-indigo-600/85
+                text-white px-4 py-3 rounded-lg
+                flex items-center gap-3 transition-all"
               >
                 <Download size={18} />
                 <span className="text-sm font-medium">Export to CSV</span>
@@ -464,7 +474,7 @@ export default function CS2TradingTracker() {
 
           {/* Main Content Area */}
           <div className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-6 mb-12">
               <AddItemForm
                 formData={formData}
                 setFormData={setFormData}

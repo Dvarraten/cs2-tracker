@@ -24,13 +24,14 @@ export default function TabsAndSearchbar({
             </button>
           </div>
           
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-4 flex-wrap">
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search items..."
-              className={`flex-1 min-w-[250px] ${t.input} rounded-lg px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none transition-colors border`}
+              className={`flex-1 min-w-[250px] ${t.input} rounded-lg px-4 py-2.5 text-white
+              placeholder-slate-400 focus:outline-none transition-colors border`}
             />
             
             <select
