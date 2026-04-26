@@ -3,13 +3,13 @@ import React from "react";
 export default function ItemGrid ({
   sellPlatform, setSellData, sellData, setSellPlatform,
   handleSellItem, handleDeleteItem,
-  t, items, sortedItems, searchTerm, 
+  theme, items, sortedItems, searchTerm, 
   activeTab, TrendingUp, Trash2
   }) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {sortedItems.map(item => (
-          <div key={item.id} className={`${t.panel} backdrop-blur-sm rounded-xl p-4 border ${t.cardBorder} hover:border-white/20 transition-all`}>
+          <div key={item.id} className={`${theme.panel} backdrop-blur-sm rounded-xl p-4 border ${theme.cardBorder} hover:border-white/20 transition-all`}>
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-base font-semibold text-white flex-1 pr-2">{item.itemName}</h3>
               <button
@@ -47,15 +47,15 @@ export default function ItemGrid ({
                   type="number"
                   step="0.01"
                   value={sellData[item.id] || ''}
-                  onChange={(e) => setSellData({ ...sellData, [item.id]: e.target.value })}
-                  className={`w-full ${t.inputSell} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border`}
+                  onChange={(e) => setSellData({ ...sellData, [item.id]: e.targetheme.value })}
+                  className={`w-full ${theme.inputSell} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border`}
                   placeholder="Sale price..."
                 />
                 <div className="flex gap-2">
                   <select
                     value={sellPlatform[item.id] || 'csfloat'}
-                    onChange={(e) => setSellPlatform({ ...sellPlatform, [item.id]: e.target.value })}
-                    className={`flex-1 ${t.inputSell} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border`}
+                    onChange={(e) => setSellPlatform({ ...sellPlatform, [item.id]: e.targetheme.value })}
+                    className={`flex-1 ${theme.inputSell} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border`}
                   >
                     <option value="csfloat" className="bg-slate-900">CSFloat (2%)</option>
                     <option value="csmoney" className="bg-slate-900">CS.MONEY (5%)</option>
@@ -75,7 +75,7 @@ export default function ItemGrid ({
                 </div>
               </div>
             ) : (
-              <div className={`${t.soldCard} rounded-lg p-3 border`}>
+              <div className={`${theme.soldCard} rounded-lg p-3 border`}>
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp size={16} className={item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'} />
                   <span className="text-white font-semibold text-sm">SOLD</span>
@@ -121,7 +121,7 @@ export default function ItemGrid ({
                   <div className="flex justify-between">
                     <span className="text-slate-400">Profit:</span>
                     <span className={`font-semibold ${item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      ${item.profit.toFixed(2)} ({item.profitPercent.toFixed(1)}%)
+                      ${item.profitheme.toFixed(2)} ({item.profitPercentheme.toFixed(1)}%)
                     </span>
                   </div>
                 </div>
@@ -137,7 +137,7 @@ export default function ItemGrid ({
                 ? 'No items match your search.'
                 : activeTab === 'active'
                 ? 'No active items. Add your first purchase!'
-                : 'No sold items yet.'}
+                : 'No sold items yetheme.'}
             </p>
           </div>
         )}

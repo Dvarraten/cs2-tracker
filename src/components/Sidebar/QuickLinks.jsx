@@ -1,12 +1,11 @@
 import React from "react"
+import { Package, Link as LinkIcon, Gem, Target, DollarSign, BarChart3, MessageSquare } from 'lucide-react';
             
 export default function QuickLinks({
-    t, setShowQuickLinks, showQuickLinks, 
-    Package, LinkIcon, Gem, Target, DollarSign,
-    BarChart3, MessageSquare
+    theme, setShowQuickLinks, showQuickLinks
 }) {
   return (
-    <div className={`${t.card} backdrop-blur-sm rounded-xl border ${t.cardBorder} overflow-hidden`}>
+    <div className={`${theme.card} backdrop-blur-sm rounded-xl border ${theme.cardBorder} overflow-hidden`}>
       <button
         onClick={() => setShowQuickLinks(p => !p)}
         className="w-full flex items-center justify-between px-5 py-4 text-white hover:bg-white/10 transition-colors"
@@ -24,12 +23,12 @@ export default function QuickLinks({
       </button>
 
       {showQuickLinks && (
-        <div className={`px-5 pb-5 space-y-2 border-t ${t.cardBorder}`} style={{paddingTop: '12px'}}>
+        <div className={`px-5 pb-5 space-y-2 border-t ${theme.cardBorder}`} style={{paddingTop: '12px'}}>
           <a 
             href="https://steamcommunity.com/id/dvichen/inventory" 
             target="_blank" 
             rel="noopener noreferrer"
-            className={`${t.sidebarItem} backdrop-blur-sm rounded-lg px-4 py-3 border text-sm text-slate-200 hover:text-white transition-all hover:border-white/30 flex items-center gap-3 w-full`}
+            className={`${theme.sidebarItem} backdrop-blur-sm rounded-lg px-4 py-3 border text-sm text-slate-200 hover:text-white transition-all hover:border-white/30 flex items-center gap-3 w-full`}
           >
             <Package size={18} />
             <span>Inventory</span>
@@ -38,13 +37,13 @@ export default function QuickLinks({
             href="https://steamcommunity.com/tradeoffer/new/?partner=173276083&token=pnIzDPno" 
             target="_blank" 
             rel="noopener noreferrer"
-            className={`${t.sidebarItem} backdrop-blur-sm rounded-lg px-4 py-3 border text-sm text-slate-200 hover:text-white transition-all hover:border-white/30 flex items-center gap-3 w-full`}
+            className={`${theme.sidebarItem} backdrop-blur-sm rounded-lg px-4 py-3 border text-sm text-slate-200 hover:text-white transition-all hover:border-white/30 flex items-center gap-3 w-full`}
           >
             <LinkIcon size={18} />
             <span>Trade Link</span>
           </a>
           <a 
-            href="https://csfloat.com/stall/76561198133541811" 
+            href="https://csfloatheme.com/stall/76561198133541811" 
             target="_blank" 
             rel="noopener noreferrer"
             className="bg-blue-900/30 hover:bg-blue-800/40 backdrop-blur-sm rounded-lg px-4 py-3 border border-blue-700/50 text-sm text-blue-200 hover:text-white transition-all hover:border-blue-600 flex items-center gap-3 w-full"
@@ -74,7 +73,7 @@ export default function QuickLinks({
             href="https://pricempire.com/app/comparison?min_price=10&max_price=9000&blacklist=case,capsule,sticker,&from_provider=csfloat&to_provider=youpin&volume=0&min_roi=5&max_roi=100&liquidity=70&price_age=10" 
             target="_blank" 
             rel="noopener noreferrer"
-            className={`${t.sidebarItem} backdrop-blur-sm rounded-lg px-4 py-3 border text-sm text-slate-200 hover:text-white transition-all hover:border-white/30 flex items-center gap-3 w-full`}
+            className={`${theme.sidebarItem} backdrop-blur-sm rounded-lg px-4 py-3 border text-sm text-slate-200 hover:text-white transition-all hover:border-white/30 flex items-center gap-3 w-full`}
           >
             <BarChart3 size={18} />
             <span>Pricempire</span>
@@ -83,7 +82,7 @@ export default function QuickLinks({
             href="https://steamcommunity.com/id/dvichen/posthistory/"
             target="_blank"
             rel="noopener noreferrer"
-            className={`${t.sidebarItem} backdrop-blur-sm rounded-lg px-4 py-3 border text-sm text-slate-200 hover:text-white transition-all hover:border-white/30 flex items-center gap-3 w-full`}
+            className={`${theme.sidebarItem} backdrop-blur-sm rounded-lg px-4 py-3 border text-sm text-slate-200 hover:text-white transition-all hover:border-white/30 flex items-center gap-3 w-full`}
           >
             <MessageSquare size={18} />
             <span>Trading Forum</span>

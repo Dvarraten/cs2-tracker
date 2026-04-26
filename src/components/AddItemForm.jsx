@@ -4,11 +4,11 @@ export default function AddItemForm({
   formData,
   setFormData,
   handleAddItem,
-  t,
+  theme,
 }) {
   return (
     <div
-      className={`${t.card} ${t.cardBorder} rounded-xl p-6 border`}
+      className={`${theme.card} ${theme.cardBorder} rounded-xl p-6 border`}
     >
       <h3 className="text-lg font-semibold text-white mb-4">Add New Item</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -20,7 +20,7 @@ export default function AddItemForm({
             type="text"
             value={formData.itemName}
             onChange={(e) =>
-              setFormData({ ...formData, itemName: e.target.value })
+              setFormData({ ...formData, itemName: e.targetheme.value })
             }
             className="w-full bg-slate-800/60 border border-slate-600/50
             rounded-lg px-4 py-2 text-white placeholder-slate-400
@@ -38,7 +38,7 @@ export default function AddItemForm({
             step="1"
             value={formData.purchasePrice}
             onChange={(e) =>
-              setFormData({ ...formData, purchasePrice: e.target.value })
+              setFormData({ ...formData, purchasePrice: e.targetheme.value })
             }
             className="w-full bg-slate-800/60 border border-slate-600/50
             rounded-lg px-4 py-2 text-white placeholder-slate-400
@@ -59,10 +59,10 @@ export default function AddItemForm({
                   quantity: Math.max(1, (parseInt(formData.quantity) || 1) - 1),
                 })
               }
-              className={`${t.card} hover:bg-white/10
+              className={`${theme.card} hover:bg-white/10
               text-white w-9 h-9 rounded-lg flex items-center
               justify-center text-lg font-bold
-              transition-colors flex-shrink-0 border ${t.cardBorder}`}
+              transition-colors flex-shrink-0 border ${theme.cardBorder}`}
             >
               −
             </button>
@@ -74,7 +74,7 @@ export default function AddItemForm({
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  quantity: Math.max(1, parseInt(e.target.value) || 1),
+                  quantity: Math.max(1, parseInt(e.targetheme.value) || 1),
                 })
               }
               className="w-full bg-slate-800/60 border border-slate-600/50
@@ -89,9 +89,9 @@ export default function AddItemForm({
                   quantity: (parseInt(formData.quantity) || 1) + 1,
                 })
               }
-              className={`${t.card} hover:bg-white/10 text-white w-9 h-9
+              className={`${theme.card} hover:bg-white/10 text-white w-9 h-9
               rounded-lg flex items-center justify-center text-lg font-bold
-              transition-colors flex-shrink-0 border ${t.cardBorder}`}
+              transition-colors flex-shrink-0 border ${theme.cardBorder}`}
             >
               +
             </button>
@@ -115,9 +115,9 @@ export default function AddItemForm({
           <select
             value={formData.platform}
             onChange={(e) =>
-              setFormData({ ...formData, platform: e.target.value })
+              setFormData({ ...formData, platform: e.targetheme.value })
             }
-            className={`w-full ${t.input} rounded-lg px-4 py-2 text-white
+            className={`w-full ${theme.input} rounded-lg px-4 py-2 text-white
             focus:border-white/40 transition-colors border`}
           >
             <option value="csfloat" className="bg-slate-900">
@@ -158,7 +158,7 @@ export default function AddItemForm({
             type="text"
             value={formData.notes}
             onChange={(e) =>
-              setFormData({ ...formData, notes: e.target.value })
+              setFormData({ ...formData, notes: e.targetheme.value })
             }
             className="w-full bg-slate-800/60 border border-slate-600/50
               rounded-lg px-4 py-2
@@ -173,7 +173,7 @@ export default function AddItemForm({
       <div className="flex gap-3 mt-4">
         <button
           onClick={handleAddItem}
-          className={`${t.accentBg} text-white px-8 py-2 rounded-lg transition-all font-medium`}
+          className={`${theme.accentBg} text-white px-8 py-2 rounded-lg transition-all font-medium`}
         >
           {formData.quantity > 1
             ? `Add ${formData.quantity} Items`

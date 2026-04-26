@@ -1,10 +1,10 @@
 import React from "react";
 import { TrendingUp } from "lucide-react";
 
-export default function RecentSales({ items, t }) {
+export default function RecentSales({ items, theme }) {
   return (
     <div
-      className={`${t.panel} backdrop-blur-sm rounded-xl p-5 border ${t.panelBorder} h-full`}
+      className={`${theme.panel} backdrop-blur-sm rounded-xl p-5 border ${theme.panelBorder} h-full`}
     >
       <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
         <TrendingUp size={18} className="text-emerald-400" />
@@ -22,7 +22,7 @@ export default function RecentSales({ items, t }) {
           .map((item) => (
             <div
               key={item.id}
-              className={`${t.soldCard} rounded-lg p-3 border`}
+              className={`${theme.soldCard} rounded-lg p-3 border`}
             >
               <div className="text-sm font-medium text-white truncate mb-1">
                 {item.itemName}
