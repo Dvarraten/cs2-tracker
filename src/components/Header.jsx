@@ -1,13 +1,13 @@
 import React from "react";
 
-export default function Header({ searchTerm, setSearchTerm }) {
+export default function Header({ searchTerm, setSearchTerm, theme, children }) {
   const scrollTo = (id) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
-    <header className="w-full border-b border-white/10 bg-slate-900/70 backdrop-blur sticky top-0 z-50">
+    <header className={`w-full border-b border-black/10 sticky top-0 z-50 ${theme?.header || "bg-[#080e1a]"}`}>
       <div className="max-w-[1800px] mx-auto px-6 h-16 flex items-center justify-between">
 
         {/* LEFT: Logo + Nav */}
@@ -15,12 +15,11 @@ export default function Header({ searchTerm, setSearchTerm }) {
           <span className="text-white font-semibold text-lg tracking-tight">
             CS2TradingTracker
           </span>
-
           <nav className="hidden md:flex items-center gap-1">
             {[
-              { label: "Add Item", id: "section-add" },
+              { label: "Add Item",     id: "section-add" },
               { label: "Handle Items", id: "section-items" },
-              { label: "Analytics", id: "section-analytics" },
+              { label: "Analytics",    id: "section-analytics" },
             ].map(({ label, id }) => (
               <button
                 key={id}
@@ -33,15 +32,16 @@ export default function Header({ searchTerm, setSearchTerm }) {
           </nav>
         </div>
 
-        {/* RIGHT: Search */}
+        {/* RIGHT: Search + ThemePicker */}
         <div className="flex items-center gap-3">
           <input
             type="text"
             placeholder="Search items..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="hidden md:block bg-slate-800/60 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-white/30 transition-colors w-52"
+            className={`hidden md:block border rounded-lg px-3 py-1.5 text-sm focus:outline-none transition-colors w-52 ${theme?.input || "bg-white/5 border-white/10 text-white placeholder-slate-500"}`}
           />
+          {children}
         </div>
       </div>
     </header>

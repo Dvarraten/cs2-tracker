@@ -78,21 +78,12 @@ export default function CS2TradingTracker() {
   return (
     <div
       className="min-h-screen"
-      style={{ backgroundColor: 'var(--bg-base, #0f172a)' }}
       onClick={() => showThemePicker && setShowThemePicker(false)}
     >
-      {/* Static layered background — no gradient shift on resize */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className={`absolute inset-0 ${themeStyles.bg} opacity-100`} />
-        {/* subtle radial glow top-left */}
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-3xl" />
-        <div className="absolute top-1/2 right-0 w-[400px] h-[400px] rounded-full bg-indigo-600/8 blur-3xl" />
-      </div>
+      <div className={`fixed inset-0 -z-10 pointer-events-none ${themeStyles.bg}`} />
 
-      {/* Sticky header + ThemePicker */}
-      <div className="sticky top-0 z-50">
-        <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-        <div className="absolute top-2 right-4" onClick={e => e.stopPropagation()}>
+      <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} theme={themeStyles}>
+        <div onClick={e => e.stopPropagation()}>
           <ThemePicker
             themeStyles={themeStyles}
             setShowThemePicker={setShowThemePicker}
@@ -102,7 +93,7 @@ export default function CS2TradingTracker() {
             themes={themes}
           />
         </div>
-      </div>
+      </Header>
 
       <div className="max-w-[1800px] mx-auto p-6">
         <div className="mb-6">

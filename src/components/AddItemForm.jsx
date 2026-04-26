@@ -1,30 +1,38 @@
 import React, { useState } from "react";
 import { CheckCircle, ClipboardPaste } from "lucide-react";
 
+import csfloatIcon  from "../assets/platforms/csfloat.webp";
+import csmoneyIcon  from "../assets/platforms/csmoney.webp";
+import gamerpayIcon from "../assets/platforms/gamerpay.webp";
+import skinswapIcon from "../assets/platforms/skinswap.webp";
+import youpinIcon   from "../assets/platforms/youpin.webp";
+import dmarketIcon  from "../assets/platforms/dmarket.webp";
+
+const PLATFORMS = [
+  { value: "csfloat",  label: "CSFloat",  icon: csfloatIcon,  fee: "2%" },
+  { value: "csmoney",  label: "CS.MONEY", icon: csmoneyIcon,  fee: "5%" },
+  { value: "gamerpay", label: "GamerPay", icon: gamerpayIcon, fee: "5%" },
+  { value: "skinswap", label: "SkinSwap", icon: skinswapIcon, fee: "5%" },
+  { value: "dmarket",  label: "DMarket",  icon: dmarketIcon,  fee: "5%" },
+  { value: "youpin",   label: "Youpin",   icon: youpinIcon,   fee: "0.5%" },
+  { value: "tradeit",  label: "Tradeit",  icon: null,         fee: "5%" },
+  { value: "facebook", label: "Facebook", icon: null,         fee: "0%" },
+  { value: "other",    label: "Other",    icon: null,         fee: "?" },
+];
+
 function PasteButton({ onPaste }) {
   const [pasted, setPasted] = useState(false);
-
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText();
-      if (text) {
-        onPaste(text.trim());
-        setPasted(true);
-        setTimeout(() => setPasted(false), 1500);
-      }
+      if (text) { onPaste(text.trim()); setPasted(true); setTimeout(() => setPasted(false), 1500); }
     } catch (e) {}
   };
-
   return (
     <button
-      type="button"
-      onClick={handlePaste}
-      title="Paste from clipboard"
+      type="button" onClick={handlePaste} title="Paste from clipboard"
       className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-all
-        ${pasted
-          ? "text-emerald-400 bg-emerald-400/10"
-          : "text-slate-500 hover:text-slate-300 hover:bg-white/8"
-        }`}
+        ${pasted ? "text-emerald-400 bg-emerald-400/10" : "text-slate-500 hover:text-slate-300 hover:bg-white/8"}`}
     >
       {pasted ? <CheckCircle size={13} /> : <ClipboardPaste size={13} />}
     </button>
@@ -46,29 +54,28 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
       <h3 className="text-lg font-semibold text-white mb-4">Add New Item</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
+        {/* Item Name */}
         <div>
           <label className="block text-slate-300 mb-2 text-sm font-medium">Item Name</label>
           <div className="relative">
             <input
-              type="text"
-              value={formData.itemName}
+              type="text" value={formData.itemName}
               onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
-              className="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-4 pr-9 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-white/40 transition-colors"
+              className="w-full bg-[#1a2540] border border-slate-600/50 rounded-lg px-4 pr-9 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-white/30 transition-colors"
               placeholder="-"
             />
             <PasteButton onPaste={(val) => setFormData({ ...formData, itemName: val })} />
           </div>
         </div>
 
+        {/* Purchase Price */}
         <div>
           <label className="block text-slate-300 mb-2 text-sm font-medium">Purchase Price ($)</label>
           <div className="relative">
             <input
-              type="number"
-              step="1"
-              value={formData.purchasePrice}
+              type="number" step="1" value={formData.purchasePrice}
               onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
-              className="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-4 pr-9 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-white/40 transition-colors"
+              className="w-full bg-[#1a2540] border border-slate-600/50 rounded-lg px-4 pr-9 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-white/30 transition-colors"
               placeholder="-"
             />
             <PasteButton onPaste={(val) => {
@@ -78,6 +85,7 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
           </div>
         </div>
 
+        {/* Quantity */}
         <div>
           <label className="block text-slate-300 mb-2 text-sm font-medium">Quantity</label>
           <div className="flex items-center gap-3">
@@ -86,10 +94,9 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
               className={`${theme.card} hover:bg-white/10 text-white w-9 h-9 rounded-lg flex items-center justify-center text-lg font-bold transition-colors flex-shrink-0 border ${theme.cardBorder}`}
             >−</button>
             <input
-              type="number" min="1" max="999"
-              value={formData.quantity}
+              type="number" min="1" max="999" value={formData.quantity}
               onChange={(e) => setFormData({ ...formData, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-              className="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-4 py-2 text-white text-center placeholder-slate-400 focus:outline-none focus:border-white/40 transition-colors"
+              className="w-full bg-[#1a2540] border border-slate-600/50 rounded-lg px-4 py-2 text-white text-center placeholder-slate-500 focus:outline-none focus:border-white/30 transition-colors"
             />
             <button
               onClick={() => setFormData({ ...formData, quantity: (parseInt(formData.quantity) || 1) + 1 })}
@@ -99,38 +106,47 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
           {formData.quantity > 1 && (
             <p className="text-xs text-emerald-400 mt-1.5">
               Total: {formData.quantity} items (${formData.purchasePrice
-                ? (parseFloat(formData.purchasePrice) * formData.quantity).toFixed(2)
-                : "0.00"})
+                ? (parseFloat(formData.purchasePrice) * formData.quantity).toFixed(2) : "0.00"})
             </p>
           )}
         </div>
 
+        {/* Platform – icon picker */}
         <div>
           <label className="block text-slate-300 mb-2 text-sm font-medium">Platform</label>
-          <select
-            value={formData.platform}
-            onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
-            className={`w-full ${theme.input} rounded-lg px-4 py-2 text-white focus:border-white/40 transition-colors border`}
-          >
-            <option value="csfloat" className="bg-slate-900">CSFloat</option>
-            <option value="csmoney" className="bg-slate-900">CS.MONEY</option>
-            <option value="gamerpay" className="bg-slate-900">GamerPay</option>
-            <option value="skinswap" className="bg-slate-900">SkinSwap</option>
-            <option value="dmarket" className="bg-slate-900">DMarket</option>
-            <option value="tradeit" className="bg-slate-900">Tradeit</option>
-            <option value="facebook" className="bg-slate-900">Facebook</option>
-            <option value="youpin" className="bg-slate-900">Youpin</option>
-            <option value="other" className="bg-slate-900">Other</option>
-          </select>
+          <div className="flex flex-wrap gap-2">
+            {PLATFORMS.map((p) => {
+              const selected = formData.platform === p.value;
+              return (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, platform: p.value })}
+                  title={`${p.label} (${p.fee})`}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all
+                    ${selected
+                      ? "bg-blue-600/30 border-blue-500/60 text-white"
+                      : "bg-[#1a2540] border-slate-600/40 text-slate-400 hover:text-white hover:border-slate-500/60"
+                    }`}
+                >
+                  {p.icon
+                    ? <img src={p.icon} alt={p.label} className="w-4 h-4 rounded-sm object-contain" />
+                    : <span className="w-4 h-4 rounded-sm bg-slate-600/50 flex items-center justify-center text-[8px] font-bold">{p.label[0]}</span>
+                  }
+                  <span>{p.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
+        {/* Notes */}
         <div className="md:col-span-2">
           <label className="block text-slate-300 mb-2 text-sm font-medium">Notes</label>
           <input
-            type="text"
-            value={formData.notes}
+            type="text" value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            className="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-white/40 transition-colors"
+            className="w-full bg-[#1a2540] border border-slate-600/50 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-white/30 transition-colors"
             placeholder="-"
           />
         </div>
