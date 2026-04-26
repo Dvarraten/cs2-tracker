@@ -1,5 +1,6 @@
 import React from "react";
 import { TrendingUp } from "lucide-react";
+import { PlatformBadge } from "./PlatformBadge";
 
 export default function RecentSales({ items, theme }) {
   const sold = items
@@ -26,15 +27,13 @@ export default function RecentSales({ items, theme }) {
       ) : (
         <div className="space-y-2">
           {sold.map((item) => (
-            <div
-              key={item.id}
-              className={`relative rounded-lg px-3 py-2.5 border ${theme.soldCard} overflow-hidden`}
-            >
-              {/* colour bar */}
+            <div key={item.id} className={`relative rounded-lg px-3 py-2.5 border ${theme.soldCard} overflow-hidden`}>
               <span className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${item.profit >= 0 ? "bg-emerald-500" : "bg-red-500"}`} />
-
               <div className="pl-2">
-                <div className="text-sm font-medium text-white truncate">{item.itemName}</div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-white truncate">{item.itemName}</span>
+                  {item.soldPlatform && <PlatformBadge platform={item.soldPlatform} size="xs" />}
+                </div>
                 <div className="flex justify-between items-center mt-0.5">
                   <span className="text-slate-400 text-xs">
                     ${item.purchasePrice.toFixed(2)} → ${item.salePrice.toFixed(2)}

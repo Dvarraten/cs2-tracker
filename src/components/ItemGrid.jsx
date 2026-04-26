@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import { TrendingUp, Trash2, CheckCircle } from "lucide-react";
 import { getPlatformFee } from "../utils/platformFees";
+import { PlatformBadge } from "./PlatformBadge";
 
 const HOLD_DURATION = 1000;
 
@@ -14,12 +15,10 @@ function HoldToDeleteButton({ onDelete }) {
     e.preventDefault();
     setHolding(true);
     startTimeRef.current = Date.now();
-
     intervalRef.current = setInterval(() => {
       const elapsed = Date.now() - startTimeRef.current;
       const pct = Math.min((elapsed / HOLD_DURATION) * 100, 100);
       setProgress(pct);
-
       if (pct >= 100) {
         clearInterval(intervalRef.current);
         setHolding(false);
@@ -37,19 +36,13 @@ function HoldToDeleteButton({ onDelete }) {
 
   return (
     <button
-      onMouseDown={startHold}
-      onMouseUp={cancelHold}
-      onMouseLeave={cancelHold}
-      onTouchStart={startHold}
-      onTouchEnd={cancelHold}
+      onMouseDown={startHold} onMouseUp={cancelHold} onMouseLeave={cancelHold}
+      onTouchStart={startHold} onTouchEnd={cancelHold}
       className="relative overflow-hidden text-red-400 hover:text-red-300 p-1.5 rounded-lg transition-colors select-none"
       title="Hold to delete"
     >
       {holding && (
-        <span
-          className="absolute inset-0 bg-red-500/25 rounded-lg"
-          style={{ width: `${progress}%`, transition: 'none' }}
-        />
+        <span className="absolute inset-0 bg-red-500/25 rounded-lg" style={{ width: `${progress}%`, transition: 'none' }} />
       )}
       <Trash2 size={16} className="relative z-10" />
     </button>
@@ -95,29 +88,26 @@ export default function ItemGrid({
             ${deleteFeedback[item.id] ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
             ${soldFeedback[item.id] ? 'ring-2 ring-emerald-400/60' : ''}
           `}
-          style={{
-            animationDelay: `${index * 40}ms`,
-            animation: 'fadeSlideIn 0.3s ease both',
-          }}
+          style={{ animationDelay: `${index * 40}ms`, animation: 'fadeSlideIn 0.3s ease both' }}
         >
           <div className="flex justify-between items-start mb-2">
-            <h3 className="text-base font-semibold text-white flex-1 pr-2">{item.itemName}</h3>
+            <h3 className="text-base font-semibold text-white flex-1 pr-2 leading-snug">{item.itemName}</h3>
             <HoldToDeleteButton onDelete={() => onDelete(item.id)} />
           </div>
 
-          <div className="text-sm text-slate-400 space-y-1 mb-3">
-            <div className="flex justify-between">
+          <div className="text-sm text-slate-400 space-y-1.5 mb-3">
+            <div className="flex justify-between items-center">
               <span>Price:</span>
               <span className="text-white font-semibold">${item.purchasePrice.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span>Bought:</span>
               <span className="text-slate-300">{item.datePurchased}</span>
             </div>
             {item.platform && (
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span>Platform:</span>
-                <span className="text-blue-300 text-xs uppercase">{item.platform}</span>
+                <PlatformBadge platform={item.platform} size="xs" />
               </div>
             )}
           </div>
@@ -129,8 +119,7 @@ export default function ItemGrid({
           {!item.sold ? (
             <div className="space-y-2">
               <input
-                type="number"
-                step="0.01"
+                type="number" step="0.01"
                 value={sellData[item.id] || ''}
                 onChange={(e) => setSellData({ ...sellData, [item.id]: e.target.value })}
                 className={`w-full ${theme.inputSell} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border`}
@@ -154,19 +143,12 @@ export default function ItemGrid({
                 <button
                   onClick={() => onSell(item.id, sellPlatform[item.id] || 'csfloat')}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 whitespace-nowrap active:scale-95
-                    ${soldFeedback[item.id]
-                      ? 'bg-emerald-400 text-white scale-95'
-                      : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                    }`}
+                    ${soldFeedback[item.id] ? 'bg-emerald-400 text-white scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
                 >
-                  {soldFeedback[item.id]
-                    ? <><CheckCircle size={14} /> Sold!</>
-                    : 'Sell'
-                  }
+                  {soldFeedback[item.id] ? <><CheckCircle size={14} /> Sold!</> : 'Sell'}
                 </button>
               </div>
 
-              {/* Live profit preview */}
               {sellData[item.id] && parseFloat(sellData[item.id]) > 0 && (() => {
                 const fee = getPlatformFee(sellPlatform[item.id] || 'csfloat');
                 const net = parseFloat(sellData[item.id]) * (1 - fee);
@@ -188,18 +170,13 @@ export default function ItemGrid({
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp size={16} className={item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'} />
                 <span className="text-white font-semibold text-sm">SOLD</span>
+                {item.soldPlatform && <PlatformBadge platform={item.soldPlatform} size="xs" />}
               </div>
               <div className="space-y-1 text-xs">
                 <div className="flex justify-between">
                   <span className="text-slate-400">Sale:</span>
                   <span className="text-white font-semibold">${item.salePrice.toFixed(2)}</span>
                 </div>
-                {item.soldPlatform && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Sold on:</span>
-                    <span className="text-blue-300 uppercase">{item.soldPlatform}</span>
-                  </div>
-                )}
                 {item.dateSold && (
                   <div className="flex justify-between">
                     <span className="text-slate-400">Sold date:</span>
@@ -227,10 +204,8 @@ export default function ItemGrid({
       {sortedItems.length === 0 && (
         <div className="col-span-full text-center py-12 text-slate-400">
           <p className="text-lg">
-            {searchTerm
-              ? 'No items match your search.'
-              : activeTab === 'active'
-              ? 'No active items. Add your first purchase!'
+            {searchTerm ? 'No items match your search.'
+              : activeTab === 'active' ? 'No active items. Add your first purchase!'
               : 'No sold items yet.'}
           </p>
         </div>

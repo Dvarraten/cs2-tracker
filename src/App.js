@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, TrendingUp, Package, Link as LinkIcon, Gem, Target, DollarSign, BarChart3, MessageSquare, Download } from 'lucide-react';
+import { Trash2, TrendingUp, BarChart3, Download } from 'lucide-react';
 import { themes } from './themes/themes';
 import './index.css';
 
@@ -21,27 +21,13 @@ import Header from './components/Header';
 
 export default function CS2TradingTracker() {
   const {
-    items,
-    formData,
-    setFormData,
-    sellData,
-    setSellData,
-    sellPlatform,
-    setSellPlatform,
-    handleAddItem,
-    handleSellItem,
-    handleDeleteItem
+    items, formData, setFormData, sellData, setSellData,
+    sellPlatform, setSellPlatform, handleAddItem, handleSellItem, handleDeleteItem
   } = useItems();
 
   const {
-    usdAmount,
-    setUsdAmount,
-    rmbAmount,
-    setRmbAmount,
-    exchangeRate,
-    lastUpdated,
-    handleUsdChange,
-    handleRmbChange
+    usdAmount, setUsdAmount, rmbAmount, setRmbAmount,
+    exchangeRate, lastUpdated, handleUsdChange, handleRmbChange
   } = useExchangeRate();
 
   const [activeTab, setActiveTab] = useState('active');
@@ -54,14 +40,10 @@ export default function CS2TradingTracker() {
   const [showQuickLinks, setShowQuickLinks] = useState(false);
 
   const themeStyles = themes[theme];
-
   const { weeklyProfit, monthlyProfit, profitChartData } = useChartData(items, chartPeriod);
 
-  useEffect(() => {
-    localStorage.setItem('cs2-theme', theme);
-  }, [theme]);
+  useEffect(() => { localStorage.setItem('cs2-theme', theme); }, [theme]);
 
-  // Reset sort to newest when switching to active tab if profit sort is selected
   useEffect(() => {
     if (activeTab === 'active' && (sortBy === 'profit-high' || sortBy === 'profit-low')) {
       setSortBy('newest');
@@ -88,25 +70,29 @@ export default function CS2TradingTracker() {
     if (sortBy === 'oldest') return a.id - b.id;
     if (sortBy === 'price-high') return b.purchasePrice - a.purchasePrice;
     if (sortBy === 'price-low') return a.purchasePrice - b.purchasePrice;
-    if (sortBy === 'profit-high') {
-      const aProfitPercent = a.profitPercent ?? -Infinity;
-      const bProfitPercent = b.profitPercent ?? -Infinity;
-      return bProfitPercent - aProfitPercent;
-    }
-    if (sortBy === 'profit-low') {
-      const aProfitPercent = a.profitPercent ?? Infinity;
-      const bProfitPercent = b.profitPercent ?? Infinity;
-      return aProfitPercent - bProfitPercent;
-    }
+    if (sortBy === 'profit-high') return (b.profitPercent ?? -Infinity) - (a.profitPercent ?? -Infinity);
+    if (sortBy === 'profit-low') return (a.profitPercent ?? Infinity) - (b.profitPercent ?? Infinity);
     return 0;
   });
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${themeStyles.bg}`} onClick={() => showThemePicker && setShowThemePicker(false)}>
-      <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-      <div className="max-w-[1800px] mx-auto p-6">
-        {/* Header */}
-        <div className="mb-8 relative">
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: 'var(--bg-base, #0f172a)' }}
+      onClick={() => showThemePicker && setShowThemePicker(false)}
+    >
+      {/* Static layered background — no gradient shift on resize */}
+      <div className="fixed inset-0 -z-10 pointer-events-none">
+        <div className={`absolute inset-0 ${themeStyles.bg} opacity-100`} />
+        {/* subtle radial glow top-left */}
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-3xl" />
+        <div className="absolute top-1/2 right-0 w-[400px] h-[400px] rounded-full bg-indigo-600/8 blur-3xl" />
+      </div>
+
+      {/* Sticky header + ThemePicker */}
+      <div className="sticky top-0 z-50">
+        <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        <div className="absolute top-2 right-4" onClick={e => e.stopPropagation()}>
           <ThemePicker
             themeStyles={themeStyles}
             setShowThemePicker={setShowThemePicker}
@@ -116,8 +102,12 @@ export default function CS2TradingTracker() {
             themes={themes}
           />
         </div>
+      </div>
 
-        <StatsCards stats={stats} />
+      <div className="max-w-[1800px] mx-auto p-6">
+        <div className="mb-6">
+          <StatsCards stats={stats} />
+        </div>
 
         <div id="section-analytics" />
         {showAnalytics && (
@@ -131,19 +121,15 @@ export default function CS2TradingTracker() {
           />
         )}
 
-        {/* Main Layout with Sidebar */}
+        {/* Main Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-6">
           {/* Left Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             <CurrencyConverter
-              usdAmount={usdAmount}
-              setUsdAmount={setUsdAmount}
-              rmbAmount={rmbAmount}
-              setRmbAmount={setRmbAmount}
-              exchangeRate={exchangeRate}
-              lastUpdated={lastUpdated}
-              handleUsdChange={handleUsdChange}
-              handleRmbChange={handleRmbChange}
+              usdAmount={usdAmount} setUsdAmount={setUsdAmount}
+              rmbAmount={rmbAmount} setRmbAmount={setRmbAmount}
+              exchangeRate={exchangeRate} lastUpdated={lastUpdated}
+              handleUsdChange={handleUsdChange} handleRmbChange={handleRmbChange}
               theme={themeStyles}
             />
             <QuickLinks
@@ -151,17 +137,17 @@ export default function CS2TradingTracker() {
               setShowQuickLinks={setShowQuickLinks}
               showQuickLinks={showQuickLinks}
             />
-
-            {/* Action Buttons */}
-            <div className="space-y-3 mt-6">
+            <div className="space-y-3">
               <button
-                onClick={() => setShowAnalytics(!showAnalytics)}
+                onClick={() => {
+                  setShowAnalytics(p => !p);
+                  setTimeout(() => document.getElementById('section-analytics')?.scrollIntoView({ behavior: 'smooth' }), 50);
+                }}
                 className={`w-full ${themeStyles.card} hover:bg-white/20 backdrop-blur-sm rounded-lg px-4 py-3 border ${themeStyles.cardBorder} text-white transition-all flex items-center gap-3`}
               >
                 <BarChart3 size={18} />
                 <span className="text-sm">{showAnalytics ? 'Hide Analytics' : 'Show Analytics'}</span>
               </button>
-
               <button
                 onClick={() => exportToCSV(items)}
                 className="w-full bg-indigo-600/50 hover:bg-indigo-600/85 text-white px-4 py-3 rounded-lg flex items-center gap-3 transition-all"
@@ -172,14 +158,12 @@ export default function CS2TradingTracker() {
             </div>
           </div>
 
-          {/* Main Content Area */}
+          {/* Main Content */}
           <div className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-6 mb-12">
+            <div id="section-add" className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
               <AddItemForm
-                formData={formData}
-                setFormData={setFormData}
-                handleAddItem={handleAddItem}
-                theme={themeStyles}
+                formData={formData} setFormData={setFormData}
+                handleAddItem={handleAddItem} theme={themeStyles}
               />
               <RecentSales items={items} theme={themeStyles} />
             </div>
@@ -187,29 +171,19 @@ export default function CS2TradingTracker() {
             <div id="section-items" />
             <TabsAndSearchbar
               theme={themeStyles}
-              setActiveTab={setActiveTab}
-              activeTab={activeTab}
+              setActiveTab={setActiveTab} activeTab={activeTab}
               stats={stats}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
+              searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+              sortBy={sortBy} setSortBy={setSortBy}
             />
 
             <ItemGrid
-              sellPlatform={sellPlatform}
-              setSellData={setSellData}
-              sellData={sellData}
-              setSellPlatform={setSellPlatform}
-              handleSellItem={handleSellItem}
-              handleDeleteItem={handleDeleteItem}
-              theme={themeStyles}
-              items={items}
-              sortedItems={sortedItems}
-              searchTerm={searchTerm}
-              activeTab={activeTab}
-              TrendingUp={TrendingUp}
-              Trash2={Trash2}
+              sellPlatform={sellPlatform} setSellData={setSellData}
+              sellData={sellData} setSellPlatform={setSellPlatform}
+              handleSellItem={handleSellItem} handleDeleteItem={handleDeleteItem}
+              theme={themeStyles} items={items} sortedItems={sortedItems}
+              searchTerm={searchTerm} activeTab={activeTab}
+              TrendingUp={TrendingUp} Trash2={Trash2}
             />
           </div>
         </div>

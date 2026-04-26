@@ -28,7 +28,7 @@ export default function TabsAndSearchbar({
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.targetheme.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search items..."
               className={`flex-1 min-w-[250px] ${theme.input} rounded-lg px-4 py-2.5 text-white
               placeholder-slate-400 focus:outline-none transition-colors border`}
@@ -36,7 +36,7 @@ export default function TabsAndSearchbar({
             
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.targetheme.value)}
+              onChange={(e) => setSortBy(e.target.value)}
               className={`${theme.input} rounded-lg px-4 py-2.5 text-white focus:outline-none transition-colors border`}
             >
               <option value="newest" className="bg-slate-900">Newest First</option>
