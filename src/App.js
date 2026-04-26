@@ -102,11 +102,11 @@ export default function CS2TradingTracker() {
   });
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${themeStyles.bg} p-6`} onClick={() => showThemePicker && setShowThemePicker(false)}>
-      <div className="max-w-[1800px] mx-auto">
+    <div className={`min-h-screen bg-gradient-to-br ${themeStyles.bg}`} onClick={() => showThemePicker && setShowThemePicker(false)}>
+      <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+      <div className="max-w-[1800px] mx-auto p-6">
         {/* Header */}
         <div className="mb-8 relative">
-          <Header />
           <ThemePicker
             themeStyles={themeStyles}
             setShowThemePicker={setShowThemePicker}
@@ -119,6 +119,7 @@ export default function CS2TradingTracker() {
 
         <StatsCards stats={stats} />
 
+        <div id="section-analytics" />
         {showAnalytics && (
           <ProfitChart
             profitChartData={profitChartData}
@@ -183,6 +184,7 @@ export default function CS2TradingTracker() {
               <RecentSales items={items} theme={themeStyles} />
             </div>
 
+            <div id="section-items" />
             <TabsAndSearchbar
               theme={themeStyles}
               setActiveTab={setActiveTab}
