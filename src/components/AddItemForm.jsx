@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { CheckCircle } from "lucide-react";
 
 export default function AddItemForm({
   formData,
@@ -6,10 +7,17 @@ export default function AddItemForm({
   handleAddItem,
   theme,
 }) {
+  const [success, setSuccess] = useState(false);
+
+  const onAdd = () => {
+    if (!formData.itemName || !formData.purchasePrice) return;
+    handleAddItem();
+    setSuccess(true);
+    setTimeout(() => setSuccess(false), 2000);
+  };
+
   return (
-    <div
-      className={`${theme.card} ${theme.cardBorder} rounded-xl p-6 border`}
-    >
+    <div className={`${theme.card} ${theme.cardBorder} rounded-xl p-6 border`}>
       <h3 className="text-lg font-semibold text-white mb-4">Add New Item</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -20,7 +28,7 @@ export default function AddItemForm({
             type="text"
             value={formData.itemName}
             onChange={(e) =>
-              setFormData({ ...formData, itemName: e.targetheme.value })
+              setFormData({ ...formData, itemName: e.target.value })
             }
             className="w-full bg-slate-800/60 border border-slate-600/50
             rounded-lg px-4 py-2 text-white placeholder-slate-400
@@ -38,7 +46,7 @@ export default function AddItemForm({
             step="1"
             value={formData.purchasePrice}
             onChange={(e) =>
-              setFormData({ ...formData, purchasePrice: e.targetheme.value })
+              setFormData({ ...formData, purchasePrice: e.target.value })
             }
             className="w-full bg-slate-800/60 border border-slate-600/50
             rounded-lg px-4 py-2 text-white placeholder-slate-400
@@ -74,7 +82,7 @@ export default function AddItemForm({
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  quantity: Math.max(1, parseInt(e.targetheme.value) || 1),
+                  quantity: Math.max(1, parseInt(e.target.value) || 1),
                 })
               }
               className="w-full bg-slate-800/60 border border-slate-600/50
@@ -115,38 +123,20 @@ export default function AddItemForm({
           <select
             value={formData.platform}
             onChange={(e) =>
-              setFormData({ ...formData, platform: e.targetheme.value })
+              setFormData({ ...formData, platform: e.target.value })
             }
             className={`w-full ${theme.input} rounded-lg px-4 py-2 text-white
             focus:border-white/40 transition-colors border`}
           >
-            <option value="csfloat" className="bg-slate-900">
-              CSFloat
-            </option>
-            <option value="csmoney" className="bg-slate-900">
-              CS.MONEY
-            </option>
-            <option value="gamerpay" className="bg-slate-900">
-              GamerPay
-            </option>
-            <option value="skinswap" className="bg-slate-900">
-              SkinSwap
-            </option>
-            <option value="dmarket" className="bg-slate-900">
-              DMarket
-            </option>
-            <option value="tradeit" className="bg-slate-900">
-              Tradeit
-            </option>
-            <option value="facebook" className="bg-slate-900">
-              Facebook
-            </option>
-            <option value="youpin" className="bg-slate-900">
-              Youpin
-            </option>
-            <option value="other" className="bg-slate-900">
-              Other
-            </option>
+            <option value="csfloat" className="bg-slate-900">CSFloat</option>
+            <option value="csmoney" className="bg-slate-900">CS.MONEY</option>
+            <option value="gamerpay" className="bg-slate-900">GamerPay</option>
+            <option value="skinswap" className="bg-slate-900">SkinSwap</option>
+            <option value="dmarket" className="bg-slate-900">DMarket</option>
+            <option value="tradeit" className="bg-slate-900">Tradeit</option>
+            <option value="facebook" className="bg-slate-900">Facebook</option>
+            <option value="youpin" className="bg-slate-900">Youpin</option>
+            <option value="other" className="bg-slate-900">Other</option>
           </select>
         </div>
 
@@ -158,7 +148,7 @@ export default function AddItemForm({
             type="text"
             value={formData.notes}
             onChange={(e) =>
-              setFormData({ ...formData, notes: e.targetheme.value })
+              setFormData({ ...formData, notes: e.target.value })
             }
             className="w-full bg-slate-800/60 border border-slate-600/50
               rounded-lg px-4 py-2
@@ -172,12 +162,23 @@ export default function AddItemForm({
 
       <div className="flex gap-3 mt-4">
         <button
-          onClick={handleAddItem}
-          className={`${theme.accentBg} text-white px-8 py-2 rounded-lg transition-all font-medium`}
+          onClick={onAdd}
+          className={`relative flex items-center gap-2 px-8 py-2 rounded-lg font-medium transition-all duration-300 overflow-hidden
+            ${success
+              ? 'bg-emerald-500 scale-95'
+              : `${theme.accentBg} hover:brightness-110 active:scale-95`
+            } text-white`}
         >
-          {formData.quantity > 1
-            ? `Add ${formData.quantity} Items`
-            : "Add Item"}
+          {success ? (
+            <>
+              <CheckCircle size={16} className="animate-bounce-in" />
+              <span>Added!</span>
+            </>
+          ) : (
+            <span>
+              {formData.quantity > 1 ? `Add ${formData.quantity} Items` : "Add Item"}
+            </span>
+          )}
         </button>
       </div>
     </div>
