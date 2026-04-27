@@ -50,6 +50,12 @@ export default function CS2TradingTracker() {
     }
   }, [activeTab, sortBy]);
 
+  // Lock body scroll when modal open
+  useEffect(() => {
+    document.body.style.overflow = showAnalytics ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [showAnalytics]);
+
   const stats = {
     totalActive: items.filter(i => !i.sold).length,
     totalSold: items.filter(i => i.sold).length,
@@ -82,7 +88,25 @@ export default function CS2TradingTracker() {
     >
       <div className={`fixed inset-0 -z-10 pointer-events-none ${themeStyles.bg}`} />
 
-      <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} theme={themeStyles}>
+      {/* Analytics modal */}
+      {showAnalytics && (
+        <ProfitChart
+          profitChartData={profitChartData}
+          chartPeriod={chartPeriod}
+          setChartPeriod={setChartPeriod}
+          weeklyProfit={weeklyProfit}
+          monthlyProfit={monthlyProfit}
+          theme={themeStyles}
+          onClose={() => setShowAnalytics(false)}
+        />
+      )}
+
+      <Header
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        theme={themeStyles}
+        onAnalyticsClick={() => setShowAnalytics(true)}
+      >
         <div onClick={e => e.stopPropagation()}>
           <ThemePicker
             themeStyles={themeStyles}
@@ -99,18 +123,6 @@ export default function CS2TradingTracker() {
         <div className="mb-6">
           <StatsCards stats={stats} theme={themeStyles} />
         </div>
-
-        <div id="section-analytics" />
-        {showAnalytics && (
-          <ProfitChart
-            profitChartData={profitChartData}
-            chartPeriod={chartPeriod}
-            setChartPeriod={setChartPeriod}
-            weeklyProfit={weeklyProfit}
-            monthlyProfit={monthlyProfit}
-            theme={themeStyles}
-          />
-        )}
 
         {/* Main Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-6">
@@ -130,14 +142,11 @@ export default function CS2TradingTracker() {
             />
             <div className="space-y-3">
               <button
-                onClick={() => {
-                  setShowAnalytics(p => !p);
-                  setTimeout(() => document.getElementById('section-analytics')?.scrollIntoView({ behavior: 'smooth' }), 50);
-                }}
+                onClick={() => setShowAnalytics(true)}
                 className={`w-full ${themeStyles.card} hover:bg-white/20 backdrop-blur-sm rounded-lg px-4 py-3 border ${themeStyles.cardBorder} text-white transition-all flex items-center gap-3`}
               >
                 <BarChart3 size={18} />
-                <span className="text-sm">{showAnalytics ? 'Hide Analytics' : 'Show Analytics'}</span>
+                <span className="text-sm">Show Analytics</span>
               </button>
               <button
                 onClick={() => exportToCSV(items)}

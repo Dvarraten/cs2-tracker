@@ -1,13 +1,19 @@
 import React from "react";
 
-export default function Header({ searchTerm, setSearchTerm, theme, children }) {
+export default function Header({ searchTerm, setSearchTerm, theme, onAnalyticsClick, children }) {
   const scrollTo = (id) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const navItems = [
+    { label: "Add Item",     action: () => scrollTo("section-add") },
+    { label: "Handle Items", action: () => scrollTo("section-items") },
+    { label: "Analytics",    action: onAnalyticsClick },
+  ];
+
   return (
-    <header className={`w-full border-b border-black/10 sticky top-0 z-50 ${theme?.header || "bg-[#080e1a]"}`}>
+    <header className={`w-full border-b border-white/8 sticky top-0 z-50 ${theme?.header || "bg-[#080e1a]"}`}>
       <div className="max-w-[1800px] mx-auto px-6 h-16 flex items-center justify-between">
 
         {/* LEFT: Logo + Nav */}
@@ -16,14 +22,10 @@ export default function Header({ searchTerm, setSearchTerm, theme, children }) {
             CS2TradingTracker
           </span>
           <nav className="hidden md:flex items-center gap-1">
-            {[
-              { label: "Add Item",     id: "section-add" },
-              { label: "Handle Items", id: "section-items" },
-              { label: "Analytics",    id: "section-analytics" },
-            ].map(({ label, id }) => (
+            {navItems.map(({ label, action }) => (
               <button
-                key={id}
-                onClick={() => scrollTo(id)}
+                key={label}
+                onClick={action}
                 className="text-slate-400 hover:text-white hover:bg-white/8 px-3 py-1.5 rounded-lg text-sm transition-all"
               >
                 {label}
