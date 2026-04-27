@@ -97,7 +97,7 @@ export default function CS2TradingTracker() {
 
       <div className="max-w-[1800px] mx-auto p-6">
         <div className="mb-6">
-          <StatsCards stats={stats} />
+          <StatsCards stats={stats} theme={themeStyles} />
         </div>
 
         <div id="section-analytics" />

@@ -3,7 +3,6 @@ import { Copy, Check } from "lucide-react";
 
 function CopyButton({ value }) {
   const [copied, setCopied] = useState(false);
-
   const handleCopy = () => {
     if (!value) return;
     navigator.clipboard.writeText(value).then(() => {
@@ -11,7 +10,6 @@ function CopyButton({ value }) {
       setTimeout(() => setCopied(false), 1500);
     });
   };
-
   return (
     <button
       onClick={handleCopy}
@@ -29,7 +27,7 @@ function CopyButton({ value }) {
 }
 
 export default function CurrencyConverter({
-  usdAmount, setUsdAmount, rmbAmount, setRmbAmount,
+  usdAmount, rmbAmount,
   exchangeRate, lastUpdated,
   handleUsdChange, handleRmbChange, theme
 }) {
@@ -38,28 +36,28 @@ export default function CurrencyConverter({
       <h3 className="text-base font-semibold text-slate-200 mb-4">Currency Converter</h3>
       <div className="space-y-3">
         <div>
-          <label className="block text-slate-400 text-xs mb-1.5">USD</label>
+          <label className={`block ${theme.subtext} text-xs mb-1.5`}>USD</label>
           <div className="flex items-center gap-1.5">
             <input
               type="text"
               inputMode="decimal"
               value={usdAmount}
               onChange={(e) => handleUsdChange(e.target.value)}
-              className="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/40 transition-colors"
+              className={`w-full ${theme.input} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border`}
               placeholder="-"
             />
             <CopyButton value={usdAmount} />
           </div>
         </div>
         <div>
-          <label className="block text-slate-400 text-xs mb-1.5">RMB (CNY)</label>
+          <label className={`block ${theme.subtext} text-xs mb-1.5`}>RMB (CNY)</label>
           <div className="flex items-center gap-1.5">
             <input
               type="text"
               inputMode="decimal"
               value={rmbAmount}
               onChange={(e) => handleRmbChange(e.target.value)}
-              className="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/40 transition-colors"
+              className={`w-full ${theme.input} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border`}
               placeholder="-"
             />
             <CopyButton value={rmbAmount} />
@@ -68,7 +66,7 @@ export default function CurrencyConverter({
       </div>
       {exchangeRate && (
         <div className={`mt-3 pt-3 border-t ${theme.cardBorder}`}>
-          <p className="text-slate-400 text-xs">
+          <p className={`${theme.subtext} text-xs`}>
             Rate: 1 USD = {exchangeRate.toFixed(4)} CNY
           </p>
           {lastUpdated && (

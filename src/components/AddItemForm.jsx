@@ -56,12 +56,12 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
 
         {/* Item Name */}
         <div>
-          <label className="block text-slate-300 mb-2 text-sm font-medium">Item Name</label>
+          <label className={`block ${theme.subtext} mb-2 text-sm font-medium`}>Item Name</label>
           <div className="relative">
             <input
               type="text" value={formData.itemName}
               onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
-              className="w-full bg-[#1a2540] border border-slate-600/50 rounded-lg px-4 pr-9 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-white/30 transition-colors"
+              className={`w-full ${theme.input} rounded-lg px-4 pr-9 py-2 text-white placeholder-slate-500 focus:outline-none transition-colors border`}
               placeholder="-"
             />
             <PasteButton onPaste={(val) => setFormData({ ...formData, itemName: val })} />
@@ -70,12 +70,12 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
 
         {/* Purchase Price */}
         <div>
-          <label className="block text-slate-300 mb-2 text-sm font-medium">Purchase Price ($)</label>
+          <label className={`block ${theme.subtext} mb-2 text-sm font-medium`}>Purchase Price ($)</label>
           <div className="relative">
             <input
               type="number" step="1" value={formData.purchasePrice}
               onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
-              className="w-full bg-[#1a2540] border border-slate-600/50 rounded-lg px-4 pr-9 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-white/30 transition-colors"
+              className={`w-full ${theme.input} rounded-lg px-4 pr-9 py-2 text-white placeholder-slate-500 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
               placeholder="-"
             />
             <PasteButton onPaste={(val) => {
@@ -87,7 +87,7 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
 
         {/* Quantity */}
         <div>
-          <label className="block text-slate-300 mb-2 text-sm font-medium">Quantity</label>
+          <label className={`block ${theme.subtext} mb-2 text-sm font-medium`}>Quantity</label>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setFormData({ ...formData, quantity: Math.max(1, (parseInt(formData.quantity) || 1) - 1) })}
@@ -96,7 +96,7 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
             <input
               type="number" min="1" max="999" value={formData.quantity}
               onChange={(e) => setFormData({ ...formData, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-              className="w-full bg-[#1a2540] border border-slate-600/50 rounded-lg px-4 py-2 text-white text-center placeholder-slate-500 focus:outline-none focus:border-white/30 transition-colors"
+              className={`w-full ${theme.input} rounded-lg px-4 py-2 text-white text-center placeholder-slate-500 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
             />
             <button
               onClick={() => setFormData({ ...formData, quantity: (parseInt(formData.quantity) || 1) + 1 })}
@@ -111,9 +111,9 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
           )}
         </div>
 
-        {/* Platform – icon picker */}
+        {/* Platform picker */}
         <div>
-          <label className="block text-slate-300 mb-2 text-sm font-medium">Platform</label>
+          <label className={`block ${theme.subtext} mb-2 text-sm font-medium`}>Platform</label>
           <div className="flex flex-wrap gap-2">
             {PLATFORMS.map((p) => {
               const selected = formData.platform === p.value;
@@ -125,13 +125,13 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
                   title={`${p.label} (${p.fee})`}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all
                     ${selected
-                      ? "bg-blue-600/30 border-blue-500/60 text-white"
-                      : "bg-[#1a2540] border-slate-600/40 text-slate-400 hover:text-white hover:border-slate-500/60"
+                      ? `${theme.accentBg} border-transparent text-white`
+                      : `${theme.card} ${theme.cardBorder} ${theme.subtext} hover:text-white`
                     }`}
                 >
                   {p.icon
                     ? <img src={p.icon} alt={p.label} className="w-4 h-4 rounded-sm object-contain" />
-                    : <span className="w-4 h-4 rounded-sm bg-slate-600/50 flex items-center justify-center text-[8px] font-bold">{p.label[0]}</span>
+                    : <span className="w-4 h-4 rounded-sm bg-white/10 flex items-center justify-center text-[8px] font-bold">{p.label[0]}</span>
                   }
                   <span>{p.label}</span>
                 </button>
@@ -142,11 +142,11 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
 
         {/* Notes */}
         <div className="md:col-span-2">
-          <label className="block text-slate-300 mb-2 text-sm font-medium">Notes</label>
+          <label className={`block ${theme.subtext} mb-2 text-sm font-medium`}>Notes</label>
           <input
             type="text" value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            className="w-full bg-[#1a2540] border border-slate-600/50 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-white/30 transition-colors"
+            className={`w-full ${theme.input} rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none transition-colors border`}
             placeholder="-"
           />
         </div>
