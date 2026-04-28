@@ -3,9 +3,26 @@ import { TrendingUp, Trash2, CheckCircle } from "lucide-react";
 import { getPlatformFee } from "../utils/platformFees";
 import { PlatformBadge } from "./PlatformBadge";
 
+import csfloatIcon  from "../assets/platforms/csfloat.webp";
+import csmoneyIcon  from "../assets/platforms/csmoney.webp";
+import gamerpayIcon from "../assets/platforms/gamerpay.webp";
+import skinswapIcon from "../assets/platforms/skinswap.webp";
+import youpinIcon   from "../assets/platforms/youpin.webp";
+import dmarketIcon  from "../assets/platforms/dmarket.webp";
+
+const SELL_PLATFORMS = [
+  { value: "csfloat",  label: "CSFloat",  icon: csfloatIcon,  fee: "2%"   },
+  { value: "csmoney",  label: "CS.MONEY", icon: csmoneyIcon,  fee: "5%"   },
+  { value: "gamerpay", label: "GamerPay", icon: gamerpayIcon, fee: "5%"   },
+  { value: "skinswap", label: "SkinSwap", icon: skinswapIcon, fee: "5%"   },
+  { value: "dmarket",  label: "DMarket",  icon: dmarketIcon,  fee: "5%"   },
+  { value: "youpin",   label: "Youpin",   icon: youpinIcon,   fee: "0.5%" },
+  { value: "tradeit",  label: "Tradeit",  icon: null,         fee: "5%"   },
+  { value: "facebook", label: "Facebook", icon: null,         fee: "0%"   },
+];
+
 const HOLD_DURATION = 1000;
 
-// Interpolates between two hex colors by progress (0–1)
 function lerpColor(a, b, t) {
   const ah = a.replace('#','');
   const bh = b.replace('#','');
@@ -17,12 +34,9 @@ function lerpColor(a, b, t) {
   return `rgb(${r},${g},${b2})`;
 }
 
-// Extracts the hex from a Tailwind class like "bg-blue-500" or "bg-[#168eff]"
-// Falls back to a neutral blue if not parseable
 function getThemeAccentHex(accentClass) {
   const match = accentClass?.match(/#([0-9a-fA-F]{6})/);
   if (match) return `#${match[1]}`;
-  // Map common Tailwind color names to hex
   const map = {
     'blue-500': '#3b82f6', 'blue-600': '#2563eb',
     'sky-400': '#38bdf8',  'sky-500': '#0ea5e9',
@@ -32,7 +46,7 @@ function getThemeAccentHex(accentClass) {
   for (const [k, v] of Object.entries(map)) {
     if (accentClass?.includes(k)) return v;
   }
-  return '#3b82f6'; // fallback blue
+  return '#3b82f6';
 }
 
 function HoldToDeleteButton({ onDelete, deleteProgress }) {
@@ -70,15 +84,42 @@ function HoldToDeleteButton({ onDelete, deleteProgress }) {
   );
 }
 
+function SellPlatformPicker({ value, onChange, theme }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {SELL_PLATFORMS.map((p) => {
+        const selected = value === p.value;
+        return (
+          <button
+            key={p.value}
+            type="button"
+            onClick={() => onChange(p.value)}
+            title={`${p.label} (${p.fee})`}
+            className={`flex items-center gap-1 px-2 py-1 rounded-md border text-[10px] font-medium transition-all
+              ${selected
+                ? `${theme.accentBg} border-transparent text-white`
+                : `${theme.card} ${theme.cardBorder} ${theme.subtext} hover:text-white`
+              }`}
+          >
+            {p.icon
+              ? <img src={p.icon} alt={p.label} className="w-3.5 h-3.5 rounded-sm object-contain flex-shrink-0" />
+              : <span className="w-3.5 h-3.5 rounded-sm bg-white/10 flex items-center justify-center text-[7px] font-bold flex-shrink-0">{p.label[0]}</span>
+            }
+            <span>{p.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPlatform, setSellPlatform, handleSellItem, handleDeleteItem }) {
-  const [sellProgress, setSellProgress] = useState(0); // 0–1, theme→green
-  const [deleteProgress, setDeleteProgress] = useState(0); // 0–100, for hold button
+  const [deleteProgress, setDeleteProgress] = useState(0);
   const [barColor, setBarColor] = useState(accentHex);
   const [exiting, setExiting] = useState(false);
   const [soldFeedback, setSoldFeedback] = useState(false);
   const sellAnimRef = useRef(null);
 
-  // Sold items always show green bar
   const soldBarColor = item.profit >= 0 ? '#30914c' : '#f53232';
 
   const animateBarTo = (targetColor, duration, onDone) => {
@@ -105,10 +146,9 @@ function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPl
   const onDeleteProgress = (pct) => {
     setDeleteProgress(pct);
     if (pct === 0) {
-      setBarColor(accentHex); // reset if cancelled
+      setBarColor(accentHex);
     } else {
-      const t = pct / 100;
-      setBarColor(lerpColor(accentHex, '#f53232', t));
+      setBarColor(lerpColor(accentHex, '#f53232', pct / 100));
     }
     if (pct >= 100) {
       setExiting(true);
@@ -120,10 +160,8 @@ function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPl
 
   const fee = !item.sold && sellData[item.id] && parseFloat(sellData[item.id]) > 0
     ? getPlatformFee(sellPlatform[item.id] || 'csfloat') : null;
-  const estProfit = fee !== null
-    ? parseFloat(sellData[item.id]) * (1 - fee) - item.purchasePrice : null;
-  const estProfitPct = estProfit !== null
-    ? (estProfit / item.purchasePrice) * 100 : null;
+  const estProfit = fee !== null ? parseFloat(sellData[item.id]) * (1 - fee) - item.purchasePrice : null;
+  const estProfitPct = estProfit !== null ? (estProfit / item.purchasePrice) * 100 : null;
 
   return (
     <div
@@ -136,8 +174,8 @@ function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPl
     >
       {/* Colored sidebar */}
       <div
-        className="w-1 flex-shrink-0 rounded-l-xl transition-colors duration-100"
-        style={{ backgroundColor: currentBarColor }}
+        className="w-1 flex-shrink-0 rounded-l-xl"
+        style={{ backgroundColor: currentBarColor, transition: 'background-color 0.1s' }}
       />
 
       {/* Card content */}
@@ -145,10 +183,7 @@ function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPl
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-base font-semibold text-white flex-1 pr-2 leading-snug">{item.itemName}</h3>
           {!item.sold && (
-            <HoldToDeleteButton
-              onDelete={onDeleteProgress}
-              deleteProgress={deleteProgress}
-            />
+            <HoldToDeleteButton onDelete={onDeleteProgress} deleteProgress={deleteProgress} />
           )}
         </div>
 
@@ -182,29 +217,21 @@ function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPl
               className={`w-full ${theme.inputSell} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
               placeholder="Sale price..."
             />
-            <div className="flex gap-2">
-              <select
-                value={sellPlatform[item.id] || 'csfloat'}
-                onChange={(e) => setSellPlatform(prev => ({ ...prev, [item.id]: e.target.value }))}
-                className={`flex-1 ${theme.inputSell} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border`}
-              >
-                <option value="csfloat"  className="bg-slate-900">CSFloat (2%)</option>
-                <option value="csmoney"  className="bg-slate-900">CS.MONEY (5%)</option>
-                <option value="gamerpay" className="bg-slate-900">GamerPay (5%)</option>
-                <option value="skinswap" className="bg-slate-900">SkinSwap (5%)</option>
-                <option value="dmarket"  className="bg-slate-900">DMarket (5%)</option>
-                <option value="tradeit"  className="bg-slate-900">Tradeit (5%)</option>
-                <option value="facebook" className="bg-slate-900">Facebook (0%)</option>
-                <option value="youpin"   className="bg-slate-900">Youpin (0.5%)</option>
-              </select>
-              <button
-                onClick={onSell}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 whitespace-nowrap active:scale-95
-                  ${soldFeedback ? 'bg-emerald-400 text-white scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
-              >
-                {soldFeedback ? <><CheckCircle size={14} /> Sold!</> : 'Sell'}
-              </button>
-            </div>
+
+            {/* Platform picker with icons */}
+            <SellPlatformPicker
+              value={sellPlatform[item.id] || 'csfloat'}
+              onChange={(val) => setSellPlatform(prev => ({ ...prev, [item.id]: val }))}
+              theme={theme}
+            />
+
+            <button
+              onClick={onSell}
+              className={`w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 active:scale-95
+                ${soldFeedback ? 'bg-emerald-400 text-white scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+            >
+              {soldFeedback ? <><CheckCircle size={14} /> Sold!</> : 'Sell'}
+            </button>
 
             {estProfit !== null && (
               <div className={`text-xs rounded-lg px-3 py-2 flex justify-between items-center transition-all

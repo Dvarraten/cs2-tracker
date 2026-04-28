@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { CheckCircle, ClipboardPaste } from "lucide-react";
+import { CheckCircle } from "lucide-react";
+import ItemAutoComplete from "./ItemAutoComplete";
+import PasteButton from "./PasteButton";
 
 import csfloatIcon  from "../assets/platforms/csfloat.webp";
 import csmoneyIcon  from "../assets/platforms/csmoney.webp";
@@ -20,25 +22,6 @@ const PLATFORMS = [
   { value: "other",    label: "Other",    icon: null,         fee: "?" },
 ];
 
-function PasteButton({ onPaste }) {
-  const [pasted, setPasted] = useState(false);
-  const handlePaste = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (text) { onPaste(text.trim()); setPasted(true); setTimeout(() => setPasted(false), 1500); }
-    } catch (e) {}
-  };
-  return (
-    <button
-      type="button" onClick={handlePaste} title="Paste from clipboard"
-      className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-all
-        ${pasted ? "text-emerald-400 bg-emerald-400/10" : "text-slate-500 hover:text-slate-300 hover:bg-white/8"}`}
-    >
-      {pasted ? <CheckCircle size={13} /> : <ClipboardPaste size={13} />}
-    </button>
-  );
-}
-
 export default function AddItemForm({ formData, setFormData, handleAddItem, theme }) {
   const [success, setSuccess] = useState(false);
 
@@ -57,15 +40,12 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
         {/* Item Name */}
         <div>
           <label className={`block ${theme.subtext} mb-2 text-sm font-medium`}>Item Name</label>
-          <div className="relative">
-            <input
-              type="text" value={formData.itemName}
-              onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
-              className={`w-full ${theme.input} rounded-lg px-4 pr-9 py-2 text-white placeholder-slate-500 focus:outline-none transition-colors border`}
-              placeholder="-"
-            />
-            <PasteButton onPaste={(val) => setFormData({ ...formData, itemName: val })} />
-          </div>
+          <ItemAutoComplete
+            value={formData.itemName}
+            onChange={(val) => setFormData({ ...formData, itemName: val })}
+            placeholder="-"
+            theme={theme}
+          />
         </div>
 
         {/* Purchase Price */}
