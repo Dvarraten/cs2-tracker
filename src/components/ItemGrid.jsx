@@ -178,8 +178,9 @@ function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPl
         style={{ backgroundColor: currentBarColor, transition: 'background-color 0.1s' }}
       />
 
-      {/* Card content */}
-      <div className="flex-1 p-4 min-w-0">
+      {/* Card content — flex-col so the sell/sold block sticks to the bottom
+          via mt-auto, regardless of whether notes are present */}
+      <div className="flex-1 p-4 min-w-0 flex flex-col">
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-base font-semibold text-white flex-1 pr-2 leading-snug">{item.itemName}</h3>
           {!item.sold && (
@@ -208,74 +209,77 @@ function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPl
           <p className="text-amber-300 text-xs mb-3 line-clamp-2">Notes: {item.notes}</p>
         )}
 
-        {!item.sold ? (
-          <div className="space-y-2">
-            <input
-              type="number" step="0.01"
-              value={sellData[item.id] || ''}
-              onChange={(e) => setSellData(prev => ({ ...prev, [item.id]: e.target.value }))}
-              className={`w-full ${theme.inputSell} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-              placeholder="Sale price..."
-            />
+        {/* Bottom-anchored action zone */}
+        <div className="mt-auto">
+          {!item.sold ? (
+            <div className="space-y-2">
+              <input
+                type="number" step="0.01"
+                value={sellData[item.id] || ''}
+                onChange={(e) => setSellData(prev => ({ ...prev, [item.id]: e.target.value }))}
+                className={`w-full ${theme.inputSell} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                placeholder="Sale price..."
+              />
 
-            {/* Platform picker with icons */}
-            <SellPlatformPicker
-              value={sellPlatform[item.id] || 'csfloat'}
-              onChange={(val) => setSellPlatform(prev => ({ ...prev, [item.id]: val }))}
-              theme={theme}
-            />
+              {/* Platform picker with icons */}
+              <SellPlatformPicker
+                value={sellPlatform[item.id] || 'csfloat'}
+                onChange={(val) => setSellPlatform(prev => ({ ...prev, [item.id]: val }))}
+                theme={theme}
+              />
 
-            <button
-              onClick={onSell}
-              className={`w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 active:scale-95
-                ${soldFeedback ? 'bg-emerald-400 text-white scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
-            >
-              {soldFeedback ? <><CheckCircle size={14} /> Sold!</> : 'Sell'}
-            </button>
+              <button
+                onClick={onSell}
+                className={`w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 active:scale-95
+                  ${soldFeedback ? 'bg-emerald-400 text-white scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+              >
+                {soldFeedback ? <><CheckCircle size={14} /> Sold!</> : 'Sell'}
+              </button>
 
-            {estProfit !== null && (
-              <div className={`text-xs rounded-lg px-3 py-2 flex justify-between items-center transition-all
-                ${estProfit >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                <span>Est. profit</span>
-                <span className="font-semibold">
-                  {estProfit >= 0 ? '+' : ''}${estProfit.toFixed(2)} ({estProfitPct >= 0 ? '+' : ''}{estProfitPct.toFixed(1)}%)
-                </span>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className={`${theme.soldCard} rounded-lg p-3 border`}>
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp size={16} className={item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'} />
-              <span className="text-white font-semibold text-sm">SOLD</span>
-              {item.soldPlatform && <PlatformBadge platform={item.soldPlatform} size="xs" />}
-            </div>
-            <div className="space-y-1 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Sale:</span>
-                <span className="text-white font-semibold">${item.salePrice.toFixed(2)}</span>
-              </div>
-              {item.dateSold && (
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Sold date:</span>
-                  <span className="text-slate-300">{item.dateSold}</span>
+              {estProfit !== null && (
+                <div className={`text-xs rounded-lg px-3 py-2 flex justify-between items-center transition-all
+                  ${estProfit >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                  <span>Est. profit</span>
+                  <span className="font-semibold">
+                    {estProfit >= 0 ? '+' : ''}${estProfit.toFixed(2)} ({estProfitPct >= 0 ? '+' : ''}{estProfitPct.toFixed(1)}%)
+                  </span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span className="text-slate-400">After fees:</span>
-                <span className="text-white font-semibold">
-                  ${(item.salePrice * (1 - getPlatformFee(item.soldPlatform))).toFixed(2)}
-                </span>
+            </div>
+          ) : (
+            <div className={`${theme.soldCard} rounded-lg p-3 border`}>
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp size={16} className={item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'} />
+                <span className="text-white font-semibold text-sm">SOLD</span>
+                {item.soldPlatform && <PlatformBadge platform={item.soldPlatform} size="xs" />}
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Profit:</span>
-                <span className={`font-semibold ${item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {item.profit >= 0 ? '+' : ''}${item.profit.toFixed(2)} ({item.profitPercent.toFixed(1)}%)
-                </span>
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Sale:</span>
+                  <span className="text-white font-semibold">${item.salePrice.toFixed(2)}</span>
+                </div>
+                {item.dateSold && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Sold date:</span>
+                    <span className="text-slate-300">{item.dateSold}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-slate-400">After fees:</span>
+                  <span className="text-white font-semibold">
+                    ${(item.salePrice * (1 - getPlatformFee(item.soldPlatform))).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Profit:</span>
+                  <span className={`font-semibold ${item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {item.profit >= 0 ? '+' : ''}${item.profit.toFixed(2)} ({item.profitPercent.toFixed(1)}%)
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

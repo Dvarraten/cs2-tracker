@@ -106,6 +106,49 @@ export const useItems = () => {
     setItems(items.filter(item => item.id !== id));
   };
 
+  // ── Direct (non-form) helpers used by the Steam-sync "Handle Items" modal.
+  // These bypass the controlled formData / sellData state so we can drive
+  // them imperatively from outside the form components.
+  const addItemDirect = ({ itemName, purchasePrice, platform = 'csfloat', notes = '' }) => {
+    if (!itemName || !purchasePrice) return null;
+    const newItem = {
+      id: Date.now() + Math.floor(Math.random() * 1000),
+      itemName,
+      purchasePrice: parseFloat(purchasePrice),
+      notes,
+      datePurchased: new Date().toISOString().split('T')[0],
+      sold: false,
+      salePrice: null,
+      platform,
+      profit: null,
+      profitPercent: null,
+    };
+    setItems(prev => [newItem, ...prev]);
+    return newItem.id;
+  };
+
+  const sellItemDirect = (id, salePrice, platform = 'csfloat') => {
+    const price = parseFloat(salePrice);
+    if (!price || price <= 0) return false;
+    const fee = getPlatformFee(platform);
+    setItems(prev => prev.map(item => {
+      if (item.id !== id) return item;
+      const netSalePrice = price * (1 - fee);
+      const profit = netSalePrice - item.purchasePrice;
+      const profitPercent = (profit / item.purchasePrice) * 100;
+      return {
+        ...item,
+        sold: true,
+        salePrice: price,
+        soldPlatform: platform,
+        profit,
+        profitPercent,
+        dateSold: new Date().toISOString().split('T')[0],
+      };
+    }));
+    return true;
+  };
+
   return {
     items,
     formData,
@@ -116,6 +159,8 @@ export const useItems = () => {
     setSellPlatform,
     handleAddItem,
     handleSellItem,
-    handleDeleteItem
+    handleDeleteItem,
+    addItemDirect,
+    sellItemDirect,
   };
 };

@@ -6,6 +6,7 @@ import './index.css';
 import { useItems } from './hooks/useItems';
 import { useExchangeRate } from './hooks/useExchangeRate';
 import { useChartData } from './hooks/useChartData';
+import { useSteamSync } from './hooks/useSteamSync';
 import { exportToCSV } from './utils/exportCSV';
 
 import StatsCards from './components/StatsCards';
@@ -18,12 +19,17 @@ import QuickLinks from './components/Sidebar/QuickLinks';
 import ThemePicker from './components/ThemePicker';
 import TabsAndSearchbar from './components/TabsAndSearchbar';
 import Header from './components/Header';
+import HandleItemsModal from './components/HandleItemsModal';
 
 export default function CS2TradingTracker() {
   const {
     items, formData, setFormData, sellData, setSellData,
-    sellPlatform, setSellPlatform, handleAddItem, handleSellItem, handleDeleteItem
+    sellPlatform, setSellPlatform, handleAddItem, handleSellItem, handleDeleteItem,
+    addItemDirect, sellItemDirect,
   } = useItems();
+
+  const steamSync = useSteamSync();
+  const [showHandleItems, setShowHandleItems] = useState(false);
 
   const {
     usdAmount, setUsdAmount, rmbAmount, setRmbAmount,
@@ -101,11 +107,26 @@ export default function CS2TradingTracker() {
         />
       )}
 
+      {/* Handle Items modal (Steam sync) */}
+      <HandleItemsModal
+        open={showHandleItems}
+        onClose={() => setShowHandleItems(false)}
+        theme={themeStyles}
+        items={items}
+        addItemDirect={addItemDirect}
+        sellItemDirect={sellItemDirect}
+        {...steamSync}
+        onSync={steamSync.sync}
+        onDismiss={steamSync.dismiss}
+      />
+
       <Header
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         theme={themeStyles}
         onAnalyticsClick={() => setShowAnalytics(true)}
+        onHandleItemsClick={() => setShowHandleItems(true)}
+        pendingCount={steamSync.pendingCount}
       >
         <div onClick={e => e.stopPropagation()}>
           <ThemePicker
