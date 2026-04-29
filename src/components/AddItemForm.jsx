@@ -13,7 +13,7 @@ import dmarketIcon  from "../assets/platforms/dmarket.webp";
 const PLATFORMS = [
   { value: "csfloat",  label: "CSFloat",  icon: csfloatIcon,  fee: "2%" },
   { value: "csmoney",  label: "CS.MONEY", icon: csmoneyIcon,  fee: "5%" },
-  { value: "gamerpay", label: "GamerPay", icon: gamerpayIcon, fee: "5%" },
+  { value: "gamerpay", label: "GamerPay", icon: gamerpayIcon, fee: "3%" },
   { value: "skinswap", label: "SkinSwap", icon: skinswapIcon, fee: "5%" },
   { value: "dmarket",  label: "DMarket",  icon: dmarketIcon,  fee: "5%" },
   { value: "youpin",   label: "Youpin",   icon: youpinIcon,   fee: "0.5%" },
