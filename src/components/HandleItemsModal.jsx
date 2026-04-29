@@ -233,12 +233,42 @@ export default function HandleItemsModal({
     return map;
   }, [items]);
 
+  // Hide incoming entries whose name matches an item already in the tracker
+  // (count-aware: if you own 3× "AK-47 | Redline (FT)" in your tracker and
+  // Steam shows 5 such assets, the extra 2 still surface as incoming).
+  // The "hidden" entries can still be cleaned up from the backend via the
+  // bulk-dismiss button below.
+  const { visibleIncoming, hiddenIncoming } = useMemo(() => {
+    const remaining = new Map();
+    for (const [k, arr] of activeByName.entries()) remaining.set(k, arr.length);
+    const visible = [];
+    const hidden = [];
+    for (const entry of incoming) {
+      const k = (entry.marketHashName || '').toLowerCase();
+      const left = remaining.get(k) || 0;
+      if (left > 0) {
+        remaining.set(k, left - 1);
+        hidden.push(entry);
+      } else {
+        visible.push(entry);
+      }
+    }
+    return { visibleIncoming: visible, hiddenIncoming: hidden };
+  }, [incoming, activeByName]);
+
+  const dismissAllHidden = async () => {
+    // Run in parallel — onDismiss is optimistic so the UI updates fast.
+    await Promise.all(
+      hiddenIncoming.map((entry) => onDismiss(entry.assetid, 'incoming'))
+    );
+  };
+
   const candidatesFor = (entry) =>
     activeByName.get((entry.marketHashName || '').toLowerCase()) || [];
 
   if (!open) return null;
 
-  const incomingCount = incoming.length;
+  const incomingCount = visibleIncoming.length;
   const outgoingCount = outgoing.length;
 
   return (
@@ -346,22 +376,53 @@ export default function HandleItemsModal({
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {tab === 'incoming' && (
-            incoming.length === 0 ? (
-              <EmptyState theme={theme} text="No new items detected. You're all caught up." />
-            ) : (
-              incoming.map((entry) => (
-                <IncomingRow
-                  key={`in-${entry.assetid}`}
-                  entry={entry}
+            <>
+              {hiddenIncoming.length > 0 && (
+                <div
+                  className={`flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg text-xs ${theme.card} border ${theme.cardBorder} ${theme.subtext}`}
+                >
+                  <span>
+                    Hiding{' '}
+                    <span className="text-white font-semibold">
+                      {hiddenIncoming.length}
+                    </span>{' '}
+                    item{hiddenIncoming.length === 1 ? '' : 's'} that match an
+                    item already in your tracker.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={dismissAllHidden}
+                    className={`${theme.accentBg} text-white text-xs font-medium px-2.5 py-1 rounded-md`}
+                  >
+                    Dismiss them
+                  </button>
+                </div>
+              )}
+
+              {visibleIncoming.length === 0 ? (
+                <EmptyState
                   theme={theme}
-                  onAdd={(payload) => {
-                    addItemDirect(payload);
-                    onDismiss(entry.assetid, 'incoming');
-                  }}
-                  onDismiss={onDismiss}
+                  text={
+                    hiddenIncoming.length > 0
+                      ? "Everything currently incoming is already in your tracker — nothing new to handle."
+                      : "No new items detected. You're all caught up."
+                  }
                 />
-              ))
-            )
+              ) : (
+                visibleIncoming.map((entry) => (
+                  <IncomingRow
+                    key={`in-${entry.assetid}`}
+                    entry={entry}
+                    theme={theme}
+                    onAdd={(payload) => {
+                      addItemDirect(payload);
+                      onDismiss(entry.assetid, 'incoming');
+                    }}
+                    onDismiss={onDismiss}
+                  />
+                ))
+              )}
+            </>
           )}
 
           {tab === 'outgoing' && (
