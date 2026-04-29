@@ -11,3 +11,6 @@ server/
 # CRA artefacts
 build/
 coverage/
+
+# Local-only scripts (e.g. items.json updater) — Vercel doesn't run them
+scripts/
