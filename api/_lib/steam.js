@@ -6,7 +6,10 @@ const BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-const FETCH_TIMEOUT_MS = 12000;
+// Vercel Hobby allows up to 60s when maxDuration is set in vercel.json
+// (we ask for 30s). 25s gives us a generous window for the Steam call
+// without leaving us hanging right at the platform limit.
+const FETCH_TIMEOUT_MS = 25000;
 const MAX_BODY_SNIPPET = 400;
 
 function browserHeaders(steamId) {
