@@ -197,6 +197,12 @@ function buildSnapshotFromInventory(data) {
   for (const a of data.assets || []) {
     const desc = descIndex.get(`${a.classid}_${a.instanceid}`);
     if (!desc) continue;
+
+    // Skip non-marketable items (service medals, pins, default-grade,
+    // graffiti boxes…). Trade-locked skins keep marketable: 1, so this
+    // filter doesn't hide newly-purchased items.
+    if (desc.marketable === 0) continue;
+
     snapshot[a.assetid] = {
       marketHashName: desc.market_hash_name || desc.name || '(unknown)',
       iconUrl: desc.icon_url || '',

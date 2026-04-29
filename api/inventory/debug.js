@@ -30,9 +30,22 @@ export default async function handler(req, res) {
 
     let tradable = 0;
     let nonTradable = 0;
+    let marketable = 0;
+    let nonMarketable = 0;
+    const nonMarketableSamples = [];
     for (const d of data.descriptions || []) {
       if (d.tradable === 1) tradable++;
       else nonTradable++;
+      if (d.marketable === 0) {
+        nonMarketable++;
+        if (nonMarketableSamples.length < 5) {
+          nonMarketableSamples.push(
+            d.market_hash_name || d.name || '(unknown)'
+          );
+        }
+      } else {
+        marketable++;
+      }
     }
 
     // Sample a few non-tradable assets so we can see they actually come
@@ -65,6 +78,9 @@ export default async function handler(req, res) {
       uniqueSnapshotItems: Object.keys(snapshot).length,
       tradableDescriptions: tradable,
       nonTradableDescriptions: nonTradable,
+      marketableDescriptions: marketable,
+      nonMarketableDescriptions: nonMarketable,
+      sampleNonMarketableItems: nonMarketableSamples,
       sampleNonTradableItems: sampleLocked,
       success: data.success,
       totalInventoryCount: data.total_inventory_count,
