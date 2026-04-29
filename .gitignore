@@ -29,3 +29,4 @@ yarn-error.log*
 /server/.env.*
 !/server/.env.example
 /server/data/
+.env*.local

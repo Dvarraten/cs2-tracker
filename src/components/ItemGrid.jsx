@@ -1,5 +1,6 @@
-import React, { useState, useRef, useCallback } from "react";
-import { TrendingUp, Trash2, CheckCircle } from "lucide-react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { TrendingUp, Trash2, CheckCircle, ChevronDown } from "lucide-react";
 import { getPlatformFee } from "../utils/platformFees";
 import { PlatformBadge } from "./PlatformBadge";
 
@@ -84,31 +85,142 @@ function HoldToDeleteButton({ onDelete, deleteProgress }) {
   );
 }
 
-function SellPlatformPicker({ value, onChange, theme }) {
+function PlatformIcon({ platform, size = 14 }) {
+  if (platform.icon) {
+    return (
+      <img
+        src={platform.icon}
+        alt={platform.label}
+        className="rounded-sm object-contain flex-shrink-0"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {SELL_PLATFORMS.map((p) => {
-        const selected = value === p.value;
-        return (
-          <button
-            key={p.value}
-            type="button"
-            onClick={() => onChange(p.value)}
-            title={`${p.label} (${p.fee})`}
-            className={`flex items-center gap-1 px-2 py-1 rounded-md border text-[10px] font-medium transition-all
-              ${selected
-                ? `${theme.accentBg} border-transparent text-white`
-                : `${theme.card} ${theme.cardBorder} ${theme.subtext} hover:text-white`
-              }`}
+    <span
+      className="rounded-sm bg-white/10 flex items-center justify-center font-bold flex-shrink-0"
+      style={{ width: size, height: size, fontSize: Math.max(8, size / 2) }}
+    >
+      {platform.label[0]}
+    </span>
+  );
+}
+
+function SellPlatformPicker({ value, onChange, theme }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, openUpward: false });
+  const triggerRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const selected =
+    SELL_PLATFORMS.find((p) => p.value === value) || SELL_PLATFORMS[0];
+
+  // Estimated max menu height — must match the max-h CSS below
+  const ESTIMATED_MENU_H = 9 * 32 + 8; // 9 options ~32px each
+
+  const updatePos = useCallback(() => {
+    if (!triggerRef.current) return;
+    const r = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - r.bottom;
+    const spaceAbove = r.top;
+    const openUpward = spaceBelow < ESTIMATED_MENU_H && spaceAbove > spaceBelow;
+    setPos({
+      top: openUpward ? r.top - 4 : r.bottom + 4,
+      left: r.left,
+      width: r.width,
+      openUpward,
+    });
+  }, [ESTIMATED_MENU_H]);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePos();
+    const onScroll = () => updatePos();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", updatePos);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", updatePos);
+    };
+  }, [open, updatePos]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => {
+      if (
+        triggerRef.current?.contains(e.target) ||
+        menuRef.current?.contains(e.target)
+      )
+        return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  return (
+    <div className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors
+          ${theme.card} ${theme.cardBorder} text-white hover:bg-white/5`}
+      >
+        <span className="flex items-center gap-2 min-w-0">
+          <PlatformIcon platform={selected} size={14} />
+          <span className="truncate">{selected.label}</span>
+          <span className={`${theme.subtext} text-[10px]`}>· fee {selected.fee}</span>
+        </span>
+        <ChevronDown
+          size={14}
+          className={`text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={{
+              position: "fixed",
+              top: pos.openUpward ? "auto" : pos.top,
+              bottom: pos.openUpward ? window.innerHeight - pos.top : "auto",
+              left: pos.left,
+              width: pos.width,
+              zIndex: 100,
+            }}
+            className={`${theme.card} border ${theme.cardBorder} rounded-lg shadow-xl max-h-60 overflow-y-auto`}
+            role="listbox"
           >
-            {p.icon
-              ? <img src={p.icon} alt={p.label} className="w-3.5 h-3.5 rounded-sm object-contain flex-shrink-0" />
-              : <span className="w-3.5 h-3.5 rounded-sm bg-white/10 flex items-center justify-center text-[7px] font-bold flex-shrink-0">{p.label[0]}</span>
-            }
-            <span>{p.label}</span>
-          </button>
-        );
-      })}
+            {SELL_PLATFORMS.map((p) => {
+              const isSelected = p.value === value;
+              return (
+                <button
+                  key={p.value}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    onChange(p.value);
+                    setOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 text-xs transition-colors
+                    ${isSelected ? "bg-white/10 text-white" : "text-slate-200 hover:bg-white/200"}`}
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    <PlatformIcon platform={p} size={14} />
+                    <span className="truncate">{p.label}</span>
+                  </span>
+                  <span className={`${theme.subtext} text-[10px] shrink-0`}>
+                    fee {p.fee}
+                  </span>
+                </button>
+              );
+            })}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
@@ -213,29 +325,29 @@ function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPl
         <div className="mt-auto">
           {!item.sold ? (
             <div className="space-y-2">
+              {/* Platform picker with icons for sites */}
+              <SellPlatformPicker
+                value={sellPlatform[item.id] || 'csfloat'}
+                onChange={(val) => setSellPlatform(prev => ({ ...prev, [item.id]: val }))}
+                theme={theme}
+              />
+              <div className="flex gap-36">
               <input
-                type="number" step="0.01"
+                type="number" step="0.01" flex="1"
                 value={sellData[item.id] || ''}
                 onChange={(e) => setSellData(prev => ({ ...prev, [item.id]: e.target.value }))}
                 className={`w-full ${theme.inputSell} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                 placeholder="Sale price..."
               />
 
-              {/* Platform picker with icons */}
-              <SellPlatformPicker
-                value={sellPlatform[item.id] || 'csfloat'}
-                onChange={(val) => setSellPlatform(prev => ({ ...prev, [item.id]: val }))}
-                theme={theme}
-              />
-
               <button
                 onClick={onSell}
-                className={`w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 active:scale-95
+                className={`w-16 flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 active:scale-95
                   ${soldFeedback ? 'bg-emerald-400 text-white scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
               >
                 {soldFeedback ? <><CheckCircle size={14} /> Sold!</> : 'Sell'}
               </button>
-
+              </div>
               {estProfit !== null && (
                 <div className={`text-xs rounded-lg px-3 py-2 flex justify-between items-center transition-all
                   ${estProfit >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>

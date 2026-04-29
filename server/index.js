@@ -100,46 +100,92 @@ function persistState() {
 }
 
 // ─── Steam fetcher ──────────────────────────────────────────────────────────
-async function fetchInventory() {
-  const url = `https://steamcommunity.com/inventory/${STEAM_ID}/730/2?l=english&count=5000`;
+// Steam's public inventory endpoint is finicky:
+//   - A custom User-Agent often returns HTTP 400.
+//   - count > 2000 returns HTTP 400.
+//   - Sometimes the same request that 400s once succeeds a moment later.
+// So we mimic a real browser and try a couple of URL variants before giving up.
+const BROWSER_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+  '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+const BROWSER_HEADERS = {
+  'User-Agent': BROWSER_UA,
+  Accept: 'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  Referer: `https://steamcommunity.com/profiles/${STEAM_ID}/inventory/`,
+  Origin: 'https://steamcommunity.com',
+};
+
+const FETCH_TIMEOUT_MS = 15000;
+const MAX_BODY_SNIPPET = 400;
+
+async function fetchInventoryAttempt(url) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 15000);
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
-      signal: ctrl.signal,
-      headers: {
-        // Steam's CDN can be picky without a UA.
-        'User-Agent': 'cs2-tracker-local/0.1 (+local)',
-        Accept: 'application/json',
-      },
-    });
-    if (res.status === 403) {
-      throw new Error('inventory is private (HTTP 403)');
-    }
-    if (res.status === 429) {
-      throw new Error('rate-limited by Steam (HTTP 429)');
-    }
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
+    const res = await fetch(url, { signal: ctrl.signal, headers: BROWSER_HEADERS });
     const text = await res.text();
-    if (!text) {
-      // Steam returns empty body when inventory is private/hidden in some cases.
-      throw new Error('empty response (inventory may be private)');
-    }
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      throw new Error('non-JSON response from Steam');
-    }
-    if (!data || !data.success) {
-      throw new Error('Steam returned success=0 (inventory private?)');
-    }
-    return data;
+    return { status: res.status, text };
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function fetchInventory() {
+  // Try a few count values + URL variants. Stop at the first one that returns
+  // a parseable JSON body with `success`.
+  const variants = [
+    `https://steamcommunity.com/inventory/${STEAM_ID}/730/2?l=english&count=2000`,
+    `https://steamcommunity.com/inventory/${STEAM_ID}/730/2?count=2000`,
+    `https://steamcommunity.com/inventory/${STEAM_ID}/730/2?l=english&count=1000`,
+  ];
+
+  let lastErr = null;
+  for (const url of variants) {
+    try {
+      const { status, text } = await fetchInventoryAttempt(url);
+      const snippet = (text || '').slice(0, MAX_BODY_SNIPPET);
+
+      if (status === 403) throw new Error(`HTTP 403 (forbidden) — body: ${snippet}`);
+      if (status === 429) throw new Error(`HTTP 429 (rate-limited) — body: ${snippet}`);
+      if (!text) throw new Error(`HTTP ${status} with empty body`);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`HTTP ${status} non-JSON body: ${snippet}`);
+      }
+
+      // Steam sometimes returns the literal JSON value `null` (HTTP 200) for
+      // hidden inventories or empty contexts. Treat that as a soft failure
+      // so we move on to the next variant.
+      if (data === null) {
+        lastErr = new Error(`HTTP ${status} body=null (inventory hidden or empty context)`);
+        continue;
+      }
+
+      if (status === 400) {
+        // Some 400s still carry a parseable error JSON; surface it.
+        lastErr = new Error(`HTTP 400 body: ${snippet}`);
+        continue;
+      }
+
+      if (!data.success) {
+        lastErr = new Error(
+          `Steam returned success=${data.success}; Error="${data.Error || ''}" body: ${snippet}`
+        );
+        continue;
+      }
+
+      // Got it.
+      return data;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error('all inventory variants failed');
 }
 
 function buildSnapshotFromInventory(data) {
@@ -308,6 +354,24 @@ app.post('/api/inventory/sync', async (_req, res) => {
       pending: state.pending,
     },
   });
+});
+
+// Diagnostic — calls Steam directly and returns raw status + body snippet.
+// Useful when sync fails so we can see what Steam is actually saying.
+app.get('/api/inventory/debug', async (_req, res) => {
+  const url = `https://steamcommunity.com/inventory/${STEAM_ID}/730/2?l=english&count=2000`;
+  try {
+    const { status, text } = await fetchInventoryAttempt(url);
+    res.json({
+      url,
+      status,
+      bodyLength: text.length,
+      bodySnippet: text.slice(0, 600),
+      headers: BROWSER_HEADERS,
+    });
+  } catch (err) {
+    res.status(500).json({ url, error: err.message || String(err) });
+  }
 });
 
 app.post('/api/inventory/dismiss', async (req, res) => {

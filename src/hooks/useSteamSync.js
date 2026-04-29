@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-// Local Steam-sync backend. This is hard-coded to localhost because the
-// backend is intended to run on the user's machine. If you ever deploy
-// the frontend, point this at your serverless function instead and keep
-// the URL in REACT_APP_STEAM_SYNC_URL — never put secrets in REACT_APP_*.
-const BASE = process.env.REACT_APP_STEAM_SYNC_URL || 'http://localhost:3001';
+// Steam-sync API base URL.
+//
+// Resolution order:
+//   1. REACT_APP_STEAM_SYNC_URL — explicit override (dev)
+//   2. '' (empty) — use relative paths /api/inventory/* which works in:
+//        • Vercel dev / production (functions live under /api)
+//        • CRA dev when proxying via package.json "proxy" field
+//
+// IMPORTANT: never put secrets in REACT_APP_* variables — they are baked
+// into the JS bundle. STEAM_ID and KV credentials live only in Vercel's
+// server-side env store.
+const BASE = process.env.REACT_APP_STEAM_SYNC_URL || '';
 
 const FRONTEND_POLL_MS = 30 * 1000; // how often we re-pull state for the badge
 
