@@ -35,15 +35,15 @@ async function attempt(url, headers) {
   }
 }
 
-export async function fetchInventory(steamId) {
-  if (!steamId || !/^\d{17}$/.test(steamId)) {
-    throw new Error('STEAM_ID env var missing or malformed (expected 17 digits)');
-  }
+// Single-page fetch with the URL-variant retry. Returns the parsed JSON or
+// throws. Used internally by fetchInventory which handles pagination.
+async function fetchInventoryPage(steamId, startAssetId = null) {
   const headers = browserHeaders(steamId);
+  const cursor = startAssetId ? `&start_assetid=${startAssetId}` : '';
   const variants = [
-    `https://steamcommunity.com/inventory/${steamId}/730/2?l=english&count=2000`,
-    `https://steamcommunity.com/inventory/${steamId}/730/2?count=2000`,
-    `https://steamcommunity.com/inventory/${steamId}/730/2?l=english&count=1000`,
+    `https://steamcommunity.com/inventory/${steamId}/730/2?l=english&count=2000${cursor}`,
+    `https://steamcommunity.com/inventory/${steamId}/730/2?count=2000${cursor}`,
+    `https://steamcommunity.com/inventory/${steamId}/730/2?l=english&count=1000${cursor}`,
   ];
 
   let lastErr = null;
@@ -84,6 +84,40 @@ export async function fetchInventory(steamId) {
     }
   }
   throw lastErr || new Error('all inventory variants failed');
+}
+
+export async function fetchInventory(steamId) {
+  if (!steamId || !/^\d{17}$/.test(steamId)) {
+    throw new Error('STEAM_ID env var missing or malformed (expected 17 digits)');
+  }
+
+  // Steam paginates inventory responses. With count=2000 + total ~77 items
+  // we'd expect a single page, but in practice Steam sometimes splits
+  // across several anyway. Follow `more_items` / `last_assetid` until we
+  // exhaust the inventory or hit our page cap.
+  const MAX_PAGES = 6;
+  const allAssets = [];
+  const descByCK = new Map(); // dedupe descriptions across pages
+  let cursor = null;
+  let firstPage = null;
+
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const data = await fetchInventoryPage(steamId, cursor);
+    if (page === 0) firstPage = data;
+    for (const a of data.assets || []) allAssets.push(a);
+    for (const d of data.descriptions || []) {
+      descByCK.set(`${d.classid}_${d.instanceid}`, d);
+    }
+    if (!data.more_items || !data.last_assetid) break;
+    cursor = data.last_assetid;
+  }
+
+  return {
+    success: 1,
+    assets: allAssets,
+    descriptions: Array.from(descByCK.values()),
+    total_inventory_count: firstPage?.total_inventory_count ?? allAssets.length,
+  };
 }
 
 export function buildSnapshotFromInventory(data) {

@@ -132,13 +132,12 @@ async function fetchInventoryAttempt(url) {
   }
 }
 
-async function fetchInventory() {
-  // Try a few count values + URL variants. Stop at the first one that returns
-  // a parseable JSON body with `success`.
+async function fetchInventoryPage(startAssetId = null) {
+  const cursor = startAssetId ? `&start_assetid=${startAssetId}` : '';
   const variants = [
-    `https://steamcommunity.com/inventory/${STEAM_ID}/730/2?l=english&count=2000`,
-    `https://steamcommunity.com/inventory/${STEAM_ID}/730/2?count=2000`,
-    `https://steamcommunity.com/inventory/${STEAM_ID}/730/2?l=english&count=1000`,
+    `https://steamcommunity.com/inventory/${STEAM_ID}/730/2?l=english&count=2000${cursor}`,
+    `https://steamcommunity.com/inventory/${STEAM_ID}/730/2?count=2000${cursor}`,
+    `https://steamcommunity.com/inventory/${STEAM_ID}/730/2?l=english&count=1000${cursor}`,
   ];
 
   let lastErr = null;
@@ -158,20 +157,14 @@ async function fetchInventory() {
         throw new Error(`HTTP ${status} non-JSON body: ${snippet}`);
       }
 
-      // Steam sometimes returns the literal JSON value `null` (HTTP 200) for
-      // hidden inventories or empty contexts. Treat that as a soft failure
-      // so we move on to the next variant.
       if (data === null) {
         lastErr = new Error(`HTTP ${status} body=null (inventory hidden or empty context)`);
         continue;
       }
-
       if (status === 400) {
-        // Some 400s still carry a parseable error JSON; surface it.
         lastErr = new Error(`HTTP 400 body: ${snippet}`);
         continue;
       }
-
       if (!data.success) {
         lastErr = new Error(
           `Steam returned success=${data.success}; Error="${data.Error || ''}" body: ${snippet}`
@@ -179,13 +172,40 @@ async function fetchInventory() {
         continue;
       }
 
-      // Got it.
       return data;
     } catch (err) {
       lastErr = err;
     }
   }
   throw lastErr || new Error('all inventory variants failed');
+}
+
+async function fetchInventory() {
+  // Follow Steam's pagination so we don't silently miss items past the
+  // first page (Steam uses `more_items` + `last_assetid` for cursoring).
+  const MAX_PAGES = 6;
+  const allAssets = [];
+  const descByCK = new Map();
+  let cursor = null;
+  let firstPage = null;
+
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const data = await fetchInventoryPage(cursor);
+    if (page === 0) firstPage = data;
+    for (const a of data.assets || []) allAssets.push(a);
+    for (const d of data.descriptions || []) {
+      descByCK.set(`${d.classid}_${d.instanceid}`, d);
+    }
+    if (!data.more_items || !data.last_assetid) break;
+    cursor = data.last_assetid;
+  }
+
+  return {
+    success: 1,
+    assets: allAssets,
+    descriptions: Array.from(descByCK.values()),
+    total_inventory_count: firstPage?.total_inventory_count ?? allAssets.length,
+  };
 }
 
 function buildSnapshotFromInventory(data) {
