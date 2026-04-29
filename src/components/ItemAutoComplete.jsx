@@ -26,7 +26,7 @@ const CATEGORY_LABEL = {
 
 function makeAcronym(name) {
   return name
-    .split(/[\s\-]+/)
+    .split(/[\s-]+/)
     .filter(Boolean)
     .map((w) => w[0])
     .join("")
