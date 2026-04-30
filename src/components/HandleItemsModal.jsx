@@ -3,6 +3,42 @@ import { X, ArrowDownCircle, ArrowUpCircle, RefreshCw, AlertTriangle } from 'luc
 
 const STEAM_IMG_BASE = 'https://community.akamai.steamstatic.com/economy/image/';
 
+// ─── Name matching ──────────────────────────────────────────────────────────
+// Steam ships full names like "Charm | Quick Silver" or "★ StatTrak™ Karambit |
+// Fade (Factory New)". Users often track them under shorter handles ("Quick
+// Silver", "Karambit Fade", "Fade"). To catch these, tokenise both sides and
+// score the overlap.
+const NAME_STOPWORDS = new Set([
+  'stattrak', 'souvenir', 'the',
+  // Wear levels — already pulled out via the (Wear) suffix strip below, but
+  // listed here too in case someone writes them inline.
+  'factory', 'new', 'minimal', 'wear', 'field', 'tested', 'well', 'worn',
+  'battle', 'scarred',
+]);
+
+function tokenizeName(name) {
+  return (name || '')
+    .toLowerCase()
+    .replace(/★/g, ' ')
+    .replace(/™/g, ' ')
+    .replace(/\([^)]*\)/g, ' ')        // strip "(Field-Tested)" etc.
+    .replace(/[|/\-.,:'"]/g, ' ')      // word-breaking punctuation
+    .split(/\s+/)
+    .filter((t) => t.length >= 2 && !NAME_STOPWORDS.has(t));
+}
+
+// Returns a score in [0, 1] expressing how well `trackerName` lines up with
+// `steamName`. We measure coverage from the tracker side so that short
+// handles ("Quick Silver") still score 1.0 against the fuller market name
+// ("Charm | Quick Silver").
+function nameMatchScore(steamName, trackerName) {
+  const steamTokens = new Set(tokenizeName(steamName));
+  const trackerTokens = tokenizeName(trackerName);
+  if (trackerTokens.length === 0 || steamTokens.size === 0) return 0;
+  const matched = trackerTokens.filter((t) => steamTokens.has(t)).length;
+  return matched / trackerTokens.length;
+}
+
 function ItemImage({ iconUrl, alt }) {
   if (!iconUrl) {
     return (
@@ -97,13 +133,49 @@ function IncomingRow({ entry, onAdd, onDismiss, theme }) {
   );
 }
 
-function OutgoingRow({ entry, candidates, onMatch, onDismiss, theme }) {
+function formatCandidateLabel(c) {
+  const base = `#${c.id} · bought $${c.purchasePrice.toFixed(2)} on ${c.datePurchased}`;
+  if (c.matchType === 'fuzzy' && typeof c.matchScore === 'number') {
+    const pct = Math.round(c.matchScore * 100);
+    return `${base} · ${pct}% match · ${c.itemName}`;
+  }
+  if (c.matchType === 'exact') return base;
+  return `${base} · ${c.itemName}`; // "browse all" results
+}
+
+function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, theme }) {
+  const [browseAll, setBrowseAll] = useState(candidates.length === 0);
+  const [browseQuery, setBrowseQuery] = useState('');
   const [selectedId, setSelectedId] = useState(
     candidates[0]?.id ? String(candidates[0].id) : ''
   );
   const [salePrice, setSalePrice] = useState('');
   const [platform, setPlatform] = useState('csfloat');
   const [confirming, setConfirming] = useState(false);
+
+  // Items the user can pick from. Default = the smart candidates list, but
+  // "Browse all" toggles to a free-text search across everything active.
+  const browseResults = useMemo(() => {
+    const q = browseQuery.toLowerCase().trim();
+    const all = allActiveItems || [];
+    const filtered = q
+      ? all.filter((it) => (it.itemName || '').toLowerCase().includes(q))
+      : all;
+    return filtered.slice(0, 30).map((it) => ({ ...it, matchType: 'browse' }));
+  }, [browseQuery, allActiveItems]);
+
+  const visibleCandidates = browseAll ? browseResults : candidates;
+
+  // Keep selected id valid as the visible list changes.
+  useEffect(() => {
+    if (visibleCandidates.length === 0) {
+      setSelectedId('');
+      return;
+    }
+    if (!visibleCandidates.some((c) => String(c.id) === selectedId)) {
+      setSelectedId(String(visibleCandidates[0].id));
+    }
+  }, [visibleCandidates, selectedId]);
 
   const submit = () => {
     const id = parseInt(selectedId, 10);
@@ -112,6 +184,12 @@ function OutgoingRow({ entry, candidates, onMatch, onDismiss, theme }) {
     setConfirming(true);
     onMatch({ trackedId: id, salePrice: v, platform, assetid: entry.assetid });
   };
+
+  // Are we showing only fuzzy matches (no exacts found)?
+  const isFuzzyOnly =
+    !browseAll &&
+    candidates.length > 0 &&
+    candidates.every((c) => c.matchType === 'fuzzy');
 
   return (
     <div className={`flex flex-col gap-3 p-3 rounded-lg ${theme.card} border ${theme.cardBorder}`}>
@@ -135,20 +213,38 @@ function OutgoingRow({ entry, candidates, onMatch, onDismiss, theme }) {
         </button>
       </div>
 
-      {candidates.length === 0 ? (
+      {isFuzzyOnly && (
+        <div className="text-[11px] text-amber-300/90 bg-amber-500/10 rounded-md px-2 py-1">
+          No exact name match — showing fuzzy suggestions. Use "Browse all" if none of these are right.
+        </div>
+      )}
+
+      {browseAll && (
+        <input
+          type="text"
+          value={browseQuery}
+          onChange={(e) => setBrowseQuery(e.target.value)}
+          placeholder={`Search active items (${(allActiveItems || []).length} total)…`}
+          className={`w-full ${theme.input} rounded-md px-3 py-1.5 text-white text-sm placeholder-slate-500 focus:outline-none border`}
+        />
+      )}
+
+      {visibleCandidates.length === 0 ? (
         <div className="text-xs text-amber-300/90 bg-amber-500/10 rounded-md px-2 py-1.5">
-          No active tracked item matches this name. Dismiss if it wasn't a tracked sale.
+          {browseAll
+            ? 'No active items match that search. Try a different word, or dismiss if it wasn\'t a tracked sale.'
+            : 'No tracked item matches this name. Use "Browse all" to pick one manually, or dismiss.'}
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
-            className={`flex-1 min-w-[180px] ${theme.input} rounded-md px-2 py-1.5 text-white text-sm focus:outline-none border`}
+            className={`flex-1 min-w-[200px] ${theme.input} rounded-md px-2 py-1.5 text-white text-sm focus:outline-none border`}
           >
-            {candidates.map((c) => (
+            {visibleCandidates.map((c) => (
               <option key={c.id} value={c.id}>
-                #{c.id} · bought ${c.purchasePrice.toFixed(2)} on {c.datePurchased}
+                {formatCandidateLabel(c)}
               </option>
             ))}
           </select>
@@ -177,7 +273,7 @@ function OutgoingRow({ entry, candidates, onMatch, onDismiss, theme }) {
           </select>
           <button
             type="button"
-            disabled={confirming || !parseFloat(salePrice)}
+            disabled={confirming || !parseFloat(salePrice) || !selectedId}
             onClick={submit}
             className={`${theme.accentBg} text-white text-sm font-medium px-3 py-1.5 rounded-md disabled:opacity-40 disabled:cursor-not-allowed`}
           >
@@ -185,6 +281,17 @@ function OutgoingRow({ entry, candidates, onMatch, onDismiss, theme }) {
           </button>
         </div>
       )}
+
+      <button
+        type="button"
+        onClick={() => {
+          setBrowseAll((prev) => !prev);
+          setBrowseQuery('');
+        }}
+        className={`self-start text-[11px] underline-offset-2 hover:underline ${theme.subtext} hover:text-white`}
+      >
+        {browseAll ? '← Back to suggestions' : 'Browse all tracked items →'}
+      </button>
     </div>
   );
 }
@@ -263,8 +370,38 @@ export default function HandleItemsModal({
     );
   };
 
-  const candidatesFor = (entry) =>
-    activeByName.get((entry.marketHashName || '').toLowerCase()) || [];
+  // Flat list of every active tracked item — used as escape hatch when the
+  // user wants to manually pick a match.
+  const activeItems = useMemo(
+    () =>
+      items
+        .filter((it) => !it.sold)
+        .sort((a, b) =>
+          (a.itemName || '').localeCompare(b.itemName || '')
+        ),
+    [items]
+  );
+
+  // Returns suggestion candidates for an outgoing entry:
+  //   1. Exact-name matches (current behaviour)
+  //   2. If none, falls back to fuzzy token-overlap matches with score >= 0.5
+  //
+  // Each candidate is `{ ...item, matchType, matchScore? }` so the row can
+  // surface why something is being suggested.
+  const candidatesFor = (entry) => {
+    const key = (entry.marketHashName || '').toLowerCase();
+    const exact = activeByName.get(key);
+    if (exact && exact.length > 0) {
+      return exact.map((it) => ({ ...it, matchType: 'exact' }));
+    }
+    const scored = [];
+    for (const it of activeItems) {
+      const score = nameMatchScore(entry.marketHashName, it.itemName);
+      if (score >= 0.5) scored.push({ ...it, matchType: 'fuzzy', matchScore: score });
+    }
+    scored.sort((a, b) => b.matchScore - a.matchScore);
+    return scored.slice(0, 10);
+  };
 
   if (!open) return null;
 
@@ -434,6 +571,7 @@ export default function HandleItemsModal({
                   key={`out-${entry.assetid}`}
                   entry={entry}
                   candidates={candidatesFor(entry)}
+                  allActiveItems={activeItems}
                   theme={theme}
                   onMatch={({ trackedId, salePrice, platform, assetid }) => {
                     const ok = sellItemDirect(trackedId, salePrice, platform);
