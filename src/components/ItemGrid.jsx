@@ -325,38 +325,55 @@ function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPl
         <div className="mt-auto">
           {!item.sold ? (
             <div className="space-y-2">
-              {/* Platform picker with icons for sites */}
-              <SellPlatformPicker
-                value={sellPlatform[item.id] || 'csfloat'}
-                onChange={(val) => setSellPlatform(prev => ({ ...prev, [item.id]: val }))}
-                theme={theme}
-              />
-              <div className="flex gap-36">
-              <input
-                type="number" step="0.01" flex="1"
-                value={sellData[item.id] || ''}
-                onChange={(e) => setSellData(prev => ({ ...prev, [item.id]: e.target.value }))}
-                className={`w-full ${theme.inputSell} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                placeholder="Sale price..."
-              />
-
-              <button
-                onClick={onSell}
-                className={`w-16 flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 active:scale-95
-                  ${soldFeedback ? 'bg-emerald-400 text-white scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
-              >
-                {soldFeedback ? <><CheckCircle size={14} /> Sold!</> : 'Sell'}
-              </button>
+              {/* Platform picker — half-width so it visually matches the
+                  sale-price input below */}
+              <div className="w-1/2">
+                <SellPlatformPicker
+                  value={sellPlatform[item.id] || 'csfloat'}
+                  onChange={(val) => setSellPlatform(prev => ({ ...prev, [item.id]: val }))}
+                  theme={theme}
+                />
               </div>
-              {estProfit !== null && (
-                <div className={`text-xs rounded-lg px-3 py-2 flex justify-between items-center transition-all
-                  ${estProfit >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                  <span>Est. profit</span>
-                  <span className="font-semibold">
-                    {estProfit >= 0 ? '+' : ''}${estProfit.toFixed(2)} ({estProfitPct >= 0 ? '+' : ''}{estProfitPct.toFixed(1)}%)
-                  </span>
+
+              {/* Sale price (exactly half-width, CSFloat-style) · Est. profit
+                  fills the gap when a price is typed · Sell pinned right. */}
+              <div className="flex gap-2 items-stretch">
+                <input
+                  type="number" step="0.01"
+                  value={sellData[item.id] || ''}
+                  onChange={(e) => setSellData(prev => ({ ...prev, [item.id]: e.target.value }))}
+                  className={`w-1/2 flex-shrink-0 min-w-0 ${theme.inputSell} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                  placeholder="Sale price..."
+                />
+
+                {/* Always-rendered gap so Sell stays right-aligned even when
+                    no price is typed yet. Inner content only shows once we
+                    have a profit estimate. */}
+                <div className="flex-1 min-w-0 flex items-stretch">
+                  {estProfit !== null && (
+                    <div
+                      className={`flex-1 min-w-0 rounded-lg px-2 flex flex-col items-center justify-center text-center transition-all
+                        ${estProfit >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}
+                    >
+                      <span className="text-[10px] opacity-70 leading-none">Est. profit</span>
+                      <span className="text-xs font-semibold leading-tight whitespace-nowrap">
+                        {estProfit >= 0 ? '+' : ''}${estProfit.toFixed(2)}
+                        <span className="opacity-70 ml-1">
+                          ({estProfitPct >= 0 ? '+' : ''}{estProfitPct.toFixed(0)}%)
+                        </span>
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
+
+                <button
+                  onClick={onSell}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 active:scale-95 flex items-center justify-center gap-1.5 flex-shrink-0
+                    ${soldFeedback ? 'bg-emerald-400 text-white scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                >
+                  {soldFeedback ? <><CheckCircle size={14} /> Sold!</> : 'Sell'}
+                </button>
+              </div>
             </div>
           ) : (
             <div className={`${theme.soldCard} rounded-lg p-3 border`}>
