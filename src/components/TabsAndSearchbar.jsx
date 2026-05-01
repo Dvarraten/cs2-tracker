@@ -45,6 +45,8 @@ export default function TabsAndSearchbar({
               <option value="price-low" className="bg-slate-900">Price: Low to High</option>
               {activeTab === 'sold' && (
                 <>
+                  <option value="profit-dollar-high" className="bg-slate-900">Profit $: High to Low</option>
+                  <option value="profit-dollar-low" className="bg-slate-900">Profit $: Low to High</option>
                   <option value="profit-high" className="bg-slate-900">Profit %: High to Low</option>
                   <option value="profit-low" className="bg-slate-900">Profit %: Low to High</option>
                 </>

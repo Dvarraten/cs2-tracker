@@ -132,7 +132,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate }) {
             {entry.marketHashName}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">
-            asset {entry.assetid} · seen {new Date(entry.detectedAt).toLocaleString()}
+            Seen {new Date(entry.detectedAt).toLocaleString()}
           </div>
         </div>
         <button
@@ -183,13 +183,12 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate }) {
 }
 
 function formatCandidateLabel(c) {
-  const base = `#${c.id} · bought $${c.purchasePrice.toFixed(2)} on ${c.datePurchased}`;
+  const base = `${c.itemName} · $${c.purchasePrice.toFixed(2)}`;
   if (c.matchType === 'fuzzy' && typeof c.matchScore === 'number') {
     const pct = Math.round(c.matchScore * 100);
-    return `${base} · ${pct}% match · ${c.itemName}`;
+    return `${base} (${pct}% match)`;
   }
-  if (c.matchType === 'exact') return base;
-  return `${base} · ${c.itemName}`; // "browse all" results
+  return base;
 }
 
 function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, theme, exchangeRate }) {
@@ -250,7 +249,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
             {entry.marketHashName}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">
-            asset {entry.assetid} · gone since {new Date(entry.detectedAt).toLocaleString()}
+            Gone since {new Date(entry.detectedAt).toLocaleString()}
           </div>
         </div>
         <button

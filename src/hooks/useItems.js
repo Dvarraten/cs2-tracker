@@ -79,6 +79,7 @@ export const useItems = () => {
     if (!salePrice || salePrice <= 0) return;
 
     const fee = getPlatformFee(platform);
+    const now = Date.now();
 
     setItems(items.map(item => {
       if (item.id === id) {
@@ -93,7 +94,10 @@ export const useItems = () => {
           soldPlatform: platform,
           profit,
           profitPercent,
-          dateSold: new Date().toISOString().split('T')[0]
+          dateSold: new Date(now).toISOString().split('T')[0],
+          // Full epoch ms so multiple sells on the same day sort
+          // correctly in Recent Sales / by-profit views.
+          soldAt: now,
         };
       }
       return item;
@@ -131,6 +135,7 @@ export const useItems = () => {
     const price = parseFloat(salePrice);
     if (!price || price <= 0) return false;
     const fee = getPlatformFee(platform);
+    const now = Date.now();
     setItems(prev => prev.map(item => {
       if (item.id !== id) return item;
       const netSalePrice = price * (1 - fee);
@@ -143,7 +148,8 @@ export const useItems = () => {
         soldPlatform: platform,
         profit,
         profitPercent,
-        dateSold: new Date().toISOString().split('T')[0],
+        dateSold: new Date(now).toISOString().split('T')[0],
+        soldAt: now,
       };
     }));
     return true;

@@ -6,9 +6,16 @@ export default function RecentSales({ items, theme }) {
   const sold = items
     .filter((i) => i.sold)
     .sort((a, b) => {
-      const aDate = a.dateSold ? new Date(a.dateSold).getTime() : 0;
-      const bDate = b.dateSold ? new Date(b.dateSold).getTime() : 0;
-      return bDate - aDate;
+      // Prefer the precise soldAt timestamp; fall back to dateSold for items
+      // sold before we started recording soldAt. id is the final tiebreaker
+      // (id = Date.now() at purchase, so newer purchases win when everything
+      // else is equal — still a reasonable proxy).
+      const aTime = a.soldAt
+        ?? (a.dateSold ? new Date(a.dateSold).getTime() : 0);
+      const bTime = b.soldAt
+        ?? (b.dateSold ? new Date(b.dateSold).getTime() : 0);
+      if (bTime !== aTime) return bTime - aTime;
+      return (b.id || 0) - (a.id || 0);
     })
     .slice(0, 5);
 

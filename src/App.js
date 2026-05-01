@@ -51,7 +51,13 @@ export default function CS2TradingTracker() {
   useEffect(() => { localStorage.setItem('cs2-theme', theme); }, [theme]);
 
   useEffect(() => {
-    if (activeTab === 'active' && (sortBy === 'profit-high' || sortBy === 'profit-low')) {
+    if (
+      activeTab === 'active' &&
+      (sortBy === 'profit-high' ||
+        sortBy === 'profit-low' ||
+        sortBy === 'profit-dollar-high' ||
+        sortBy === 'profit-dollar-low')
+    ) {
       setSortBy('newest');
     }
   }, [activeTab, sortBy]);
@@ -84,6 +90,8 @@ export default function CS2TradingTracker() {
     if (sortBy === 'price-low') return a.purchasePrice - b.purchasePrice;
     if (sortBy === 'profit-high') return (b.profitPercent ?? -Infinity) - (a.profitPercent ?? -Infinity);
     if (sortBy === 'profit-low') return (a.profitPercent ?? Infinity) - (b.profitPercent ?? Infinity);
+    if (sortBy === 'profit-dollar-high') return (b.profit ?? -Infinity) - (a.profit ?? -Infinity);
+    if (sortBy === 'profit-dollar-low') return (a.profit ?? Infinity) - (b.profit ?? Infinity);
     return 0;
   });
 
