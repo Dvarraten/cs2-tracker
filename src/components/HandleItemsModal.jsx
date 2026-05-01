@@ -39,6 +39,54 @@ function nameMatchScore(steamName, trackerName) {
   return matched / trackerTokens.length;
 }
 
+// ─── Currency-paired price input ────────────────────────────────────────────
+// Two inputs that sync via the live exchange rate. The USD field is the
+// "source of truth" — that's what gets stored on the item. Editing either
+// field updates the other so users can type in whichever currency they
+// actually paid in.
+function PricePair({ usdValue, cnyValue, onChange, exchangeRate, theme, label }) {
+  const handleUsd = (raw) => {
+    const num = parseFloat(raw);
+    const cny =
+      isNaN(num) || !exchangeRate ? '' : (num * exchangeRate).toFixed(2);
+    onChange({ usd: raw, cny });
+  };
+  const handleCny = (raw) => {
+    const num = parseFloat(raw);
+    const usd =
+      isNaN(num) || !exchangeRate ? '' : (num / exchangeRate).toFixed(2);
+    onChange({ usd, cny: raw });
+  };
+  const inputClass = `w-full ${theme.input} rounded-md pl-6 pr-2 py-1.5 text-white text-sm placeholder-slate-500 focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`;
+  return (
+    <div className="flex items-center gap-1.5 min-w-[220px] flex-1">
+      <div className="relative flex-1 min-w-[100px]">
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none">$</span>
+        <input
+          type="number"
+          step="0.01"
+          value={usdValue}
+          onChange={(e) => handleUsd(e.target.value)}
+          placeholder={label || 'USD'}
+          className={inputClass}
+        />
+      </div>
+      <div className="relative flex-1 min-w-[100px]">
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none">¥</span>
+        <input
+          type="number"
+          step="0.01"
+          value={cnyValue}
+          onChange={(e) => handleCny(e.target.value)}
+          placeholder={exchangeRate ? 'CNY' : 'rate loading…'}
+          disabled={!exchangeRate}
+          className={`${inputClass} ${!exchangeRate ? 'opacity-50 cursor-not-allowed' : ''}`}
+        />
+      </div>
+    </div>
+  );
+}
+
 function ItemImage({ iconUrl, alt }) {
   if (!iconUrl) {
     return (
@@ -57,13 +105,14 @@ function ItemImage({ iconUrl, alt }) {
   );
 }
 
-function IncomingRow({ entry, onAdd, onDismiss, theme }) {
-  const [price, setPrice] = useState('');
+function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate }) {
+  const [usdPrice, setUsdPrice] = useState('');
+  const [cnyPrice, setCnyPrice] = useState('');
   const [platform, setPlatform] = useState('csfloat');
   const [confirming, setConfirming] = useState(false);
 
   const submit = () => {
-    const v = parseFloat(price);
+    const v = parseFloat(usdPrice);
     if (!v || v <= 0) return;
     setConfirming(true);
     onAdd({
@@ -97,13 +146,13 @@ function IncomingRow({ entry, onAdd, onDismiss, theme }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="number"
-          step="0.01"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          placeholder="Purchase price ($)"
-          className={`flex-1 min-w-[140px] ${theme.input} rounded-md px-3 py-1.5 text-white text-sm placeholder-slate-500 focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+        <PricePair
+          usdValue={usdPrice}
+          cnyValue={cnyPrice}
+          onChange={({ usd, cny }) => { setUsdPrice(usd); setCnyPrice(cny); }}
+          exchangeRate={exchangeRate}
+          theme={theme}
+          label="Purchase price"
         />
         <select
           value={platform}
@@ -122,7 +171,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme }) {
         </select>
         <button
           type="button"
-          disabled={confirming || !parseFloat(price)}
+          disabled={confirming || !parseFloat(usdPrice)}
           onClick={submit}
           className={`${theme.accentBg} text-white text-sm font-medium px-3 py-1.5 rounded-md disabled:opacity-40 disabled:cursor-not-allowed`}
         >
@@ -143,13 +192,14 @@ function formatCandidateLabel(c) {
   return `${base} · ${c.itemName}`; // "browse all" results
 }
 
-function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, theme }) {
+function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, theme, exchangeRate }) {
   const [browseAll, setBrowseAll] = useState(candidates.length === 0);
   const [browseQuery, setBrowseQuery] = useState('');
   const [selectedId, setSelectedId] = useState(
     candidates[0]?.id ? String(candidates[0].id) : ''
   );
-  const [salePrice, setSalePrice] = useState('');
+  const [usdSalePrice, setUsdSalePrice] = useState('');
+  const [cnySalePrice, setCnySalePrice] = useState('');
   const [platform, setPlatform] = useState('csfloat');
   const [confirming, setConfirming] = useState(false);
 
@@ -179,7 +229,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
 
   const submit = () => {
     const id = parseInt(selectedId, 10);
-    const v = parseFloat(salePrice);
+    const v = parseFloat(usdSalePrice);
     if (!id || !v || v <= 0) return;
     setConfirming(true);
     onMatch({ trackedId: id, salePrice: v, platform, assetid: entry.assetid });
@@ -248,13 +298,13 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
               </option>
             ))}
           </select>
-          <input
-            type="number"
-            step="0.01"
-            value={salePrice}
-            onChange={(e) => setSalePrice(e.target.value)}
-            placeholder="Sale price ($)"
-            className={`w-32 ${theme.input} rounded-md px-3 py-1.5 text-white text-sm placeholder-slate-500 focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+          <PricePair
+            usdValue={usdSalePrice}
+            cnyValue={cnySalePrice}
+            onChange={({ usd, cny }) => { setUsdSalePrice(usd); setCnySalePrice(cny); }}
+            exchangeRate={exchangeRate}
+            theme={theme}
+            label="Sale price"
           />
           <select
             value={platform}
@@ -273,7 +323,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
           </select>
           <button
             type="button"
-            disabled={confirming || !parseFloat(salePrice) || !selectedId}
+            disabled={confirming || !parseFloat(usdSalePrice) || !selectedId}
             onClick={submit}
             className={`${theme.accentBg} text-white text-sm font-medium px-3 py-1.5 rounded-md disabled:opacity-40 disabled:cursor-not-allowed`}
           >
@@ -315,6 +365,7 @@ export default function HandleItemsModal({
   items,
   addItemDirect,
   sellItemDirect,
+  exchangeRate,
 }) {
   const [tab, setTab] = useState('incoming');
 
@@ -551,6 +602,7 @@ export default function HandleItemsModal({
                     key={`in-${entry.assetid}`}
                     entry={entry}
                     theme={theme}
+                    exchangeRate={exchangeRate}
                     onAdd={(payload) => {
                       addItemDirect(payload);
                       onDismiss(entry.assetid, 'incoming');
@@ -573,6 +625,7 @@ export default function HandleItemsModal({
                   candidates={candidatesFor(entry)}
                   allActiveItems={activeItems}
                   theme={theme}
+                  exchangeRate={exchangeRate}
                   onMatch={({ trackedId, salePrice, platform, assetid }) => {
                     const ok = sellItemDirect(trackedId, salePrice, platform);
                     if (ok) onDismiss(assetid, 'outgoing');

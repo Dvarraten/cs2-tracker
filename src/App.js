@@ -115,6 +115,7 @@ export default function CS2TradingTracker() {
         items={items}
         addItemDirect={addItemDirect}
         sellItemDirect={sellItemDirect}
+        exchangeRate={exchangeRate}
         {...steamSync}
         onSync={steamSync.sync}
         onDismiss={steamSync.dismiss}
