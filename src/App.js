@@ -83,9 +83,21 @@ export default function CS2TradingTracker() {
     return matchesTab && matchesSearch;
   });
 
+  // For the Sold tab, "newest"/"oldest" means most recently *sold* (not bought).
+  const soldTime = (it) =>
+    it.soldAt ?? (it.dateSold ? new Date(it.dateSold).getTime() : 0);
+
   const sortedItems = [...filteredItems].sort((a, b) => {
-    if (sortBy === 'newest') return b.id - a.id;
-    if (sortBy === 'oldest') return a.id - b.id;
+    if (sortBy === 'newest') {
+      return activeTab === 'sold'
+        ? soldTime(b) - soldTime(a) || (b.id - a.id)
+        : b.id - a.id;
+    }
+    if (sortBy === 'oldest') {
+      return activeTab === 'sold'
+        ? soldTime(a) - soldTime(b) || (a.id - b.id)
+        : a.id - b.id;
+    }
     if (sortBy === 'price-high') return b.purchasePrice - a.purchasePrice;
     if (sortBy === 'price-low') return a.purchasePrice - b.purchasePrice;
     if (sortBy === 'profit-high') return (b.profitPercent ?? -Infinity) - (a.profitPercent ?? -Infinity);

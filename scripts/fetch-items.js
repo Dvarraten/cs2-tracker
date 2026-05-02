@@ -4,15 +4,16 @@
 // Run with:  npm run items:update
 //
 // Source repo: https://github.com/ByMykel/CSGO-API
-// Endpoint:    https://bymykel.github.io/CSGO-API/api/en/skins_not_grouped.json
+// Endpoint:    https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/skins_not_grouped.json
 //   - This is the "ungrouped" variant — one entry per (skin × wear × stattrak)
 //     combination, which matches our existing key-by-full-name layout.
+//   - We pull from the raw GitHub URL because bymykel.github.io was retired.
 
 const fs = require('fs');
 const path = require('path');
 
 const SRC_URL =
-  'https://bymykel.github.io/CSGO-API/api/en/skins_not_grouped.json';
+  'https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/skins_not_grouped.json';
 const OUT_PATH = path.join(__dirname, '..', 'public', 'items.json');
 
 (async () => {
@@ -78,8 +79,19 @@ const OUT_PATH = path.join(__dirname, '..', 'public', 'items.json');
       (skipped ? `, skipped ${skipped}` : '')
   );
 
-  // Quick sanity probe so you can see at a glance that new skins came through.
-  const probes = ['Dead Hand', 'Terminal', 'Sealed', 'Kukri'];
+  // Quick sanity probe so you can see at a glance that new skins came through,
+  // including the categories the old (Feb 2024) dataset was missing.
+  const probes = [
+    'Dead Hand',
+    'Terminal',
+    'Kukri',
+    'Sport Gloves',
+    'Hand Wraps',
+    'Driver Gloves',
+    'Specialist Gloves',
+    'Cobalt Skulls',
+    'Vice',
+  ];
   for (const probe of probes) {
     const hits = Object.keys(out).filter((k) => k.includes(probe)).length;
     console.log(`[items]   contains "${probe}": ${hits} entries`);
