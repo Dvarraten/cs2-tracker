@@ -105,7 +105,7 @@ function ItemImage({ iconUrl, alt }) {
   );
 }
 
-function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate }) {
+function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, pendingMatch, onPromotePending }) {
   const [usdPrice, setUsdPrice] = useState('');
   const [cnyPrice, setCnyPrice] = useState('');
   const [platform, setPlatform] = useState('csfloat');
@@ -120,7 +120,20 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate }) {
       purchasePrice: v,
       platform,
       notes: `From Steam inventory (asset ${entry.assetid})`,
+      iconUrl: entry.iconUrl
+        ? `https://community.akamai.steamstatic.com/economy/image/${entry.iconUrl}/96fx96f`
+        : null,
     });
+  };
+
+  const promote = () => {
+    if (!pendingMatch) return;
+    setConfirming(true);
+    const iconUrl = entry.iconUrl
+      ? `https://community.akamai.steamstatic.com/economy/image/${entry.iconUrl}/96fx96f`
+      : null;
+    onPromotePending(pendingMatch.item.id, { iconUrl });
+    onDismiss(entry.assetid, 'incoming');
   };
 
   return (
@@ -145,39 +158,77 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate }) {
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <PricePair
-          usdValue={usdPrice}
-          cnyValue={cnyPrice}
-          onChange={({ usd, cny }) => { setUsdPrice(usd); setCnyPrice(cny); }}
-          exchangeRate={exchangeRate}
-          theme={theme}
-          label="Purchase price"
-        />
-        <select
-          value={platform}
-          onChange={(e) => setPlatform(e.target.value)}
-          className={`${theme.input} rounded-md px-2 py-1.5 text-white text-sm focus:outline-none border`}
+      {pendingMatch ? (
+        <div
+          className={`flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-md border ${theme.cardBorder} bg-amber-500/10`}
         >
-          <option value="csfloat">CSFloat</option>
-          <option value="csmoney">CS.MONEY</option>
-          <option value="gamerpay">GamerPay</option>
-          <option value="skinswap">SkinSwap</option>
-          <option value="dmarket">DMarket</option>
-          <option value="youpin">Youpin</option>
-          <option value="tradeit">Tradeit</option>
-          <option value="facebook">Facebook</option>
-          <option value="other">Other</option>
-        </select>
-        <button
-          type="button"
-          disabled={confirming || !parseFloat(usdPrice)}
-          onClick={submit}
-          className={`${theme.accentBg} text-white text-sm font-medium px-3 py-1.5 rounded-md disabled:opacity-40 disabled:cursor-not-allowed`}
-        >
-          {confirming ? 'Adding…' : 'Add to tracker'}
-        </button>
-      </div>
+          <div className="text-xs text-amber-200 leading-snug min-w-0">
+            <div className="font-semibold">
+              Matches a pending purchase
+              {pendingMatch.matchType === 'fuzzy' && pendingMatch.matchScore && (
+                <span className="opacity-70 font-normal">
+                  {' '}
+                  ({Math.round(pendingMatch.matchScore * 100)}% match)
+                </span>
+              )}
+            </div>
+            <div className="text-amber-300/80 truncate">
+              "{pendingMatch.item.itemName}" — paid ${pendingMatch.item.purchasePrice.toFixed(2)}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={confirming}
+              onClick={promote}
+              className="bg-amber-500 hover:bg-amber-400 text-white text-sm font-medium px-3 py-1.5 rounded-md disabled:opacity-40"
+            >
+              {confirming ? 'Promoting…' : 'Mark received'}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDismiss(entry.assetid, 'incoming')}
+              className={`text-xs px-2 py-1 rounded ${theme.subtext} hover:text-white`}
+            >
+              Not this one
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
+          <PricePair
+            usdValue={usdPrice}
+            cnyValue={cnyPrice}
+            onChange={({ usd, cny }) => { setUsdPrice(usd); setCnyPrice(cny); }}
+            exchangeRate={exchangeRate}
+            theme={theme}
+            label="Purchase price"
+          />
+          <select
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            className={`${theme.input} rounded-md px-2 py-1.5 text-white text-sm focus:outline-none border`}
+          >
+            <option value="csfloat">CSFloat</option>
+            <option value="csmoney">CS.MONEY</option>
+            <option value="gamerpay">GamerPay</option>
+            <option value="skinswap">SkinSwap</option>
+            <option value="dmarket">DMarket</option>
+            <option value="youpin">Youpin</option>
+            <option value="tradeit">Tradeit</option>
+            <option value="facebook">Facebook</option>
+            <option value="other">Other</option>
+          </select>
+          <button
+            type="button"
+            disabled={confirming || !parseFloat(usdPrice)}
+            onClick={submit}
+            className={`${theme.accentBg} text-white text-sm font-medium px-3 py-1.5 rounded-md disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            {confirming ? 'Adding…' : 'Add to tracker'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -364,6 +415,7 @@ export default function HandleItemsModal({
   items,
   addItemDirect,
   sellItemDirect,
+  promotePendingItem,
   exchangeRate,
 }) {
   const [tab, setTab] = useState('incoming');
@@ -374,21 +426,48 @@ export default function HandleItemsModal({
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
-  // Index active tracked items by market_hash_name for outgoing matching.
+  // Index active (non-pending, non-sold) tracked items by market_hash_name
+  // for outgoing matching and the incoming "already tracked" filter.
   const activeByName = useMemo(() => {
     const map = new Map();
     for (const it of items) {
-      if (it.sold) continue;
+      if (it.sold || it.pending) continue;
       const key = (it.itemName || '').toLowerCase();
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(it);
     }
-    // Within each name, sort oldest-first (FIFO default).
     for (const arr of map.values()) {
       arr.sort((a, b) => (a.datePurchased || '').localeCompare(b.datePurchased || ''));
     }
     return map;
   }, [items]);
+
+  // Pending purchases — used to surface a "Mark received" shortcut on
+  // incoming Steam items that match something the user is waiting for.
+  const pendingItems = useMemo(
+    () => items.filter((it) => !it.sold && it.pending),
+    [items]
+  );
+
+  const findPendingMatch = (entry) => {
+    const lowerName = (entry.marketHashName || '').toLowerCase();
+    // 1) exact lowercase name match
+    let exact = pendingItems.find(
+      (p) => (p.itemName || '').toLowerCase() === lowerName
+    );
+    if (exact) return { item: exact, matchType: 'exact' };
+    // 2) fuzzy fallback (>= 0.5 score from tracker side)
+    let best = null;
+    let bestScore = 0;
+    for (const p of pendingItems) {
+      const score = nameMatchScore(entry.marketHashName, p.itemName);
+      if (score > bestScore && score >= 0.5) {
+        best = p;
+        bestScore = score;
+      }
+    }
+    return best ? { item: best, matchType: 'fuzzy', matchScore: bestScore } : null;
+  };
 
   // Hide incoming entries whose name matches an item already in the tracker
   // (count-aware: if you own 3× "AK-47 | Redline (FT)" in your tracker and
@@ -602,6 +681,8 @@ export default function HandleItemsModal({
                     entry={entry}
                     theme={theme}
                     exchangeRate={exchangeRate}
+                    pendingMatch={findPendingMatch(entry)}
+                    onPromotePending={promotePendingItem}
                     onAdd={(payload) => {
                       addItemDirect(payload);
                       onDismiss(entry.assetid, 'incoming');

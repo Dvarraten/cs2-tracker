@@ -1,15 +1,45 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { TrendingUp, Trash2, CheckCircle, ChevronDown } from "lucide-react";
+import { TrendingUp, Trash2, CheckCircle, ChevronDown, Clock, PackageCheck } from "lucide-react";
 import { getPlatformFee } from "../utils/platformFees";
 import { PlatformBadge } from "./PlatformBadge";
-
+import { useItemImage } from "../utils/itemImages";
 import csfloatIcon  from "../assets/platforms/csfloat.webp";
 import csmoneyIcon  from "../assets/platforms/csmoney.webp";
 import gamerpayIcon from "../assets/platforms/gamerpay.webp";
 import skinswapIcon from "../assets/platforms/skinswap.webp";
 import youpinIcon   from "../assets/platforms/youpin.webp";
 import dmarketIcon  from "../assets/platforms/dmarket.webp";
+
+function ItemThumbnail({ item }) {
+  const url = useItemImage({ directIconUrl: item.iconUrl, name: item.itemName });
+  if (!url) {
+    return (
+      <div className="w-12 h-12 rounded-md bg-white/5 flex items-center justify-center text-[9px] text-slate-500 flex-shrink-0">
+        no img
+      </div>
+    );
+  }
+  return (
+    <img
+      src={url}
+      alt=""
+      loading="lazy"
+      className="w-12 h-12 rounded-md bg-white/5 object-contain flex-shrink-0"
+    />
+  );
+}
+
+// Returns "3 days left" / "Due today" / "Overdue 2d" depending on diff.
+function formatDeliveryCountdown(expectedDelivery) {
+  if (!expectedDelivery) return null;
+  const ms = expectedDelivery - Date.now();
+  const days = Math.round(ms / (24 * 60 * 60 * 1000));
+  if (days > 1) return { label: `${days} days left`, overdue: false };
+  if (days === 1) return { label: '1 day left', overdue: false };
+  if (days === 0) return { label: 'Due today', overdue: false };
+  return { label: `Overdue ${Math.abs(days)}d`, overdue: true };
+}
 
 const SELL_PLATFORMS = [
   { value: "csfloat",  label: "CSFloat",  icon: csfloatIcon,  fee: "2%"   },
@@ -225,7 +255,12 @@ function SellPlatformPicker({ value, onChange, theme }) {
   );
 }
 
-function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPlatform, setSellPlatform, handleSellItem, handleDeleteItem }) {
+function ItemCard({
+  item, index, theme, accentHex,
+  sellData, setSellData, sellPlatform, setSellPlatform,
+  handleSellItem, handleDeleteItem, promotePendingItem,
+  selectMode, isSelected, onToggleSelect,
+}) {
   const [deleteProgress, setDeleteProgress] = useState(0);
   const [barColor, setBarColor] = useState(accentHex);
   const [exiting, setExiting] = useState(false);
@@ -268,7 +303,14 @@ function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPl
     }
   };
 
-  const currentBarColor = item.sold ? soldBarColor : barColor;
+  // Pending items get an amber sidebar, sold use profit colour, otherwise theme accent.
+  const pendingBarColor = '#f59e0b';
+  const currentBarColor = item.sold
+    ? soldBarColor
+    : item.pending
+    ? pendingBarColor
+    : barColor;
+  const countdown = item.pending ? formatDeliveryCountdown(item.expectedDelivery) : null;
 
   const fee = !item.sold && sellData[item.id] && parseFloat(sellData[item.id]) > 0
     ? getPlatformFee(sellPlatform[item.id] || 'csfloat') : null;
@@ -293,9 +335,38 @@ function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPl
       {/* Card content — flex-col so the sell/sold block sticks to the bottom
           via mt-auto, regardless of whether notes are present */}
       <div className="flex-1 p-4 min-w-0 flex flex-col">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-base font-semibold text-white flex-1 pr-2 leading-snug">{item.itemName}</h3>
-          {!item.sold && (
+        <div className="flex justify-between items-start gap-2 mb-2">
+          {selectMode && !item.sold && (
+            <button
+              type="button"
+              onClick={() => onToggleSelect && onToggleSelect(item.id)}
+              className={`mt-1 w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
+                isSelected
+                  ? 'bg-red-500 border-red-500'
+                  : `${theme.cardBorder} hover:border-white/40`
+              }`}
+              aria-label={isSelected ? 'Deselect' : 'Select'}
+            >
+              {isSelected && <CheckCircle size={12} className="text-white" />}
+            </button>
+          )}
+          <ItemThumbnail item={item} />
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold text-white leading-snug truncate">{item.itemName}</h3>
+            {item.pending && countdown && (
+              <div
+                className={`mt-1 inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                  countdown.overdue
+                    ? 'bg-red-500/15 text-red-300'
+                    : 'bg-amber-500/15 text-amber-300'
+                }`}
+              >
+                <Clock size={10} />
+                {countdown.label}
+              </div>
+            )}
+          </div>
+          {!item.sold && !selectMode && (
             <HoldToDeleteButton onDelete={onDeleteProgress} deleteProgress={deleteProgress} />
           )}
         </div>
@@ -323,7 +394,29 @@ function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPl
 
         {/* Bottom-anchored action zone */}
         <div className="mt-auto">
-          {!item.sold ? (
+          {item.pending && !item.sold ? (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => promotePendingItem && promotePendingItem(item.id)}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium ${theme.accentBg} text-white transition-colors`}
+              >
+                <PackageCheck size={14} />
+                Mark received
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('Cancel this pending purchase? It will be removed entirely.')) {
+                    handleDeleteItem(item.id);
+                  }
+                }}
+                className={`px-3 py-2 rounded-lg text-sm ${theme.card} border ${theme.cardBorder} ${theme.subtext} hover:text-white transition-colors`}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : !item.sold ? (
             <div className="space-y-2">
               {/* Platform picker — half-width so it visually matches the
                   sale-price input below */}
@@ -416,10 +509,17 @@ function ItemCard({ item, index, theme, accentHex, sellData, setSellData, sellPl
 
 export default function ItemGrid({
   sellPlatform, setSellData, sellData, setSellPlatform,
-  handleSellItem, handleDeleteItem,
+  handleSellItem, handleDeleteItem, promotePendingItem,
   theme, sortedItems, searchTerm, activeTab,
+  selectMode, selectedIds, onToggleSelect,
 }) {
   const accentHex = getThemeAccentHex(theme.accentBg + ' ' + theme.dot);
+
+  const emptyText =
+    searchTerm ? 'No items match your search.'
+    : activeTab === 'active' ? 'No active items. Add your first purchase!'
+    : activeTab === 'pending' ? 'No pending purchases. Add an item with "Trade hold" enabled to track items waiting to arrive.'
+    : 'No sold items yet.';
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -443,16 +543,16 @@ export default function ItemGrid({
           setSellPlatform={setSellPlatform}
           handleSellItem={handleSellItem}
           handleDeleteItem={handleDeleteItem}
+          promotePendingItem={promotePendingItem}
+          selectMode={selectMode}
+          isSelected={selectedIds && selectedIds.has(item.id)}
+          onToggleSelect={onToggleSelect}
         />
       ))}
 
       {sortedItems.length === 0 && (
         <div className="col-span-full text-center py-12 text-slate-400">
-          <p className="text-lg">
-            {searchTerm ? 'No items match your search.'
-              : activeTab === 'active' ? 'No active items. Add your first purchase!'
-              : 'No sold items yet.'}
-          </p>
+          <p className="text-lg">{emptyText}</p>
         </div>
       )}
     </div>

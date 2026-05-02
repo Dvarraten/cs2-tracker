@@ -25,11 +25,13 @@ export default function CS2TradingTracker() {
   const {
     items, formData, setFormData, sellData, setSellData,
     sellPlatform, setSellPlatform, handleAddItem, handleSellItem, handleDeleteItem,
-    addItemDirect, sellItemDirect,
+    addItemDirect, sellItemDirect, promotePendingItem, handleBulkDelete,
   } = useItems();
 
   const steamSync = useSteamSync();
   const [showHandleItems, setShowHandleItems] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
 
   const {
     usdAmount, setUsdAmount, rmbAmount, setRmbAmount,
@@ -69,17 +71,21 @@ export default function CS2TradingTracker() {
   }, [showAnalytics]);
 
   const stats = {
-    totalActive: items.filter(i => !i.sold).length,
+    totalActive: items.filter(i => !i.sold && !i.pending).length,
+    totalPending: items.filter(i => !i.sold && i.pending).length,
     totalSold: items.filter(i => i.sold).length,
     totalProfit: items.filter(i => i.sold).reduce((sum, i) => sum + i.profit, 0),
-    totalInvested: items.filter(i => !i.sold).reduce((sum, i) => sum + i.purchasePrice, 0)
+    totalInvested: items.filter(i => !i.sold && !i.pending).reduce((sum, i) => sum + i.purchasePrice, 0),
   };
 
   const filteredItems = items.filter(item => {
-    const matchesTab = activeTab === 'active' ? !item.sold : item.sold;
+    const matchesTab =
+      activeTab === 'active' ? (!item.sold && !item.pending)
+      : activeTab === 'pending' ? (!item.sold && !!item.pending)
+      : item.sold;
     const matchesSearch =
       item.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.notes.toLowerCase().includes(searchTerm.toLowerCase());
+      (item.notes || '').toLowerCase().includes(searchTerm.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
@@ -104,8 +110,31 @@ export default function CS2TradingTracker() {
     if (sortBy === 'profit-low') return (a.profitPercent ?? Infinity) - (b.profitPercent ?? Infinity);
     if (sortBy === 'profit-dollar-high') return (b.profit ?? -Infinity) - (a.profit ?? -Infinity);
     if (sortBy === 'profit-dollar-low') return (a.profit ?? Infinity) - (b.profit ?? Infinity);
+    if (sortBy === 'delivery-soon') return (a.expectedDelivery ?? Infinity) - (b.expectedDelivery ?? Infinity);
+    if (sortBy === 'delivery-late') return (b.expectedDelivery ?? -Infinity) - (a.expectedDelivery ?? -Infinity);
     return 0;
   });
+
+  // Selection helpers (used by bulk-delete toolbar)
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    clearSelection();
+  };
+  const confirmBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Delete ${selectedIds.size} item${selectedIds.size === 1 ? '' : 's'}? This cannot be undone.`)) return;
+    handleBulkDelete([...selectedIds]);
+    exitSelectMode();
+  };
 
   return (
     <div
@@ -123,6 +152,7 @@ export default function CS2TradingTracker() {
           weeklyProfit={weeklyProfit}
           monthlyProfit={monthlyProfit}
           theme={themeStyles}
+          items={items}
           onClose={() => setShowAnalytics(false)}
         />
       )}
@@ -135,6 +165,7 @@ export default function CS2TradingTracker() {
         items={items}
         addItemDirect={addItemDirect}
         sellItemDirect={sellItemDirect}
+        promotePendingItem={promotePendingItem}
         exchangeRate={exchangeRate}
         {...steamSync}
         onSync={steamSync.sync}
@@ -219,12 +250,49 @@ export default function CS2TradingTracker() {
               sortBy={sortBy} setSortBy={setSortBy}
             />
 
+            {/* Bulk-select toolbar (only on Active / Pending tabs) */}
+            {activeTab !== 'sold' && (
+              <div className="flex items-center gap-2 mb-3">
+                {!selectMode ? (
+                  <button
+                    onClick={() => setSelectMode(true)}
+                    className={`text-xs px-3 py-1.5 rounded-md border ${themeStyles.cardBorder} ${themeStyles.card} ${themeStyles.subtext} hover:text-white transition-colors`}
+                  >
+                    Select multiple
+                  </button>
+                ) : (
+                  <>
+                    <span className={`text-xs ${themeStyles.subtext}`}>
+                      {selectedIds.size} selected
+                    </span>
+                    <button
+                      onClick={confirmBulkDelete}
+                      disabled={selectedIds.size === 0}
+                      className="text-xs px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-500 text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Delete selected
+                    </button>
+                    <button
+                      onClick={exitSelectMode}
+                      className={`text-xs px-3 py-1.5 rounded-md border ${themeStyles.cardBorder} ${themeStyles.card} ${themeStyles.subtext} hover:text-white transition-colors`}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
             <ItemGrid
               sellPlatform={sellPlatform} setSellData={setSellData}
               sellData={sellData} setSellPlatform={setSellPlatform}
               handleSellItem={handleSellItem} handleDeleteItem={handleDeleteItem}
+              promotePendingItem={promotePendingItem}
               theme={themeStyles} items={items} sortedItems={sortedItems}
               searchTerm={searchTerm} activeTab={activeTab}
+              selectMode={selectMode}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
               TrendingUp={TrendingUp} Trash2={Trash2}
             />
           </div>

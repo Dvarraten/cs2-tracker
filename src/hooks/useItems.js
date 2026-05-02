@@ -9,7 +9,10 @@ export const useItems = () => {
     purchasePrice: '',
     notes: '',
     platform: 'csfloat',
-    quantity: 1
+    quantity: 1,
+    pending: false,
+    expectedDelivery: '',
+    iconUrl: null,
   });
   const [sellData, setSellData] = useState({});
   const [sellPlatform, setSellPlatform] = useState({});
@@ -56,6 +59,13 @@ export const useItems = () => {
 
     const purchaseDate = new Date();
     const quantity = Math.max(1, parseInt(formData.quantity) || 1);
+    const isPending = !!formData.pending;
+    // Default expected delivery = 7-day Steam trade hold.
+    const expectedDelivery = isPending
+      ? formData.expectedDelivery
+        ? new Date(formData.expectedDelivery).getTime()
+        : Date.now() + 7 * 24 * 60 * 60 * 1000
+      : null;
 
     const newItems = Array.from({ length: quantity }, (_, i) => ({
       id: Date.now() + i,
@@ -67,11 +77,17 @@ export const useItems = () => {
       salePrice: null,
       platform: formData.platform,
       profit: null,
-      profitPercent: null
+      profitPercent: null,
+      pending: isPending,
+      expectedDelivery,
+      iconUrl: formData.iconUrl || null,
     }));
 
     setItems([...newItems, ...items]);
-    setFormData({ itemName: '', purchasePrice: '', notes: '', platform: 'csfloat', quantity: 1 });
+    setFormData({
+      itemName: '', purchasePrice: '', notes: '', platform: 'csfloat',
+      quantity: 1, pending: false, expectedDelivery: '', iconUrl: null,
+    });
   };
 
   const handleSellItem = (id, platform) => {
@@ -113,7 +129,10 @@ export const useItems = () => {
   // ── Direct (non-form) helpers used by the Steam-sync "Handle Items" modal.
   // These bypass the controlled formData / sellData state so we can drive
   // them imperatively from outside the form components.
-  const addItemDirect = ({ itemName, purchasePrice, platform = 'csfloat', notes = '' }) => {
+  const addItemDirect = ({
+    itemName, purchasePrice, platform = 'csfloat', notes = '',
+    iconUrl = null, pending = false, expectedDelivery = null,
+  }) => {
     if (!itemName || !purchasePrice) return null;
     const newItem = {
       id: Date.now() + Math.floor(Math.random() * 1000),
@@ -126,9 +145,37 @@ export const useItems = () => {
       platform,
       profit: null,
       profitPercent: null,
+      pending,
+      expectedDelivery,
+      iconUrl,
     };
     setItems(prev => [newItem, ...prev]);
     return newItem.id;
+  };
+
+  // Promote a pending purchase to active (when the trade hold ends or the
+  // Steam sync sees the item land in the inventory). Updates iconUrl if the
+  // sync gave us one, since manual adds may not have had it.
+  const promotePendingItem = (id, { iconUrl } = {}) => {
+    setItems(prev => prev.map(item => {
+      if (item.id !== id) return item;
+      return {
+        ...item,
+        pending: false,
+        expectedDelivery: null,
+        // Refresh datePurchased to reflect actual delivery for accurate
+        // hold-time history.
+        datePurchased: new Date().toISOString().split('T')[0],
+        iconUrl: iconUrl || item.iconUrl || null,
+      };
+    }));
+  };
+
+  // Bulk delete by IDs (used by the select-mode toolbar).
+  const handleBulkDelete = (ids) => {
+    if (!ids || ids.length === 0) return;
+    const toRemove = new Set(ids);
+    setItems(prev => prev.filter(item => !toRemove.has(item.id)));
   };
 
   const sellItemDirect = (id, salePrice, platform = 'csfloat') => {
@@ -168,5 +215,7 @@ export const useItems = () => {
     handleDeleteItem,
     addItemDirect,
     sellItemDirect,
+    promotePendingItem,
+    handleBulkDelete,
   };
 };

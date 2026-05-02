@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { CheckCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { CheckCircle, Clock } from "lucide-react";
 import ItemAutoComplete from "./ItemAutoComplete";
 import PasteButton from "./PasteButton";
+import { useItemImage } from "../utils/itemImages";
 
 import csfloatIcon  from "../assets/platforms/csfloat.webp";
 import csmoneyIcon  from "../assets/platforms/csmoney.webp";
@@ -25,12 +26,31 @@ const PLATFORMS = [
 export default function AddItemForm({ formData, setFormData, handleAddItem, theme }) {
   const [success, setSuccess] = useState(false);
 
+  // Resolve the item's icon (from items.json) so we can stash it on the
+  // tracked item — gives newly-added cards a thumbnail right away.
+  const resolvedIcon = useItemImage({ name: formData.itemName });
+  useEffect(() => {
+    if (resolvedIcon && resolvedIcon !== formData.iconUrl) {
+      setFormData((prev) => ({ ...prev, iconUrl: resolvedIcon }));
+    }
+    if (!resolvedIcon && formData.iconUrl && !formData.itemName) {
+      setFormData((prev) => ({ ...prev, iconUrl: null }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedIcon, formData.itemName]);
+
   const onAdd = () => {
     if (!formData.itemName || !formData.purchasePrice) return;
     handleAddItem();
     setSuccess(true);
     setTimeout(() => setSuccess(false), 2000);
   };
+
+  // Default expected delivery: 7 days out, formatted YYYY-MM-DD for <input type="date">
+  const defaultDeliveryISO = (() => {
+    const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    return d.toISOString().split('T')[0];
+  })();
 
   return (
     <div id="section-add" className={`${theme.card} ${theme.cardBorder} rounded-xl p-6 border`}>
@@ -130,18 +150,57 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
             placeholder="-"
           />
         </div>
+
+        {/* Trade-hold toggle + expected delivery — full width, compact */}
+        <div className="md:col-span-2 flex items-center flex-wrap gap-3 -mt-1">
+          <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-slate-300">
+            <input
+              type="checkbox"
+              checked={!!formData.pending}
+              onChange={(e) => setFormData({
+                ...formData,
+                pending: e.target.checked,
+                expectedDelivery: e.target.checked
+                  ? formData.expectedDelivery || defaultDeliveryISO
+                  : '',
+              })}
+              className="w-4 h-4 rounded border-slate-500 accent-amber-500"
+            />
+            <Clock size={14} className="text-amber-400" />
+            <span>On trade hold (item not received yet)</span>
+          </label>
+          {formData.pending && (
+            <div className="flex items-center gap-2">
+              <span className={`text-xs ${theme.subtext}`}>Expected delivery:</span>
+              <input
+                type="date"
+                value={formData.expectedDelivery || defaultDeliveryISO}
+                onChange={(e) => setFormData({ ...formData, expectedDelivery: e.target.value })}
+                className={`${theme.input} rounded-md px-2 py-1 text-white text-sm focus:outline-none border`}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-3 mt-4">
         <button
           onClick={onAdd}
           className={`relative flex items-center gap-2 px-8 py-2 rounded-lg font-medium transition-all duration-300
-            ${success ? 'bg-emerald-500 scale-95' : `${theme.accentBg} hover:brightness-110 active:scale-95`} text-white`}
+            ${success
+              ? 'bg-emerald-500 scale-95'
+              : formData.pending
+              ? 'bg-amber-600 hover:bg-amber-500 active:scale-95'
+              : `${theme.accentBg} hover:brightness-110 active:scale-95`
+            } text-white`}
         >
-          {success
-            ? <><CheckCircle size={16} /><span>Added!</span></>
-            : <span>{formData.quantity > 1 ? `Add ${formData.quantity} Items` : "Add Item"}</span>
-          }
+          {success ? (
+            <><CheckCircle size={16} /><span>Added!</span></>
+          ) : formData.pending ? (
+            <><Clock size={16} /><span>{formData.quantity > 1 ? `Add ${formData.quantity} Pending` : 'Add Pending'}</span></>
+          ) : (
+            <span>{formData.quantity > 1 ? `Add ${formData.quantity} Items` : "Add Item"}</span>
+          )}
         </button>
       </div>
     </div>

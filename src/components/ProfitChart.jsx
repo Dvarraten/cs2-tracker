@@ -1,8 +1,149 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { TrendingUp, TrendingDown, Calendar, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-export default function ProfitChart({ profitChartData, chartPeriod, setChartPeriod, weeklyProfit, monthlyProfit, theme, onClose }) {
+// Build a date → profit map from sold items in the given window (default 90 days).
+function buildDailyProfit(items, days = 90) {
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  const start = new Date(today);
+  start.setDate(start.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+
+  const dailyMap = new Map(); // 'YYYY-MM-DD' -> { profit, count }
+  for (const it of items) {
+    if (!it.sold || it.profit == null || !it.dateSold) continue;
+    const t = it.soldAt ?? new Date(it.dateSold).getTime();
+    if (t < start.getTime() || t > today.getTime()) continue;
+    const key = it.dateSold;
+    const slot = dailyMap.get(key) || { profit: 0, count: 0 };
+    slot.profit += it.profit;
+    slot.count += 1;
+    dailyMap.set(key, slot);
+  }
+
+  // Build full grid of every day in window (so empty days still render).
+  const cells = [];
+  const cursor = new Date(start);
+  while (cursor.getTime() <= today.getTime()) {
+    const iso = cursor.toISOString().split('T')[0];
+    const slot = dailyMap.get(iso);
+    cells.push({
+      date: iso,
+      dow: cursor.getDay(), // 0 = Sunday
+      profit: slot ? slot.profit : 0,
+      count: slot ? slot.count : 0,
+    });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return cells;
+}
+
+function ProfitHeatmap({ items, theme }) {
+  const cells = useMemo(() => buildDailyProfit(items, 90), [items]);
+  const [hover, setHover] = useState(null);
+
+  // Normalise colour intensity by max absolute profit in the window.
+  const maxAbs = Math.max(1, ...cells.map((c) => Math.abs(c.profit)));
+
+  // Group cells into columns where each column is one week (7 cells).
+  // We want most-recent week on the right, so iterate forwards and pad
+  // the first column with empties for the leading day-of-week offset.
+  const firstDow = cells[0]?.dow ?? 0;
+  const padded = [
+    ...Array.from({ length: firstDow }, () => null),
+    ...cells,
+  ];
+  const columns = [];
+  for (let i = 0; i < padded.length; i += 7) {
+    columns.push(padded.slice(i, i + 7));
+  }
+
+  const cellSize = 13;
+  const gap = 3;
+  const width = columns.length * (cellSize + gap);
+  const height = 7 * (cellSize + gap);
+
+  const cellColor = (cell) => {
+    if (!cell) return 'transparent';
+    if (cell.count === 0) return 'rgba(255,255,255,0.04)';
+    const intensity = Math.min(1, Math.abs(cell.profit) / maxAbs);
+    const alpha = 0.25 + 0.7 * intensity;
+    return cell.profit >= 0
+      ? `rgba(52, 211, 153, ${alpha})` // emerald-400
+      : `rgba(248, 113, 113, ${alpha})`; // red-400
+  };
+
+  // Sum stats for caption
+  const total = cells.reduce((s, c) => s + c.profit, 0);
+  const tradingDays = cells.filter((c) => c.count > 0).length;
+
+  return (
+    <div className={`${theme.panel} rounded-xl p-5 border ${theme.panelBorder} relative`}>
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h3 className="text-base font-semibold text-white">Daily P&amp;L · last 90 days</h3>
+        <div className="text-xs text-slate-400 flex items-center gap-3">
+          <span>{tradingDays} trading days</span>
+          <span className={`font-semibold ${total >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            {total >= 0 ? '+' : ''}${total.toFixed(2)} total
+          </span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <svg width={width} height={height} style={{ display: 'block' }}>
+          {columns.map((col, x) =>
+            col.map((cell, y) => (
+              <rect
+                key={`${x}-${y}`}
+                x={x * (cellSize + gap)}
+                y={y * (cellSize + gap)}
+                width={cellSize}
+                height={cellSize}
+                rx={2}
+                ry={2}
+                fill={cellColor(cell)}
+                onMouseEnter={() => cell && setHover({ ...cell, x, y })}
+                onMouseLeave={() => setHover(null)}
+                style={{ cursor: cell ? 'pointer' : 'default', transition: 'opacity 0.15s' }}
+              />
+            ))
+          )}
+        </svg>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-2 mt-3 text-[10px] text-slate-500">
+        <span>Less</span>
+        <span style={{ background: 'rgba(248, 113, 113, 0.95)' }} className="w-3 h-3 rounded-sm" />
+        <span style={{ background: 'rgba(248, 113, 113, 0.4)' }} className="w-3 h-3 rounded-sm" />
+        <span style={{ background: 'rgba(255,255,255,0.04)' }} className="w-3 h-3 rounded-sm" />
+        <span style={{ background: 'rgba(52, 211, 153, 0.4)' }} className="w-3 h-3 rounded-sm" />
+        <span style={{ background: 'rgba(52, 211, 153, 0.95)' }} className="w-3 h-3 rounded-sm" />
+        <span>More</span>
+        <span className="ml-auto">red = loss · green = profit</span>
+      </div>
+
+      {hover && (
+        <div className="absolute pointer-events-none bg-slate-900/95 border border-slate-700 text-xs text-white rounded-md px-2 py-1.5 shadow-lg z-10"
+          style={{
+            left: 24 + hover.x * (cellSize + gap),
+            top: 60 + hover.y * (cellSize + gap),
+          }}
+        >
+          <div className="font-semibold">{hover.date}</div>
+          <div className={hover.profit >= 0 ? 'text-emerald-400' : hover.profit < 0 ? 'text-red-400' : 'text-slate-400'}>
+            {hover.count === 0
+              ? 'No sales'
+              : `${hover.count} sale${hover.count === 1 ? '' : 's'} · ${hover.profit >= 0 ? '+' : ''}$${hover.profit.toFixed(2)}`}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function ProfitChart({ profitChartData, chartPeriod, setChartPeriod, weeklyProfit, monthlyProfit, theme, onClose, items = [] }) {
   return (
     /* Backdrop */
     <div
@@ -106,6 +247,11 @@ export default function ProfitChart({ profitChartData, chartPeriod, setChartPeri
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Daily P&L heatmap — full width below */}
+        <div className="mt-6">
+          <ProfitHeatmap items={items} theme={theme} />
         </div>
       </div>
     </div>

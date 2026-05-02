@@ -1,58 +1,81 @@
 import React from "react";
 
 export default function TabsAndSearchbar({
-    theme, setActiveTab, activeTab, stats, searchTerm, setSearchTerm, sortBy, setSortBy
+  theme, setActiveTab, activeTab, stats, searchTerm, setSearchTerm, sortBy, setSortBy,
 }) {
-    return (
-        <div className="mb-6">
-          <div className="flex gap-3 mb-4 flex-wrap">
-            <button
-              onClick={() => setActiveTab('active')}
-              className={`px-5 py-2.5 rounded-lg font-medium transition-all ${
-                activeTab === 'active' ? theme.tabActive : theme.tabInactive
-              }`}
-            >
-              Active Items ({stats.totalActive})
-            </button>
-            <button
-              onClick={() => setActiveTab('sold')}
-              className={`px-5 py-2.5 rounded-lg font-medium transition-all ${
-                activeTab === 'sold' ? theme.tabActive : theme.tabInactive
-              }`}
-            >
-              Sold Items ({stats.totalSold})
-            </button>
-          </div>
-          
-          <div className="flex gap-4 flex-wrap">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search items..."
-              className={`flex-1 min-w-[250px] ${theme.input} rounded-lg px-4 py-2.5 text-white
-              placeholder-slate-400 focus:outline-none transition-colors border`}
-            />
-            
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className={`${theme.input} rounded-lg px-4 py-2.5 text-white focus:outline-none transition-colors border`}
-            >
-              <option value="newest" className="bg-slate-900">Newest First</option>
-              <option value="oldest" className="bg-slate-900">Oldest First</option>
-              <option value="price-high" className="bg-slate-900">Price: High to Low</option>
-              <option value="price-low" className="bg-slate-900">Price: Low to High</option>
-              {activeTab === 'sold' && (
-                <>
-                  <option value="profit-dollar-high" className="bg-slate-900">Profit $: High to Low</option>
-                  <option value="profit-dollar-low" className="bg-slate-900">Profit $: Low to High</option>
-                  <option value="profit-high" className="bg-slate-900">Profit %: High to Low</option>
-                  <option value="profit-low" className="bg-slate-900">Profit %: Low to High</option>
-                </>
-              )}
-            </select>
-          </div>
-        </div>
-    );
+  return (
+    <div className="mb-6">
+      <div className="flex gap-3 mb-4 flex-wrap">
+        <button
+          onClick={() => setActiveTab('active')}
+          className={`px-5 py-2.5 rounded-lg font-medium transition-all ${
+            activeTab === 'active' ? theme.tabActive : theme.tabInactive
+          }`}
+        >
+          Active Items ({stats.totalActive})
+        </button>
+        <button
+          onClick={() => setActiveTab('pending')}
+          className={`px-5 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 ${
+            activeTab === 'pending' ? theme.tabActive : theme.tabInactive
+          }`}
+        >
+          <span>Pending</span>
+          <span
+            className={`text-xs font-semibold rounded-full px-2 py-0.5 ${
+              stats.totalPending > 0
+                ? 'bg-amber-500/20 text-amber-300'
+                : 'bg-white/10 text-slate-400'
+            }`}
+          >
+            {stats.totalPending}
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab('sold')}
+          className={`px-5 py-2.5 rounded-lg font-medium transition-all ${
+            activeTab === 'sold' ? theme.tabActive : theme.tabInactive
+          }`}
+        >
+          Sold Items ({stats.totalSold})
+        </button>
+      </div>
+
+      <div className="flex gap-4 flex-wrap">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search items..."
+          className={`flex-1 min-w-[250px] ${theme.input} rounded-lg px-4 py-2.5 text-white
+            placeholder-slate-400 focus:outline-none transition-colors border`}
+        />
+
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className={`${theme.input} rounded-lg px-4 py-2.5 text-white focus:outline-none transition-colors border`}
+        >
+          <option value="newest" className="bg-slate-900">Newest First</option>
+          <option value="oldest" className="bg-slate-900">Oldest First</option>
+          <option value="price-high" className="bg-slate-900">Price: High to Low</option>
+          <option value="price-low" className="bg-slate-900">Price: Low to High</option>
+          {activeTab === 'pending' && (
+            <>
+              <option value="delivery-soon" className="bg-slate-900">Delivery: Soonest First</option>
+              <option value="delivery-late" className="bg-slate-900">Delivery: Latest First</option>
+            </>
+          )}
+          {activeTab === 'sold' && (
+            <>
+              <option value="profit-dollar-high" className="bg-slate-900">Profit $: High to Low</option>
+              <option value="profit-dollar-low" className="bg-slate-900">Profit $: Low to High</option>
+              <option value="profit-high" className="bg-slate-900">Profit %: High to Low</option>
+              <option value="profit-low" className="bg-slate-900">Profit %: Low to High</option>
+            </>
+          )}
+        </select>
+      </div>
+    </div>
+  );
 }
