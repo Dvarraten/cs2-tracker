@@ -1,6 +1,6 @@
 # cs2-tracker
 
-A personal P&L tracker for buying and selling **Counter-Strike 2** skins across third-party markets (CSFloat, CS.MONEY, GamerPay, SkinSwap, DMarket, Youpin, Tradeit, Facebook, …).
+A personal Profit/Loss tracker for buying and selling **Counter-Strike 2** skins across multiple third-party markets in different regions (CSFloat, Buff163, YouPin, CSMoney Market).
 
 It connects to your Steam inventory to detect incoming and outgoing items automatically, lets you log purchases that are still on trade hold, and gives you analytics on realised profit by day, week, and month.
 
