@@ -2,8 +2,12 @@
 // AddItemForm autocomplete; reuse the same cache here so manually-added
 // items can render a thumbnail by looking up their market_hash_name.
 //
-// Steam-sync items already carry iconUrl on the entity itself — for those,
-// callers can skip the lookup entirely.
+// Lookup order:
+//   1. Direct iconUrl on the entity (Steam-sync items always have one)
+//   2. Exact key match in items.json
+//   3. Token-based fuzzy match against all keys ("Quick Silver" →
+//      "Charm | Quick Silver (some wear)") so manually-typed short names
+//      still resolve to a thumbnail.
 
 import { useEffect, useState } from "react";
 
@@ -11,6 +15,8 @@ const ITEMS_URL = `${process.env.PUBLIC_URL || ""}/items.json`;
 
 let _cache = null;
 let _loadPromise = null;
+let _tokenIndex = null;       // [{ key, tokens: Set<string> }] — built lazily
+const _fuzzyCache = new Map(); // name → imageUrl | null
 
 function loadItems() {
   if (_cache) return Promise.resolve(_cache);
@@ -30,6 +36,71 @@ function loadItems() {
       return null;
     });
   return _loadPromise;
+}
+
+// ─── Fuzzy match helpers ────────────────────────────────────────────────────
+const NAME_STOPWORDS = new Set([
+  "stattrak", "souvenir", "the",
+  "factory", "new", "minimal", "wear", "field", "tested", "well", "worn",
+  "battle", "scarred",
+]);
+
+function tokenizeName(name) {
+  return (name || "")
+    .toLowerCase()
+    .replace(/★/g, " ")
+    .replace(/™/g, " ")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[|/\-.,:'"]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length >= 2 && !NAME_STOPWORDS.has(t));
+}
+
+function buildTokenIndex(data) {
+  if (_tokenIndex) return _tokenIndex;
+  const out = [];
+  for (const key of Object.keys(data)) {
+    out.push({ key, tokens: new Set(tokenizeName(key)) });
+  }
+  _tokenIndex = out;
+  return out;
+}
+
+function fuzzyLookup(data, name) {
+  if (_fuzzyCache.has(name)) return _fuzzyCache.get(name);
+  const queryTokens = tokenizeName(name);
+  if (queryTokens.length === 0) {
+    _fuzzyCache.set(name, null);
+    return null;
+  }
+  const index = buildTokenIndex(data);
+
+  let bestKey = null;
+  let bestScore = 0;
+  let bestKeyLength = Infinity;
+  for (const { key, tokens } of index) {
+    let matched = 0;
+    for (const t of queryTokens) if (tokens.has(t)) matched++;
+    const score = matched / queryTokens.length;
+    if (score < 0.5) continue;
+    // Tiebreak: prefer the shortest key (usually the cleanest, most
+    // canonical entry) so "Quick Silver" doesn't pick a Souvenir variant
+    // when a plain one exists.
+    if (
+      score > bestScore ||
+      (score === bestScore && key.length < bestKeyLength)
+    ) {
+      bestKey = key;
+      bestScore = score;
+      bestKeyLength = key.length;
+    }
+  }
+
+  const url = bestKey && data[bestKey] && data[bestKey].image
+    ? data[bestKey].image
+    : null;
+  _fuzzyCache.set(name, url);
+  return url;
 }
 
 // Returns an absolute URL for the icon image, or null if we couldn't find
@@ -55,14 +126,14 @@ export function useItemImage({ directIconUrl, name }) {
         setResolved(null);
         return;
       }
+      // 1) exact match
       const entry = data[name];
-      // ByMykel ships full URLs in `image`. Older datasets stored just the
-      // Steam icon path — handle both.
       if (entry && entry.image) {
         setResolved(entry.image);
-      } else {
-        setResolved(null);
+        return;
       }
+      // 2) fuzzy fallback (cached after the first hit per name)
+      setResolved(fuzzyLookup(data, name));
     });
     return () => {
       cancelled = true;
