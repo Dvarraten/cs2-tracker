@@ -29,9 +29,13 @@ export default function CS2TradingTracker() {
   } = useItems();
 
   const steamSync = useSteamSync();
-  const [showHandleItems, setShowHandleItems] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
+
+  const scrollToHandleItems = () => {
+    const el = document.getElementById('section-handle');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const {
     usdAmount, setUsdAmount, rmbAmount, setRmbAmount,
@@ -157,27 +161,16 @@ export default function CS2TradingTracker() {
         />
       )}
 
-      {/* Handle Items modal (Steam sync) */}
-      <HandleItemsModal
-        open={showHandleItems}
-        onClose={() => setShowHandleItems(false)}
-        theme={themeStyles}
-        items={items}
-        addItemDirect={addItemDirect}
-        sellItemDirect={sellItemDirect}
-        promotePendingItem={promotePendingItem}
-        exchangeRate={exchangeRate}
-        {...steamSync}
-        onSync={steamSync.sync}
-        onDismiss={steamSync.dismiss}
-      />
+      {/* Handle Items lives inline next to AddItemForm now (see below).
+          The modal mode is no longer mounted at the page root — header
+          button just scrolls to the inline panel. */}
 
       <Header
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         theme={themeStyles}
         onAnalyticsClick={() => setShowAnalytics(true)}
-        onHandleItemsClick={() => setShowHandleItems(true)}
+        onHandleItemsClick={scrollToHandleItems}
         pendingCount={steamSync.pendingCount}
       >
         <div onClick={e => e.stopPropagation()}>
@@ -208,6 +201,7 @@ export default function CS2TradingTracker() {
               handleUsdChange={handleUsdChange} handleRmbChange={handleRmbChange}
               theme={themeStyles}
             />
+            <RecentSales items={items} theme={themeStyles} />
             <QuickLinks
               theme={themeStyles}
               setShowQuickLinks={setShowQuickLinks}
@@ -233,12 +227,25 @@ export default function CS2TradingTracker() {
 
           {/* Main Content */}
           <div className="space-y-4">
-            <div id="section-add" className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
+            <div id="section-add" className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
               <AddItemForm
                 formData={formData} setFormData={setFormData}
                 handleAddItem={handleAddItem} theme={themeStyles}
               />
-              <RecentSales items={items} theme={themeStyles} />
+              <HandleItemsModal
+                embedded
+                open
+                onClose={() => {}}
+                theme={themeStyles}
+                items={items}
+                addItemDirect={addItemDirect}
+                sellItemDirect={sellItemDirect}
+                promotePendingItem={promotePendingItem}
+                exchangeRate={exchangeRate}
+                {...steamSync}
+                onSync={steamSync.sync}
+                onDismiss={steamSync.dismiss}
+              />
             </div>
 
             <div id="section-items" />

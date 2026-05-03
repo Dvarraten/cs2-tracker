@@ -60,11 +60,11 @@ export const useItems = () => {
     const purchaseDate = new Date();
     const quantity = Math.max(1, parseInt(formData.quantity) || 1);
     const isPending = !!formData.pending;
-    // Default expected delivery = 7-day Steam trade hold.
+    // Default expected delivery = 8-day Steam trade hold.
     const expectedDelivery = isPending
       ? formData.expectedDelivery
         ? new Date(formData.expectedDelivery).getTime()
-        : Date.now() + 7 * 24 * 60 * 60 * 1000
+        : Date.now() + 8 * 24 * 60 * 60 * 1000
       : null;
 
     const newItems = Array.from({ length: quantity }, (_, i) => ({
