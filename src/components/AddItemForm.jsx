@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { CheckCircle, Clock } from "lucide-react";
+import { CheckCircle, Clock, PackagePlus } from "lucide-react";
 import ItemAutoComplete from "./ItemAutoComplete";
 import PasteButton from "./PasteButton";
 import PlatformPicker from "./PlatformPicker";
@@ -53,8 +53,11 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
   })();
 
   return (
-    <div id="section-add" className={`${theme.card} ${theme.cardBorder} rounded-xl p-5 border`}>
-      <h3 className="text-base font-semibold text-white mb-3">Add New Item</h3>
+    <div id="section-add" className={`${theme.panel} ${theme.panelBorder} rounded-xl p-5 border`}>
+      <h3 className="text-base font-semibold text-white mb-3 flex items-center gap-2">
+        <PackagePlus size={18} className="text-indigo-400" />
+        Add New Item
+      </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
         {/* Item Name */}
@@ -91,16 +94,16 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
           <div className="flex items-center gap-2">
             <button
               onClick={() => setFormData({ ...formData, quantity: Math.max(1, (parseInt(formData.quantity) || 1) - 1) })}
-              className={`${theme.card} hover:bg-white/10 text-white w-8 h-8 rounded-lg flex items-center justify-center text-base font-bold transition-colors flex-shrink-0 border ${theme.cardBorder}`}
+              className={`${theme.card} hover:bg-white/10 text-white h-[38px] w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors flex-shrink-0 border ${theme.cardBorder}`}
             >−</button>
             <input
               type="number" min="1" max="999" value={formData.quantity}
               onChange={(e) => setFormData({ ...formData, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-              className={`w-full ${theme.input} rounded-lg px-3 py-1.5 text-sm text-white text-center placeholder-slate-500 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+              className={`w-full ${theme.input} rounded-lg px-3 py-2 text-sm text-white text-center placeholder-slate-500 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
             />
             <button
               onClick={() => setFormData({ ...formData, quantity: (parseInt(formData.quantity) || 1) + 1 })}
-              className={`${theme.card} hover:bg-white/10 text-white w-8 h-8 rounded-lg flex items-center justify-center text-base font-bold transition-colors flex-shrink-0 border ${theme.cardBorder}`}
+              className={`${theme.card} hover:bg-white/10 text-white h-[38px] w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors flex-shrink-0 border ${theme.cardBorder}`}
             >+</button>
           </div>
           {formData.quantity > 1 && (
@@ -128,7 +131,7 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
           <input
             type="text" value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            className={`w-full ${theme.input} rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors border`}
+            className={`w-full ${theme.input} rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors border`}
             placeholder="-"
           />
         </div>
@@ -175,18 +178,23 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
       <div className="flex gap-3 mt-3">
         <button
           onClick={onAdd}
-          className={`relative flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all duration-300
+          className={`relative flex items-center gap-2 pl-5 pr-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 border overflow-hidden
             ${success
-              ? 'bg-emerald-500 scale-95'
-              : formData.pending
-              ? 'bg-amber-600 hover:bg-amber-500 active:scale-95'
-              : `${theme.accentBg} hover:brightness-110 active:scale-95`
-            } text-white`}
+              ? 'bg-emerald-500 border-emerald-400 scale-95 text-white'
+              : `${theme.card} ${theme.cardBorder} text-white hover:bg-white/5 active:scale-95`
+            }`}
         >
+          {!success && (
+            <span
+              className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${
+                formData.pending ? 'bg-amber-500' : 'bg-blue-500'
+              }`}
+            />
+          )}
           {success ? (
             <><CheckCircle size={16} /><span>Added!</span></>
           ) : formData.pending ? (
-            <><Clock size={16} /><span>{formData.quantity > 1 ? `Add ${formData.quantity} Pending` : 'Add Pending'}</span></>
+            <><Clock size={16} className="text-amber-400" /><span>{formData.quantity > 1 ? `Add ${formData.quantity} Pending` : 'Add Pending'}</span></>
           ) : (
             <span>{formData.quantity > 1 ? `Add ${formData.quantity} Items` : "Add Item"}</span>
           )}

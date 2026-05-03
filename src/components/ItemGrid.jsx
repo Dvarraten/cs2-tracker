@@ -317,13 +317,30 @@ function ItemCard({
 
   return (
     <div
-      className={`${theme.panel} backdrop-blur-sm rounded-xl border ${theme.cardBorder}
+      className={`relative ${theme.panel} backdrop-blur-sm rounded-xl border ${
+        selectMode && isSelected ? 'border-red-500 ring-2 ring-red-500/40' : theme.cardBorder
+      }
         hover:border-white/20 transition-all duration-300 overflow-hidden flex
         ${exiting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
         ${soldFeedback && !item.sold ? 'ring-2 ring-emerald-400/60' : ''}
+        ${selectMode ? 'cursor-pointer' : ''}
       `}
       style={{ animationDelay: `${index * 40}ms`, animation: 'fadeSlideIn 0.3s ease both' }}
     >
+      {/* When in select mode, an overlay swallows clicks anywhere on the
+          card and toggles selection. This prevents accidental sell-input
+          interactions and lets the user pick by clicking the whole card. */}
+      {selectMode && (
+        <div
+          className="absolute inset-0 z-20"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect && onToggleSelect(item.id);
+          }}
+          aria-label={isSelected ? 'Deselect item' : 'Select item'}
+          role="button"
+        />
+      )}
       {/* Colored sidebar */}
       <div
         className="w-1 flex-shrink-0 rounded-l-xl"
@@ -364,7 +381,7 @@ function ItemCard({
               </div>
             )}
           </div>
-          {!item.sold && !selectMode && (
+          {!selectMode && (
             <HoldToDeleteButton onDelete={onDeleteProgress} deleteProgress={deleteProgress} />
           )}
         </div>

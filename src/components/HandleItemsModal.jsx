@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, ArrowDownCircle, ArrowUpCircle, RefreshCw, AlertTriangle } from 'lucide-react';
+import { X, ArrowDownCircle, ArrowUpCircle, RefreshCw, AlertTriangle, Inbox } from 'lucide-react';
 
 const STEAM_IMG_BASE = 'https://community.akamai.steamstatic.com/economy/image/';
 
@@ -539,10 +539,13 @@ export default function HandleItemsModal({
   // tree so we can wrap it in either a modal frame or an inline panel.
   const innerUi = (
     <>
-      {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/8">
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold text-white">Handle Items</h2>
+      {/* Header — title + last-sync timestamp + Sync now button on one row */}
+        <div className="flex items-center justify-between p-4 gap-3 border-b border-transparent flex-wrap">
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-semibold text-white flex items-center gap-2">
+              <Inbox size={18} className="text-amber-400" />
+              Handle Items
+            </h3>
             {pending.length > 0 && (
               <span className="bg-red-500/20 text-red-300 text-xs font-semibold px-2 py-0.5 rounded-full">
                 {pending.length} pending
@@ -550,6 +553,12 @@ export default function HandleItemsModal({
             )}
           </div>
           <div className="flex items-center gap-2">
+            <span className="text-[11px] text-slate-500">
+              {hasInitialSnapshot && lastSync
+                ? <>Last sync: {new Date(lastSync).toLocaleTimeString()}</>
+                : !hasInitialSnapshot ? 'No snapshot yet'
+                : 'never'}
+            </span>
             <button
               type="button"
               onClick={onSync}
@@ -560,42 +569,38 @@ export default function HandleItemsModal({
               <RefreshCw size={12} className={busy ? 'animate-spin' : ''} />
               {busy ? 'Syncing…' : 'Sync now'}
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-slate-400 hover:text-white p-1.5 rounded hover:bg-white/5"
-            >
-              <X size={18} />
-            </button>
+            {!embedded && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-slate-400 hover:text-white p-1.5 rounded hover:bg-white/5"
+              >
+                <X size={18} />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Status strip */}
-        <div className="px-4 py-2 text-[11px] text-slate-400 border-b border-white/8 flex items-center gap-3 flex-wrap">
-          {reachable === false ? (
-            <span className="flex items-center gap-1.5 text-amber-300">
-              <AlertTriangle size={12} />
-              Local backend not reachable on localhost:3001 — start it with{' '}
-              <code className="bg-white/5 px-1 rounded">cd server && npm start</code>
-            </span>
-          ) : !hasInitialSnapshot ? (
-            <span>Waiting for first inventory snapshot…</span>
-          ) : (
-            <>
-              <span>
-                Last sync:{' '}
-                {lastSync ? new Date(lastSync).toLocaleString() : 'never'}{' '}
-                {lastSyncOk === false && (
-                  <span className="text-red-300 ml-1">(failed: {lastError})</span>
-                )}
+        {/* Error / unreachable banner — only shown when something's off. */}
+        {(reachable === false || lastSyncOk === false) && (
+          <div className="px-4 py-2 text-[11px] flex items-center gap-1.5 flex-wrap">
+            {reachable === false ? (
+              <span className="flex items-center gap-1.5 text-amber-300">
+                <AlertTriangle size={12} />
+                Local backend not reachable on localhost:3001 — start it with{' '}
+                <code className="bg-white/5 px-1 rounded">cd server && npm start</code>
               </span>
-              <span className="opacity-60">· auto-poll every {pollIntervalMin} min</span>
-            </>
-          )}
-        </div>
+            ) : (
+              <span className="flex items-center gap-1.5 text-red-300">
+                <AlertTriangle size={12} />
+                Sync failed: {lastError}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Tabs */}
-        <div className="flex border-b border-white/8">
+        <div className="flex border-b border-transparent">
           <button
             type="button"
             onClick={() => setTab('incoming')}
@@ -716,7 +721,7 @@ export default function HandleItemsModal({
     return (
       <div
         id="section-handle"
-        className={`relative w-full ${theme.card} ${theme.cardBorder} rounded-xl border shadow-lg flex flex-col overflow-hidden self-start max-h-[640px]`}
+        className={`relative w-full h-full ${theme.panel} ${theme.panelBorder} rounded-xl border shadow-lg flex flex-col overflow-hidden`}
       >
         {innerUi}
       </div>

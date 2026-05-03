@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Coins } from "lucide-react";
 
 function CopyButton({ value }) {
   const [copied, setCopied] = useState(false);
@@ -33,7 +33,10 @@ export default function CurrencyConverter({
 }) {
   return (
     <div className={`${theme.panel} backdrop-blur-sm rounded-xl p-5 border ${theme.panelBorder}`}>
-      <h3 className="text-base font-semibold text-slate-200 mb-4">Currency Converter</h3>
+      <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+        <Coins size={18} className="text-blue-400" />
+        Currency Converter
+      </h3>
       <div className="space-y-3">
         <div>
           <label className={`block ${theme.subtext} text-xs mb-1.5`}>USD</label>
