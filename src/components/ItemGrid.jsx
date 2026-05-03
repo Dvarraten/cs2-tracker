@@ -44,12 +44,10 @@ function formatDeliveryCountdown(expectedDelivery) {
 const SELL_PLATFORMS = [
   { value: "csfloat",  label: "CSFloat",  icon: csfloatIcon,  fee: "2%"   },
   { value: "csmoney",  label: "CS.MONEY", icon: csmoneyIcon,  fee: "5%"   },
-  { value: "gamerpay", label: "GamerPay", icon: gamerpayIcon, fee: "5%"   },
+  { value: "gamerpay", label: "GamerPay", icon: gamerpayIcon, fee: "3%"   },
   { value: "skinswap", label: "SkinSwap", icon: skinswapIcon, fee: "5%"   },
   { value: "dmarket",  label: "DMarket",  icon: dmarketIcon,  fee: "5%"   },
   { value: "youpin",   label: "Youpin",   icon: youpinIcon,   fee: "0.5%" },
-  { value: "tradeit",  label: "Tradeit",  icon: null,         fee: "5%"   },
-  { value: "facebook", label: "Facebook", icon: null,         fee: "0%"   },
 ];
 
 const HOLD_DURATION = 1000;
@@ -507,6 +505,12 @@ function ItemCard({
   );
 }
 
+// Render in batches so flipping tabs with hundreds of items doesn't stall
+// the main thread — initial chunk + more as the user scrolls near the
+// bottom (via IntersectionObserver, no external lib needed).
+const INITIAL_VISIBLE = 60;
+const VISIBLE_STEP = 30;
+
 export default function ItemGrid({
   sellPlatform, setSellData, sellData, setSellPlatform,
   handleSellItem, handleDeleteItem, promotePendingItem,
@@ -515,6 +519,37 @@ export default function ItemGrid({
 }) {
   const accentHex = getThemeAccentHex(theme.accentBg + ' ' + theme.dot);
 
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const sentinelRef = useRef(null);
+
+  // Reset paging whenever the filter context changes (tab / search / sort
+  // produces a different list). We key off the count + first id so we
+  // catch reorders too without depending on the unstable array identity.
+  const listKey = `${activeTab}|${searchTerm}|${sortedItems.length}|${sortedItems[0]?.id ?? ''}`;
+  useEffect(() => {
+    setVisibleCount(INITIAL_VISIBLE);
+  }, [listKey]);
+
+  // Auto-load more when the sentinel scrolls into view.
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return;
+    if (visibleCount >= sortedItems.length) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) => Math.min(c + VISIBLE_STEP, sortedItems.length));
+        }
+      },
+      { rootMargin: '300px' }
+    );
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, [visibleCount, sortedItems.length]);
+
+  const visibleItems = sortedItems.slice(0, visibleCount);
+  const hasMore = visibleCount < sortedItems.length;
+
   const emptyText =
     searchTerm ? 'No items match your search.'
     : activeTab === 'active' ? 'No active items. Add your first purchase!'
@@ -522,39 +557,55 @@ export default function ItemGrid({
     : 'No sold items yet.';
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <style>{`
-        @keyframes fadeSlideIn {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <style>{`
+          @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
 
-      {sortedItems.map((item, index) => (
-        <ItemCard
-          key={item.id}
-          item={item}
-          index={index}
-          theme={theme}
-          accentHex={accentHex}
-          sellData={sellData}
-          setSellData={setSellData}
-          sellPlatform={sellPlatform}
-          setSellPlatform={setSellPlatform}
-          handleSellItem={handleSellItem}
-          handleDeleteItem={handleDeleteItem}
-          promotePendingItem={promotePendingItem}
-          selectMode={selectMode}
-          isSelected={selectedIds && selectedIds.has(item.id)}
-          onToggleSelect={onToggleSelect}
-        />
-      ))}
+        {visibleItems.map((item, index) => (
+          <ItemCard
+            key={item.id}
+            item={item}
+            index={index}
+            theme={theme}
+            accentHex={accentHex}
+            sellData={sellData}
+            setSellData={setSellData}
+            sellPlatform={sellPlatform}
+            setSellPlatform={setSellPlatform}
+            handleSellItem={handleSellItem}
+            handleDeleteItem={handleDeleteItem}
+            promotePendingItem={promotePendingItem}
+            selectMode={selectMode}
+            isSelected={selectedIds && selectedIds.has(item.id)}
+            onToggleSelect={onToggleSelect}
+          />
+        ))}
 
-      {sortedItems.length === 0 && (
-        <div className="col-span-full text-center py-12 text-slate-400">
-          <p className="text-lg">{emptyText}</p>
+        {sortedItems.length === 0 && (
+          <div className="col-span-full text-center py-12 text-slate-400">
+            <p className="text-lg">{emptyText}</p>
+          </div>
+        )}
+      </div>
+
+      {hasMore && (
+        <div
+          ref={sentinelRef}
+          className="w-full text-center py-6 text-xs text-slate-500"
+        >
+          Loading more… ({visibleCount} of {sortedItems.length})
         </div>
       )}
-    </div>
+      {!hasMore && sortedItems.length > INITIAL_VISIBLE && (
+        <div className="w-full text-center py-4 text-xs text-slate-600">
+          Showing all {sortedItems.length} items
+        </div>
+      )}
+    </>
   );
 }

@@ -32,7 +32,7 @@ export default function CurrencyConverter({
   handleUsdChange, handleRmbChange, theme
 }) {
   return (
-    <div className={`${theme.card} backdrop-blur-sm rounded-xl p-5 border ${theme.cardBorder}`}>
+    <div className={`${theme.panel} backdrop-blur-sm rounded-xl p-5 border ${theme.panelBorder}`}>
       <h3 className="text-base font-semibold text-slate-200 mb-4">Currency Converter</h3>
       <div className="space-y-3">
         <div>

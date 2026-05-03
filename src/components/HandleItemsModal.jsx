@@ -215,8 +215,6 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, pendingMatc
             <option value="skinswap">SkinSwap</option>
             <option value="dmarket">DMarket</option>
             <option value="youpin">Youpin</option>
-            <option value="tradeit">Tradeit</option>
-            <option value="facebook">Facebook</option>
             <option value="other">Other</option>
           </select>
           <button
@@ -367,8 +365,6 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
             <option value="skinswap">SkinSwap</option>
             <option value="dmarket">DMarket</option>
             <option value="youpin">Youpin</option>
-            <option value="tradeit">Tradeit</option>
-            <option value="facebook">Facebook</option>
             <option value="other">Other</option>
           </select>
           <button
@@ -417,14 +413,16 @@ export default function HandleItemsModal({
   sellItemDirect,
   promotePendingItem,
   exchangeRate,
+  embedded = false,
 }) {
   const [tab, setTab] = useState('incoming');
 
-  // Lock body scroll while open, like the analytics modal does
+  // Lock body scroll while open as a modal — never lock when embedded.
   useEffect(() => {
+    if (embedded) return;
     document.body.style.overflow = open ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
-  }, [open]);
+  }, [open, embedded]);
 
   // Index active (non-pending, non-sold) tracked items by market_hash_name
   // for outgoing matching and the incoming "already tracked" filter.
@@ -532,21 +530,16 @@ export default function HandleItemsModal({
     return scored.slice(0, 10);
   };
 
-  if (!open) return null;
+  if (!embedded && !open) return null;
 
   const incomingCount = visibleIncoming.length;
   const outgoingCount = outgoing.length;
 
-  return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div
-        className={`relative w-full max-w-3xl max-h-[85vh] overflow-hidden ${theme.panel || theme.card} ${theme.cardBorder} rounded-2xl border shadow-2xl flex flex-col`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
+  // The actual UI — header, status, tabs, body — captured as a single JSX
+  // tree so we can wrap it in either a modal frame or an inline panel.
+  const innerUi = (
+    <>
+      {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/8">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-white">Handle Items</h2>
@@ -716,6 +709,30 @@ export default function HandleItemsModal({
             )
           )}
         </div>
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div
+        id="section-handle"
+        className={`relative w-full ${theme.card} ${theme.cardBorder} rounded-xl border shadow-lg flex flex-col overflow-hidden self-start max-h-[640px]`}
+      >
+        {innerUi}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className={`relative w-full max-w-3xl max-h-[85vh] overflow-hidden ${theme.panel || theme.card} ${theme.cardBorder} rounded-2xl border shadow-2xl flex flex-col`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {innerUi}
       </div>
     </div>
   );
