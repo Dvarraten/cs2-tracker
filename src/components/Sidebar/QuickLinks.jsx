@@ -5,12 +5,12 @@ export default function QuickLinks({
     theme, setShowQuickLinks, showQuickLinks
 }) {
   return (
-    <div className={`${theme.card} backdrop-blur-sm rounded-xl border ${theme.cardBorder} overflow-hidden`}>
+    <div className="space-y-2">
       <button
         onClick={() => setShowQuickLinks(p => !p)}
-        className="w-full flex items-center justify-between px-5 py-4 text-white hover:bg-white/10 transition-colors"
+        className={`w-full ${theme.card} hover:bg-white/20 backdrop-blur-sm rounded-lg px-4 py-3 border ${theme.cardBorder} text-white transition-all flex items-center justify-between gap-3`}
       >
-        <span className="text-base font-semibold flex items-center gap-2">
+        <span className="flex items-center gap-3 text-sm">
           <LinkIcon size={18} />
           Quick Links
         </span>
@@ -23,7 +23,7 @@ export default function QuickLinks({
       </button>
 
       {showQuickLinks && (
-        <div className={`px-5 pb-5 space-y-2 border-t ${theme.cardBorder}`} style={{paddingTop: '12px'}}>
+        <div className="space-y-2">
           <a 
             href="https://steamcommunity.com/id/dvichen/inventory" 
             target="_blank" 

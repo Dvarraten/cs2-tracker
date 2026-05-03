@@ -217,35 +217,44 @@ export default function CS2TradingTracker() {
               </button>
               <button
                 onClick={() => exportToCSV(items)}
-                className="w-full bg-indigo-600/50 hover:bg-indigo-600/85 text-white px-4 py-3 rounded-lg flex items-center gap-3 transition-all"
+                className={`w-full ${themeStyles.card} hover:bg-white/20 backdrop-blur-sm rounded-lg px-4 py-3 border ${themeStyles.cardBorder} text-white transition-all flex items-center gap-3`}
               >
                 <Download size={18} />
-                <span className="text-sm font-medium">Export to CSV</span>
+                <span className="text-sm">Export to CSV</span>
               </button>
             </div>
           </div>
 
           {/* Main Content */}
           <div className="space-y-4">
-            <div id="section-add" className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div id="section-add" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AddItemForm
                 formData={formData} setFormData={setFormData}
                 handleAddItem={handleAddItem} theme={themeStyles}
               />
-              <HandleItemsModal
-                embedded
-                open
-                onClose={() => {}}
-                theme={themeStyles}
-                items={items}
-                addItemDirect={addItemDirect}
-                sellItemDirect={sellItemDirect}
-                promotePendingItem={promotePendingItem}
-                exchangeRate={exchangeRate}
-                {...steamSync}
-                onSync={steamSync.sync}
-                onDismiss={steamSync.dismiss}
-              />
+              {/* On lg+, AddItemForm dictates the row height — HandleItems
+                  is absolutely positioned inside its cell so its content
+                  can grow without pushing the row taller. Internal body
+                  scrolls instead. On smaller screens the grid collapses
+                  to a single column and HandleItems renders normally. */}
+              <div className="relative lg:min-h-0">
+                <div className="lg:absolute lg:inset-0">
+                  <HandleItemsModal
+                    embedded
+                    open
+                    onClose={() => {}}
+                    theme={themeStyles}
+                    items={items}
+                    addItemDirect={addItemDirect}
+                    sellItemDirect={sellItemDirect}
+                    promotePendingItem={promotePendingItem}
+                    exchangeRate={exchangeRate}
+                    {...steamSync}
+                    onSync={steamSync.sync}
+                    onDismiss={steamSync.dismiss}
+                  />
+                </div>
+              </div>
             </div>
 
             <div id="section-items" />
@@ -255,40 +264,12 @@ export default function CS2TradingTracker() {
               stats={stats}
               searchTerm={searchTerm} setSearchTerm={setSearchTerm}
               sortBy={sortBy} setSortBy={setSortBy}
+              selectMode={selectMode}
+              selectedIds={selectedIds}
+              onEnterSelectMode={() => setSelectMode(true)}
+              onCancelSelectMode={exitSelectMode}
+              onConfirmBulkDelete={confirmBulkDelete}
             />
-
-            {/* Bulk-select toolbar (only on Active / Pending tabs) */}
-            {activeTab !== 'sold' && (
-              <div className="flex items-center gap-2 mb-3">
-                {!selectMode ? (
-                  <button
-                    onClick={() => setSelectMode(true)}
-                    className={`text-xs px-3 py-1.5 rounded-md border ${themeStyles.cardBorder} ${themeStyles.card} ${themeStyles.subtext} hover:text-white transition-colors`}
-                  >
-                    Select multiple
-                  </button>
-                ) : (
-                  <>
-                    <span className={`text-xs ${themeStyles.subtext}`}>
-                      {selectedIds.size} selected
-                    </span>
-                    <button
-                      onClick={confirmBulkDelete}
-                      disabled={selectedIds.size === 0}
-                      className="text-xs px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-500 text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Delete selected
-                    </button>
-                    <button
-                      onClick={exitSelectMode}
-                      className={`text-xs px-3 py-1.5 rounded-md border ${themeStyles.cardBorder} ${themeStyles.card} ${themeStyles.subtext} hover:text-white transition-colors`}
-                    >
-                      Cancel
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
 
             <ItemGrid
               sellPlatform={sellPlatform} setSellData={setSellData}
