@@ -36,7 +36,7 @@ export default function TabsAndSearchbar({
 }) {
   return (
     <div className="mb-6">
-      <div className="flex gap-3 mb-4 flex-wrap">
+      <div className="flex gap-2 mb-2 mt-8 flex-wrap">
         <TabButton
           label="Active Items"
           count={stats.totalActive}
