@@ -191,9 +191,9 @@ export default function CS2TradingTracker() {
         </div>
 
         {/* Main Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr] gap-8">
           {/* Left Sidebar */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             <CurrencyConverter
               usdAmount={usdAmount} setUsdAmount={setUsdAmount}
               rmbAmount={rmbAmount} setRmbAmount={setRmbAmount}
@@ -207,7 +207,7 @@ export default function CS2TradingTracker() {
               setShowQuickLinks={setShowQuickLinks}
               showQuickLinks={showQuickLinks}
             />
-            <div className="space-y-3">
+            <div className="space-y-2">
               <button
                 onClick={() => setShowAnalytics(true)}
                 className={`w-full ${themeStyles.card} hover:bg-white/20 backdrop-blur-sm rounded-lg px-4 py-3 border ${themeStyles.cardBorder} text-white transition-all flex items-center gap-3`}
@@ -226,8 +226,8 @@ export default function CS2TradingTracker() {
           </div>
 
           {/* Main Content */}
-          <div className="space-y-4">
-            <div id="section-add" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <div id="section-add" className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <AddItemForm
                 formData={formData} setFormData={setFormData}
                 handleAddItem={handleAddItem} theme={themeStyles}

@@ -27,11 +27,40 @@ function tokenizeName(name) {
     .filter((t) => t.length >= 2 && !NAME_STOPWORDS.has(t));
 }
 
+// Steam names follow "<weapon> | <skin> (<wear>)". The skin part is the
+// distinguishing piece — matching on it avoids "AK-47 | Asiimov" being
+// scored as a hit against every AK-47 in the tracker.
+function getSkinPart(name) {
+  if (!name) return null;
+  // Strip the trailing "(Wear)" suffix.
+  const stripped = name.replace(/\s*\([^)]*\)\s*$/, '').trim();
+  const pipeIdx = stripped.indexOf('|');
+  if (pipeIdx === -1) return null; // no skin segment
+  return stripped.slice(pipeIdx + 1).trim();
+}
+
 // Returns a score in [0, 1] expressing how well `trackerName` lines up with
-// `steamName`. We measure coverage from the tracker side so that short
-// handles ("Quick Silver") still score 1.0 against the fuller market name
-// ("Charm | Quick Silver").
+// `steamName`. The score is the fraction of *Steam skin* tokens that appear
+// somewhere in the tracker name — that way "Asiimov" or "AK-47 Asiimov" or
+// "AK-47 | Asiimov" all match an outgoing AK-47 | Asiimov, but a tracker
+// item called "AK-47 | Redline" does NOT match (it'd score 0/1 = 0).
 function nameMatchScore(steamName, trackerName) {
+  const steamSkin = getSkinPart(steamName);
+
+  if (steamSkin) {
+    const steamSkinTokens = tokenizeName(steamSkin);
+    if (steamSkinTokens.length === 0) return 0;
+    // Compare against the tracker's skin part if it has one, otherwise the
+    // whole tracker name (so a user who typed just "Asiimov" still matches).
+    const trackerCmp = getSkinPart(trackerName) ?? trackerName;
+    const trackerTokens = new Set(tokenizeName(trackerCmp));
+    if (trackerTokens.size === 0) return 0;
+    const matched = steamSkinTokens.filter((t) => trackerTokens.has(t)).length;
+    return matched / steamSkinTokens.length;
+  }
+
+  // Steam name has no skin segment (vanilla knives, agents, stickers …).
+  // Fall back to whole-name comparison.
   const steamTokens = new Set(tokenizeName(steamName));
   const trackerTokens = tokenizeName(trackerName);
   if (trackerTokens.length === 0 || steamTokens.size === 0) return 0;

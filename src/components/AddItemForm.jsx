@@ -58,7 +58,7 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
         <PackagePlus size={18} className="text-indigo-400" />
         Add New Item
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
 
         {/* Item Name */}
         <div>
@@ -78,7 +78,7 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
             <input
               type="number" step="1" value={formData.purchasePrice}
               onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
-              className={`w-full ${theme.input} rounded-lg px-3 pr-9 py-2 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+              className={`w-full h-[40px] ${theme.input} rounded-lg px-3 pr-9 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
               placeholder="-"
             />
             <PasteButton onPaste={(val) => {
@@ -94,16 +94,16 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
           <div className="flex items-center gap-2">
             <button
               onClick={() => setFormData({ ...formData, quantity: Math.max(1, (parseInt(formData.quantity) || 1) - 1) })}
-              className={`${theme.card} hover:bg-white/10 text-white h-[38px] w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors flex-shrink-0 border ${theme.cardBorder}`}
+              className={`${theme.card} hover:bg-white/10 text-white h-[40px] w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors flex-shrink-0 border ${theme.cardBorder}`}
             >−</button>
             <input
               type="number" min="1" max="999" value={formData.quantity}
               onChange={(e) => setFormData({ ...formData, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-              className={`w-full ${theme.input} rounded-lg px-3 py-2 text-sm text-white text-center placeholder-slate-500 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+              className={`w-full h-[40px] ${theme.input} rounded-lg px-3 text-sm text-white text-center placeholder-slate-500 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
             />
             <button
               onClick={() => setFormData({ ...formData, quantity: (parseInt(formData.quantity) || 1) + 1 })}
-              className={`${theme.card} hover:bg-white/10 text-white h-[38px] w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors flex-shrink-0 border ${theme.cardBorder}`}
+              className={`${theme.card} hover:bg-white/10 text-white h-[40px] w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors flex-shrink-0 border ${theme.cardBorder}`}
             >+</button>
           </div>
           {formData.quantity > 1 && (
@@ -126,56 +126,19 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
         </div>
 
         {/* Notes */}
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 mb-2">
           <label className={`block ${theme.subtext} mb-1.5 text-xs font-medium`}>Notes</label>
           <input
             type="text" value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            className={`w-full ${theme.input} rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors border`}
+            className={`w-full h-[40px] ${theme.input} rounded-lg px-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors border`}
             placeholder="-"
           />
         </div>
-
-        {/* Trade-hold toggle + expected delivery — styled to match the
-            other pill buttons in the form */}
-        <div className="md:col-span-2 flex items-center flex-wrap gap-3 -mt-1">
-          <button
-            type="button"
-            onClick={() => {
-              const next = !formData.pending;
-              setFormData({
-                ...formData,
-                pending: next,
-                expectedDelivery: next
-                  ? formData.expectedDelivery || defaultDeliveryISO
-                  : '',
-              });
-            }}
-            title="Item is on trade hold (not yet received)"
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all
-              ${formData.pending
-                ? 'bg-amber-500 hover:bg-amber-400 border-transparent text-white'
-                : `${theme.card} ${theme.cardBorder} ${theme.subtext} hover:text-white`
-              }`}
-          >
-            <Clock size={14} />
-            <span>On trade hold</span>
-          </button>
-          {formData.pending && (
-            <div className="flex items-center gap-2">
-              <span className={`text-xs ${theme.subtext}`}>Expected delivery:</span>
-              <input
-                type="date"
-                value={formData.expectedDelivery || defaultDeliveryISO}
-                onChange={(e) => setFormData({ ...formData, expectedDelivery: e.target.value })}
-                className={`${theme.input} rounded-md px-2 py-1 text-white text-sm focus:outline-none border`}
-              />
-            </div>
-          )}
-        </div>
       </div>
 
-      <div className="flex gap-3 mt-3">
+      {/* Action row: Add Item + On trade hold toggle (+ delivery date when on) */}
+      <div className="flex gap-3 mt-3 items-center flex-wrap">
         <button
           onClick={onAdd}
           className={`relative flex items-center gap-2 pl-5 pr-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 border overflow-hidden
@@ -199,6 +162,43 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
             <span>{formData.quantity > 1 ? `Add ${formData.quantity} Items` : "Add Item"}</span>
           )}
         </button>
+
+        {/* On trade hold — same shape as Add Item, always amber side bar.
+            Toggled state is conveyed via a subtle ring + amber clock icon. */}
+        <button
+          type="button"
+          onClick={() => {
+            const next = !formData.pending;
+            setFormData({
+              ...formData,
+              pending: next,
+              expectedDelivery: next
+                ? formData.expectedDelivery || defaultDeliveryISO
+                : '',
+            });
+          }}
+          title="Item is on trade hold (not yet received)"
+          className={`relative flex items-center gap-2 pl-5 pr-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 border overflow-hidden
+            ${theme.card} ${theme.cardBorder} text-white hover:bg-white/5 active:scale-95
+            ${formData.pending ? 'ring-2 ring-amber-500/50' : ''}
+          `}
+        >
+          <span className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg bg-amber-500" />
+          <Clock size={16} className={formData.pending ? 'text-amber-300' : 'text-amber-400'} />
+          <span>On trade hold</span>
+        </button>
+
+        {formData.pending && (
+          <div className="flex items-center gap-2">
+            <span className={`text-xs ${theme.subtext}`}>Expected delivery:</span>
+            <input
+              type="date"
+              value={formData.expectedDelivery || defaultDeliveryISO}
+              onChange={(e) => setFormData({ ...formData, expectedDelivery: e.target.value })}
+              className={`${theme.input} rounded-md px-2 py-1 text-white text-sm focus:outline-none border`}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

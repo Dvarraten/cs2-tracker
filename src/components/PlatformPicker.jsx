@@ -89,8 +89,8 @@ export default function PlatformPicker({ value, onChange, theme, platforms }) {
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors
-          ${theme.card} ${theme.cardBorder} text-white hover:bg-white/5`}
+        className={`w-full h-[40px] flex items-center justify-between gap-2 px-3 rounded-lg border text-sm font-medium transition-colors
+          ${theme.input} text-white hover:bg-white/5`}
       >
         <span className="flex items-center gap-2 min-w-0">
           <PlatformIcon platform={selected} size={14} />
@@ -117,7 +117,7 @@ export default function PlatformPicker({ value, onChange, theme, platforms }) {
               width: pos.width,
               zIndex: 100,
             }}
-            className={`${theme.card} border ${theme.cardBorder} rounded-lg shadow-xl max-h-60 overflow-y-auto`}
+            className={`${theme.panel} border ${theme.panelBorder} rounded-lg shadow-xl max-h-60 overflow-y-auto`}
             role="listbox"
           >
             {platforms.map((p) => {
