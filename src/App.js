@@ -3,6 +3,7 @@ import { Trash2, TrendingUp, BarChart3, Download } from 'lucide-react';
 import { themes } from './themes/themes';
 import './index.css';
 
+import { useAuth } from './hooks/useAuth';
 import { useItems } from './hooks/useItems';
 import { useExchangeRate } from './hooks/useExchangeRate';
 import { useChartData } from './hooks/useChartData';
@@ -22,11 +23,13 @@ import Header from './components/Header';
 import HandleItemsModal from './components/HandleItemsModal';
 
 export default function CS2TradingTracker() {
+  const { user, loading: authLoading, login, logout } = useAuth();
+
   const {
     items, formData, setFormData, sellData, setSellData,
     sellPlatform, setSellPlatform, handleAddItem, handleSellItem, handleDeleteItem,
     addItemDirect, sellItemDirect, promotePendingItem, handleBulkDelete,
-  } = useItems();
+  } = useItems(user?.steamId);
 
   const steamSync = useSteamSync();
   const [selectMode, setSelectMode] = useState(false);
@@ -172,6 +175,9 @@ export default function CS2TradingTracker() {
         onAnalyticsClick={() => setShowAnalytics(true)}
         onHandleItemsClick={scrollToHandleItems}
         pendingCount={steamSync.pendingCount}
+        user={user}
+        onLogin={login}
+        onLogout={logout}
       >
         <div onClick={e => e.stopPropagation()}>
           <ThemePicker

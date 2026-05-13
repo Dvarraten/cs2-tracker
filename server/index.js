@@ -26,6 +26,24 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
+const { setSessionCookie, clearSessionCookie, getSessionSteamId } = require('./lib/auth');
+
+// Lazy Redis client (only created when Upstash env vars are present).
+let _redis = null;
+async function getRedis() {
+  if (_redis) return _redis;
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return null;
+  const { Redis } = await import('@upstash/redis');
+  _redis = new Redis({ url, token });
+  return _redis;
+}
+
+function itemsKey(steamId) {
+  return `cs2-tracker:items:${steamId}`;
+}
+
 // ─── Config ─────────────────────────────────────────────────────────────────
 const STEAM_ID = (process.env.STEAM_ID || '').trim();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -218,10 +236,16 @@ function buildSnapshotFromInventory(data) {
     const desc = descIndex.get(`${a.classid}_${a.instanceid}`);
     if (!desc) continue;
 
-    // Skip non-marketable items (service medals, pins, default-grade,
-    // graffiti boxes…). Trade-locked skins keep marketable: 1, so this
-    // filter doesn't hide newly-purchased items.
-    if (desc.marketable === 0) continue;
+    // Skip permanently non-marketable items (service medals, pins, graffiti,
+    // default-grade junk). These never get a market_tradable_restriction.
+    //
+    // Items on trade hold are temporarily non-marketable but carry a
+    // market_tradable_restriction > 0, so we keep them — this is how we
+    // detect incoming items before the hold expires.
+    const temporarilyRestricted =
+      (desc.market_tradable_restriction > 0) ||
+      (desc.market_marketable_restriction > 0);
+    if (desc.marketable === 0 && !temporarilyRestricted) continue;
 
     snapshot[a.assetid] = {
       marketHashName: desc.market_hash_name || desc.name || '(unknown)',
@@ -355,6 +379,84 @@ function buildStatusPayload() {
   };
 }
 
+// ─── Auth routes ────────────────────────────────────────────────────────────
+const APP_URL = (process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+
+app.get('/api/auth/steam', (_req, res) => {
+  const returnTo = `${APP_URL}/api/auth/callback`;
+  const params = new URLSearchParams({
+    'openid.ns': 'http://specs.openid.net/auth/2.0',
+    'openid.mode': 'checkid_setup',
+    'openid.return_to': returnTo,
+    'openid.realm': APP_URL + '/',
+    'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
+    'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
+  });
+  res.redirect(302, `https://steamcommunity.com/openid/login?${params}`);
+});
+
+app.get('/api/auth/callback', async (req, res) => {
+  const query = req.query || {};
+  const verifyParams = new URLSearchParams({ ...query, 'openid.mode': 'check_authentication' });
+  let text;
+  try {
+    const verifyRes = await fetch('https://steamcommunity.com/openid/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: verifyParams.toString(),
+    });
+    text = await verifyRes.text();
+  } catch {
+    return res.status(502).send('Could not reach Steam to verify login');
+  }
+  if (!text.includes('is_valid:true')) return res.status(401).send('Steam login validation failed');
+
+  const claimedId = query['openid.claimed_id'] || '';
+  const match = claimedId.match(/\/(\d{17})$/);
+  if (!match) return res.status(400).send('Invalid Steam ID');
+  const steamId = match[1];
+
+  const allowedId = (process.env.STEAM_ID || '').trim();
+  if (allowedId && steamId !== allowedId) return res.status(403).send('This tracker is private');
+
+  setSessionCookie(res, steamId);
+  res.redirect(302, APP_URL + '/');
+});
+
+app.get('/api/auth/me', (req, res) => {
+  const steamId = getSessionSteamId(req);
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ user: steamId ? { steamId } : null });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  clearSessionCookie(res);
+  res.json({ ok: true });
+});
+
+// ─── Items (cloud storage) ───────────────────────────────────────────────────
+app.get('/api/items', async (req, res) => {
+  const steamId = getSessionSteamId(req);
+  if (!steamId) return res.status(401).json({ error: 'not authenticated' });
+  const redis = await getRedis();
+  if (!redis) return res.status(503).json({ error: 'Redis not configured' });
+  const items = await redis.get(itemsKey(steamId));
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ items: Array.isArray(items) ? items : [] });
+});
+
+app.post('/api/items', async (req, res) => {
+  const steamId = getSessionSteamId(req);
+  if (!steamId) return res.status(401).json({ error: 'not authenticated' });
+  const { items } = req.body || {};
+  if (!Array.isArray(items)) return res.status(400).json({ error: 'items must be an array' });
+  const redis = await getRedis();
+  if (!redis) return res.status(503).json({ error: 'Redis not configured' });
+  await redis.set(itemsKey(steamId), items);
+  res.json({ ok: true, count: items.length });
+});
+
+// ─── Status + inventory routes ───────────────────────────────────────────────
 app.get('/', (_req, res) => res.json(buildStatusPayload()));
 app.get('/api', (_req, res) => res.json(buildStatusPayload()));
 

@@ -7,6 +7,9 @@ export default function Header({
   onAnalyticsClick,
   onHandleItemsClick,
   pendingCount = 0,
+  user,
+  onLogin,
+  onLogout,
   children,
 }) {
   const scrollTo = (id) => {
@@ -66,6 +69,21 @@ export default function Header({
             className={`hidden md:block border rounded-lg px-3 py-1.5 text-sm focus:outline-none transition-colors w-52 ${theme?.input || "bg-white/5 border-white/10 text-white placeholder-slate-500"}`}
           />
           {children}
+          {user ? (
+            <button
+              onClick={onLogout}
+              className="text-slate-400 hover:text-white hover:bg-white/8 px-3 py-1.5 rounded-lg text-sm transition-all"
+            >
+              Sign out
+            </button>
+          ) : (
+            <button
+              onClick={onLogin}
+              className="text-slate-400 hover:text-white hover:bg-white/8 px-3 py-1.5 rounded-lg text-sm transition-all"
+            >
+              Sign in
+            </button>
+          )}
         </div>
       </div>
     </header>

@@ -130,15 +130,16 @@ export function buildSnapshotFromInventory(data) {
     const desc = descIndex.get(`${a.classid}_${a.instanceid}`);
     if (!desc) continue;
 
-    // Skip items Steam itself classifies as non-marketable: service medals,
-    // pins, graffiti boxes, default-grade items, etc. These have no market
-    // price, so tracking them as P&L positions makes no sense.
+    // Skip permanently non-marketable items (service medals, pins, graffiti,
+    // default-grade junk). These never get a market_tradable_restriction.
     //
-    // Important: this is NOT the same as `tradable === 0`. Trade-locked
-    // skins (e.g. just-purchased items with a 7-day cooldown) keep
-    // `marketable: 1` and `market_tradable_restriction: 7`, so they pass
-    // through this filter correctly.
-    if (desc.marketable === 0) continue;
+    // Items on trade hold are temporarily non-marketable but carry a
+    // market_tradable_restriction > 0, so we keep them — this is how we
+    // detect incoming items before the hold expires.
+    const temporarilyRestricted =
+      (desc.market_tradable_restriction > 0) ||
+      (desc.market_marketable_restriction > 0);
+    if (desc.marketable === 0 && !temporarilyRestricted) continue;
 
     snapshot[a.assetid] = {
       marketHashName: desc.market_hash_name || desc.name || '(unknown)',

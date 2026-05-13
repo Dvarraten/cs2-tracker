@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getPlatformFee } from '../utils/platformFees';
 
-export const useItems = () => {
+export const useItems = (steamId) => {
   const [items, setItems] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const saveTimerRef = useRef(null);
   const [formData, setFormData] = useState({
     itemName: '',
     purchasePrice: '',
@@ -17,42 +18,32 @@ export const useItems = () => {
   const [sellData, setSellData] = useState({});
   const [sellPlatform, setSellPlatform] = useState({});
 
-  // Load items from localStorage on mount
+  // Load items from API on mount (only when authenticated)
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('cs2-trading-items');
-      const backup = sessionStorage.getItem('cs2-trading-backup');
+    if (!steamId) return;
+    setIsLoaded(false);
+    fetch('/api/items')
+      .then(r => r.json())
+      .then(({ items }) => {
+        setItems(Array.isArray(items) ? items : []);
+        setIsLoaded(true);
+      })
+      .catch(() => setIsLoaded(true));
+  }, [steamId]);
 
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setItems(parsed);
-        console.log('Data loaded from localStorage:', parsed.length, 'items');
-      } else if (backup) {
-        const parsed = JSON.parse(backup);
-        setItems(parsed);
-        console.log('Data recovered from session backup:', parsed.length, 'items');
-      } else {
-        console.log('No saved data found - starting fresh');
-      }
-    } catch (error) {
-      console.error('Failed to load data:', error);
-    }
-    setIsLoaded(true);
-  }, []);
-
-  // Save items to localStorage whenever they change (but only after initial load)
+  // Save items to API (debounced 1.5s) whenever they change after initial load
   useEffect(() => {
-    if (!isLoaded) return;
-
-    try {
-      localStorage.setItem('cs2-trading-items', JSON.stringify(items));
-      console.log('Data saved to localStorage:', items.length, 'items');
-      sessionStorage.setItem('cs2-trading-backup', JSON.stringify(items));
-    } catch (error) {
-      console.error('Failed to save data:', error);
-      alert('Warning: Unable to save data. Your browser may be blocking localStorage.');
-    }
-  }, [items, isLoaded]);
+    if (!isLoaded || !steamId) return;
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      fetch('/api/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+      }).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(saveTimerRef.current);
+  }, [items, isLoaded, steamId]);
 
   const handleAddItem = () => {
     if (!formData.itemName || !formData.purchasePrice) return;
