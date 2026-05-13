@@ -309,7 +309,7 @@ async function runSync() {
       const response = await fetchTradeHistory(state.lastTradeTime || 0);
 
       const descIndex = buildDescIndex(response.descriptions);
-      const trades = (response.trades || []).filter(t => t.status === 3);
+      const trades = (response.trades || []).filter(t => t.status === 3 || t.status === 11);
       for (const trade of trades) {
         for (const [k, v] of buildDescIndex(trade.descriptions)) {
           if (!descIndex.has(k)) descIndex.set(k, v);

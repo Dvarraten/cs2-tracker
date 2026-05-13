@@ -7,6 +7,9 @@ export default async function handler(req, res) {
     const response = await fetchTradeHistory(process.env.STEAM_API_KEY, 0);
     return res.json({
       tradeCount: (response.trades || []).length,
+      statusBreakdown: (response.trades || []).reduce((acc, t) => {
+        acc[t.status] = (acc[t.status] || 0) + 1; return acc;
+      }, {}),
       trades: (response.trades || []).slice(0, 5).map(t => ({
         tradeid: t.tradeid,
         time_init: t.time_init,
