@@ -146,6 +146,36 @@ export function buildSnapshotFromInventory(data) {
   return snapshot;
 }
 
+// Fetch completed trades from the Steam Web API after a given Unix timestamp.
+// Requires STEAM_API_KEY. Returns the raw `response` object from Steam.
+export async function fetchTradeHistory(apiKey, afterTime = 0) {
+  if (!apiKey) throw new Error('STEAM_API_KEY env var is not set');
+
+  const params = new URLSearchParams({
+    key: apiKey,
+    max_trades: '100',
+    include_failed: '0',
+    get_descriptions: '1',
+    language: 'english',
+    navigating_back: '0',
+  });
+  if (afterTime > 0) params.set('start_after_time', String(afterTime));
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const res = await fetch(
+      `https://api.steampowered.com/IEconService/GetTradeHistory/v1/?${params}`
+    );
+    if (!res.ok) throw new Error(`Steam API HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.response) throw new Error('Steam API returned no response object');
+    return data.response;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function diffSnapshots(prev, next) {
   const incoming = [];
   const outgoing = [];

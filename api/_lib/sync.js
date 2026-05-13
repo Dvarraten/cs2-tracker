@@ -1,54 +1,42 @@
-// Shared sync orchestration. Used by both the manual sync endpoint and the
-// lazy-sync path inside the state endpoint.
-
 import { loadState, saveState, DEFAULT_STATE } from './state.js';
-import {
-  fetchInventory,
-  buildSnapshotFromInventory,
-  diffSnapshots,
-} from './steam.js';
+import { fetchTradeHistory } from './steam.js';
 
 export const POLL_INTERVAL_MIN = 5;
 export const STALE_THRESHOLD_MS = POLL_INTERVAL_MIN * 60 * 1000;
-
-// Soft lock so two concurrent requests (e.g. the every-30s frontend poll
-// firing twice) don't both run a full sync. The lock is just a timestamp
-// inside the state blob; we treat it as "held" if it's < 90 s old.
 const LOCK_TTL_MS = 90 * 1000;
 
 export function isStateStale(state) {
   if (!state.lastSync) return true;
-  const ageMs = Date.now() - new Date(state.lastSync).getTime();
-  return ageMs > STALE_THRESHOLD_MS;
+  return Date.now() - new Date(state.lastSync).getTime() > STALE_THRESHOLD_MS;
+}
+
+function buildDescIndex(descriptions = []) {
+  const index = new Map();
+  for (const d of descriptions) index.set(`${d.classid}_${d.instanceid}`, d);
+  return index;
 }
 
 export async function runSync({ force = false } = {}) {
   const startedAt = new Date().toISOString();
   const startedAtMs = Date.now();
-
   const state = await loadState();
 
-  // Honour soft lock unless caller asked for force=true (manual sync button).
-  if (!force) {
-    if (state.syncLockAt && startedAtMs - state.syncLockAt < LOCK_TTL_MS) {
-      return { ok: true, skipped: 'locked', state };
-    }
+  if (!force && state.syncLockAt && startedAtMs - state.syncLockAt < LOCK_TTL_MS) {
+    return { ok: true, skipped: 'locked', state };
   }
 
-  // Take the lock immediately so concurrent requests bow out.
   state.syncLockAt = startedAtMs;
   await saveState(state);
 
   try {
-    const data = await fetchInventory(process.env.STEAM_ID);
-    const nextSnapshot = buildSnapshotFromInventory(data);
+    const apiKey = process.env.STEAM_API_KEY;
 
+    // First run: record current time as baseline, generate no events.
     if (!state.hasInitialSnapshot) {
-      // First sync — seed silently, no events.
       const next = {
         ...state,
-        snapshot: nextSnapshot,
         hasInitialSnapshot: true,
+        lastTradeTime: Math.floor(Date.now() / 1000),
         lastSync: startedAt,
         lastSyncOk: true,
         lastError: null,
@@ -58,39 +46,62 @@ export async function runSync({ force = false } = {}) {
       return { ok: true, initial: true, state: next };
     }
 
-    const { incoming, outgoing } = diffSnapshots(state.snapshot, nextSnapshot);
+    const response = await fetchTradeHistory(apiKey, state.lastTradeTime || 0);
 
-    const seen = new Set(state.pending.map((p) => `${p.type}:${p.assetid}`));
-    const append = [];
-    for (const item of incoming) {
-      const key = `incoming:${item.assetid}`;
-      if (!seen.has(key)) {
-        append.push({ type: 'incoming', detectedAt: startedAt, ...item });
-        seen.add(key);
+    // Descriptions may be top-level or per-trade depending on Steam API version.
+    const descIndex = buildDescIndex(response.descriptions);
+    const trades = (response.trades || []).filter(t => t.status === 3);
+    for (const trade of trades) {
+      for (const [k, v] of buildDescIndex(trade.descriptions)) {
+        if (!descIndex.has(k)) descIndex.set(k, v);
       }
     }
-    for (const item of outgoing) {
-      const key = `outgoing:${item.assetid}`;
-      if (!seen.has(key)) {
-        append.push({ type: 'outgoing', detectedAt: startedAt, ...item });
-        seen.add(key);
-      }
+
+    const seen = new Set(state.pending.map(p => `${p.type}:${p.assetid}`));
+    const append = [];
+    let maxTime = state.lastTradeTime || 0;
+
+    for (const trade of trades) {
+      maxTime = Math.max(maxTime, trade.time_init || 0);
+
+      const addAssets = (assets, type) => {
+        for (const asset of assets || []) {
+          if (Number(asset.appid) !== 730) continue;
+          if (String(asset.contextid) !== '2') continue;
+          const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
+          if (!desc || !desc.marketable) continue;
+          // new_assetid is the item's ID in your inventory after the trade completed.
+          const assetid = asset.new_assetid || asset.assetid;
+          const key = `${type}:${assetid}`;
+          if (seen.has(key)) continue;
+          append.push({
+            type,
+            assetid,
+            marketHashName: desc.market_hash_name || desc.name || '(unknown)',
+            iconUrl: desc.icon_url || '',
+            detectedAt: new Date((trade.time_init || 0) * 1000).toISOString(),
+          });
+          seen.add(key);
+        }
+      };
+
+      addAssets(trade.assets_received, 'incoming');
+      addAssets(trade.assets_given, 'outgoing');
     }
 
     const next = {
       ...state,
       pending: state.pending.concat(append),
-      snapshot: nextSnapshot,
+      lastTradeTime: maxTime,
       lastSync: startedAt,
       lastSyncOk: true,
       lastError: null,
       syncLockAt: 0,
     };
     await saveState(next);
-
     return { ok: true, added: append.length, state: next };
+
   } catch (err) {
-    // Release lock + record the failure so the frontend can show it.
     const failed = {
       ...state,
       lastSync: startedAt,
@@ -103,9 +114,5 @@ export async function runSync({ force = false } = {}) {
   }
 }
 
-// Default export so functions can `import runSync from '../_lib/sync.js'`
-// if they prefer that style.
 export default runSync;
-
-// Re-export DEFAULT_STATE for convenience.
 export { DEFAULT_STATE };

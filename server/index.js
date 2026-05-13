@@ -95,9 +95,7 @@ const DEFAULT_STATE = {
   lastSyncOk: null,
   lastError: null,
   hasInitialSnapshot: false,
-  // assetid -> { marketHashName, iconUrl }
-  snapshot: {},
-  // [{ type: 'incoming'|'outgoing', assetid, marketHashName, iconUrl, detectedAt }]
+  lastTradeTime: 0,
   pending: [],
 };
 
@@ -251,45 +249,44 @@ async function fetchInventory() {
   };
 }
 
-function buildSnapshotFromInventory(data) {
-  const descIndex = new Map();
-  for (const d of data.descriptions || []) {
-    descIndex.set(`${d.classid}_${d.instanceid}`, d);
-  }
-  const snapshot = {};
-  for (const a of data.assets || []) {
-    const desc = descIndex.get(`${a.classid}_${a.instanceid}`);
-    if (!desc) continue;
+// ─── Trade history fetcher ──────────────────────────────────────────────────
+async function fetchTradeHistory(afterTime = 0) {
+  const apiKey = (process.env.STEAM_API_KEY || '').trim();
+  if (!apiKey) throw new Error('STEAM_API_KEY is not set in server/.env');
 
-    // Skip permanently non-marketable items (service medals, pins, graffiti,
-    // default-grade junk). These never get a market_tradable_restriction.
-    //
-    // Items on trade hold are temporarily non-marketable but carry a
-    // market_tradable_restriction > 0, so we keep them — this is how we
-    // detect incoming items before the hold expires.
-    if (desc.marketable === 0 && !(desc.market_tradable_restriction > 0)) continue;
+  const params = new URLSearchParams({
+    key: apiKey,
+    max_trades: '100',
+    include_failed: '0',
+    get_descriptions: '1',
+    language: 'english',
+    navigating_back: '0',
+  });
+  if (afterTime > 0) params.set('start_after_time', String(afterTime));
 
-    snapshot[a.assetid] = {
-      marketHashName: desc.market_hash_name || desc.name || '(unknown)',
-      iconUrl: desc.icon_url || '',
-    };
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const res = await fetch(
+      `https://api.steampowered.com/IEconService/GetTradeHistory/v1/?${params}`,
+      { signal: ctrl.signal }
+    );
+    if (!res.ok) throw new Error(`Steam API HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.response) throw new Error('Steam API returned no response object');
+    return data.response;
+  } finally {
+    clearTimeout(timer);
   }
-  return snapshot;
 }
 
-// ─── Diff + state update ───────────────────────────────────────────────────
-function diffSnapshots(prev, next) {
-  const incoming = [];
-  const outgoing = [];
-  for (const [assetid, info] of Object.entries(next)) {
-    if (!prev[assetid]) incoming.push({ assetid, ...info });
-  }
-  for (const [assetid, info] of Object.entries(prev)) {
-    if (!next[assetid]) outgoing.push({ assetid, ...info });
-  }
-  return { incoming, outgoing };
+function buildDescIndex(descriptions = []) {
+  const index = new Map();
+  for (const d of descriptions) index.set(`${d.classid}_${d.instanceid}`, d);
+  return index;
 }
 
+// ─── Sync ───────────────────────────────────────────────────────────────────
 let syncInFlight = null;
 
 async function runSync() {
@@ -297,60 +294,67 @@ async function runSync() {
   syncInFlight = (async () => {
     const startedAt = new Date().toISOString();
     try {
-      const data = await fetchInventory();
-      const nextSnapshot = buildSnapshotFromInventory(data);
-
+      // First run: record current time, generate no events.
       if (!state.hasInitialSnapshot) {
-        // First successful sync — seed snapshot, do NOT generate events
-        // (otherwise everything you already own would flood the modal).
-        state.snapshot = nextSnapshot;
         state.hasInitialSnapshot = true;
+        state.lastTradeTime = Math.floor(Date.now() / 1000);
         state.lastSync = startedAt;
         state.lastSyncOk = true;
         state.lastError = null;
         await persistState();
-        console.log(
-          `[sync] initial snapshot taken — ${Object.keys(nextSnapshot).length} items`
-        );
+        console.log('[sync] initialized — tracking trades from now');
         return { ok: true, initial: true };
       }
 
-      const { incoming, outgoing } = diffSnapshots(state.snapshot, nextSnapshot);
+      const response = await fetchTradeHistory(state.lastTradeTime || 0);
 
-      // Append new pending events, dedup by (type, assetid).
-      const seen = new Set(
-        state.pending.map((p) => `${p.type}:${p.assetid}`)
-      );
-      const append = [];
-      for (const item of incoming) {
-        const key = `incoming:${item.assetid}`;
-        if (!seen.has(key)) {
-          append.push({ type: 'incoming', detectedAt: startedAt, ...item });
-          seen.add(key);
+      const descIndex = buildDescIndex(response.descriptions);
+      const trades = (response.trades || []).filter(t => t.status === 3);
+      for (const trade of trades) {
+        for (const [k, v] of buildDescIndex(trade.descriptions)) {
+          if (!descIndex.has(k)) descIndex.set(k, v);
         }
       }
-      for (const item of outgoing) {
-        const key = `outgoing:${item.assetid}`;
-        if (!seen.has(key)) {
-          append.push({ type: 'outgoing', detectedAt: startedAt, ...item });
-          seen.add(key);
-        }
+
+      const seen = new Set(state.pending.map(p => `${p.type}:${p.assetid}`));
+      const append = [];
+      let maxTime = state.lastTradeTime || 0;
+
+      for (const trade of trades) {
+        maxTime = Math.max(maxTime, trade.time_init || 0);
+
+        const addAssets = (assets, type) => {
+          for (const asset of assets || []) {
+            if (Number(asset.appid) !== 730) continue;
+            if (String(asset.contextid) !== '2') continue;
+            const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
+            if (!desc || !desc.marketable) continue;
+            const assetid = asset.new_assetid || asset.assetid;
+            const key = `${type}:${assetid}`;
+            if (seen.has(key)) continue;
+            append.push({
+              type,
+              assetid,
+              marketHashName: desc.market_hash_name || desc.name || '(unknown)',
+              iconUrl: desc.icon_url || '',
+              detectedAt: new Date((trade.time_init || 0) * 1000).toISOString(),
+            });
+            seen.add(key);
+          }
+        };
+
+        addAssets(trade.assets_received, 'incoming');
+        addAssets(trade.assets_given, 'outgoing');
       }
 
       state.pending = state.pending.concat(append);
-      state.snapshot = nextSnapshot;
+      state.lastTradeTime = maxTime;
       state.lastSync = startedAt;
       state.lastSyncOk = true;
       state.lastError = null;
       await persistState();
 
-      if (append.length) {
-        console.log(
-          `[sync] ${incoming.length} incoming, ${outgoing.length} outgoing (added ${append.length} pending)`
-        );
-      } else {
-        console.log('[sync] no changes');
-      }
+      console.log(append.length ? `[sync] ${append.length} new trade events` : '[sync] no new trades');
       return { ok: true, added: append.length };
     } catch (err) {
       state.lastSync = startedAt;

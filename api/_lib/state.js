@@ -22,7 +22,7 @@ export const DEFAULT_STATE = {
   lastSyncOk: null,
   lastError: null,
   hasInitialSnapshot: false,
-  snapshot: {},
+  lastTradeTime: 0,
   pending: [],
   syncLockAt: 0,
 };
