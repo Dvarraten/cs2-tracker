@@ -70,6 +70,10 @@ export function publicState(state, extras = {}) {
     lastSyncOk: state.lastSyncOk,
     lastError: state.lastError,
     hasInitialSnapshot: state.hasInitialSnapshot,
+    lastTradeTime: state.lastTradeTime,
+    lastTradeTimeHuman: state.lastTradeTime
+      ? new Date(state.lastTradeTime * 1000).toISOString()
+      : null,
     pending: state.pending,
     pollIntervalMin: 5,
     ...extras,
