@@ -297,7 +297,7 @@ async function runSync() {
       // First run: record current time, generate no events.
       if (!state.hasInitialSnapshot) {
         state.hasInitialSnapshot = true;
-        state.lastTradeTime = Math.floor(Date.now() / 1000);
+        state.lastTradeTime = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
         state.lastSync = startedAt;
         state.lastSyncOk = true;
         state.lastError = null;

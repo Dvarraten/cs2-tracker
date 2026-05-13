@@ -36,7 +36,7 @@ export async function runSync({ force = false } = {}) {
       const next = {
         ...state,
         hasInitialSnapshot: true,
-        lastTradeTime: Math.floor(Date.now() / 1000),
+        lastTradeTime: Math.floor(Date.now() / 1000) - 24 * 60 * 60,
         lastSync: startedAt,
         lastSyncOk: true,
         lastError: null,
