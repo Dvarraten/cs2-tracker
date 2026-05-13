@@ -18,31 +18,44 @@ export const useItems = (steamId) => {
   const [sellData, setSellData] = useState({});
   const [sellPlatform, setSellPlatform] = useState({});
 
-  // Load items from API on mount (only when authenticated)
+  // Load items — from API when logged in, localStorage otherwise
   useEffect(() => {
-    if (!steamId) return;
     setIsLoaded(false);
-    fetch('/api/items')
-      .then(r => r.json())
-      .then(({ items }) => {
-        setItems(Array.isArray(items) ? items : []);
-        setIsLoaded(true);
-      })
-      .catch(() => setIsLoaded(true));
+    if (steamId) {
+      fetch('/api/items')
+        .then(r => r.json())
+        .then(({ items }) => {
+          setItems(Array.isArray(items) ? items : []);
+          setIsLoaded(true);
+        })
+        .catch(() => setIsLoaded(true));
+    } else {
+      try {
+        const saved = localStorage.getItem('cs2-trading-items');
+        if (saved) setItems(JSON.parse(saved));
+      } catch {}
+      setIsLoaded(true);
+    }
   }, [steamId]);
 
-  // Save items to API (debounced 1.5s) whenever they change after initial load
+  // Save items — API (debounced) when logged in, localStorage otherwise
   useEffect(() => {
-    if (!isLoaded || !steamId) return;
-    clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      fetch('/api/items', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
-      }).catch(() => {});
-    }, 1500);
-    return () => clearTimeout(saveTimerRef.current);
+    if (!isLoaded) return;
+    if (steamId) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        fetch('/api/items', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items }),
+        }).catch(() => {});
+      }, 1500);
+      return () => clearTimeout(saveTimerRef.current);
+    } else {
+      try {
+        localStorage.setItem('cs2-trading-items', JSON.stringify(items));
+      } catch {}
+    }
   }, [items, isLoaded, steamId]);
 
   const handleAddItem = () => {

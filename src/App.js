@@ -4,6 +4,7 @@ import { themes } from './themes/themes';
 import './index.css';
 
 import { useAuth } from './hooks/useAuth';
+import WelcomeModal from './components/WelcomeModal';
 import { useItems } from './hooks/useItems';
 import { useExchangeRate } from './hooks/useExchangeRate';
 import { useChartData } from './hooks/useChartData';
@@ -23,7 +24,11 @@ import Header from './components/Header';
 import HandleItemsModal from './components/HandleItemsModal';
 
 export default function CS2TradingTracker() {
-  const { user, login, logout } = useAuth();
+  const { user, loading: authLoading, login, logout } = useAuth();
+  const [authDismissed, setAuthDismissed] = useState(
+    () => !!localStorage.getItem('cs2-auth-dismissed')
+  );
+  const showWelcome = !authLoading && !user && !authDismissed;
 
   const {
     items, formData, setFormData, sellData, setSellData,
@@ -149,6 +154,16 @@ export default function CS2TradingTracker() {
       onClick={() => showThemePicker && setShowThemePicker(false)}
     >
       <div className={`fixed inset-0 -z-10 pointer-events-none ${themeStyles.bg}`} />
+
+      {showWelcome && (
+        <WelcomeModal
+          onLogin={login}
+          onContinue={() => {
+            localStorage.setItem('cs2-auth-dismissed', '1');
+            setAuthDismissed(true);
+          }}
+        />
+      )}
 
       {/* Analytics modal */}
       {showAnalytics && (

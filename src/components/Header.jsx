@@ -1,14 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
 import { BarChart3, LogOut, ExternalLink, Download, User } from "lucide-react";
+import steamLogo from "../assets/platforms/steam.png";
 
 function SteamIcon({ className }) {
-  return (
-    <img
-      src="https://store.akamai.steamstatic.com/public/shared/images/header/logo_steam.svg"
-      alt=""
-      className={className}
-    />
-  );
+  return <img src={steamLogo} alt="" className={className} />;
 }
 
 export default function Header({
@@ -172,7 +167,7 @@ export default function Header({
               onClick={onLogin}
               className="flex items-center gap-2 bg-[#1b2838] hover:bg-[#2a475e] border border-white/10 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
             >
-              <SteamIcon className="h-4 w-4 brightness-0 invert" />
+              <SteamIcon className="h-4 w-4" />
               Sign in
             </button>
           )}
