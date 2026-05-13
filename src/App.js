@@ -178,6 +178,7 @@ export default function CS2TradingTracker() {
         user={user}
         onLogin={login}
         onLogout={logout}
+        onExportCSV={() => exportToCSV(items)}
       >
         <div onClick={e => e.stopPropagation()}>
           <ThemePicker

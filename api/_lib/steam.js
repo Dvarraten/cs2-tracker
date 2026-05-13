@@ -136,10 +136,7 @@ export function buildSnapshotFromInventory(data) {
     // Items on trade hold are temporarily non-marketable but carry a
     // market_tradable_restriction > 0, so we keep them — this is how we
     // detect incoming items before the hold expires.
-    const temporarilyRestricted =
-      (desc.market_tradable_restriction > 0) ||
-      (desc.market_marketable_restriction > 0);
-    if (desc.marketable === 0 && !temporarilyRestricted) continue;
+    if (desc.marketable === 0 && !(desc.market_tradable_restriction > 0)) continue;
 
     snapshot[a.assetid] = {
       marketHashName: desc.market_hash_name || desc.name || '(unknown)',

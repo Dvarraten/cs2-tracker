@@ -44,6 +44,31 @@ function itemsKey(steamId) {
   return `cs2-tracker:items:${steamId}`;
 }
 
+async function getSteamProfile(steamId) {
+  const redis = await getRedis();
+  const key = `cs2-tracker:profile:${steamId}`;
+  if (redis) {
+    const cached = await redis.get(key).catch(() => null);
+    if (cached) return cached;
+  }
+  try {
+    const res = await fetch(`https://steamcommunity.com/profiles/${steamId}/?xml=1`, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
+    const xml = await res.text();
+    const avatarMatch = xml.match(/<avatarFull><!\[CDATA\[(.*?)\]\]><\/avatarFull>/);
+    const nameMatch = xml.match(/<steamID><!\[CDATA\[(.*?)\]\]><\/steamID>/);
+    const profile = {
+      avatarUrl: avatarMatch?.[1] || null,
+      personaName: nameMatch?.[1] || null,
+    };
+    if (redis && profile.avatarUrl) redis.set(key, profile, { ex: 86400 }).catch(() => {});
+    return profile;
+  } catch {
+    return { avatarUrl: null, personaName: null };
+  }
+}
+
 // ─── Config ─────────────────────────────────────────────────────────────────
 const STEAM_ID = (process.env.STEAM_ID || '').trim();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -242,10 +267,7 @@ function buildSnapshotFromInventory(data) {
     // Items on trade hold are temporarily non-marketable but carry a
     // market_tradable_restriction > 0, so we keep them — this is how we
     // detect incoming items before the hold expires.
-    const temporarilyRestricted =
-      (desc.market_tradable_restriction > 0) ||
-      (desc.market_marketable_restriction > 0);
-    if (desc.marketable === 0 && !temporarilyRestricted) continue;
+    if (desc.marketable === 0 && !(desc.market_tradable_restriction > 0)) continue;
 
     snapshot[a.assetid] = {
       marketHashName: desc.market_hash_name || desc.name || '(unknown)',
@@ -423,10 +445,12 @@ app.get('/api/auth/callback', async (req, res) => {
   res.redirect(302, APP_URL + '/');
 });
 
-app.get('/api/auth/me', (req, res) => {
+app.get('/api/auth/me', async (req, res) => {
   const steamId = getSessionSteamId(req);
   res.setHeader('Cache-Control', 'no-store');
-  res.json({ user: steamId ? { steamId } : null });
+  if (!steamId) return res.json({ user: null });
+  const { avatarUrl, personaName } = await getSteamProfile(steamId);
+  res.json({ user: { steamId, avatarUrl, personaName } });
 });
 
 app.post('/api/auth/logout', (req, res) => {

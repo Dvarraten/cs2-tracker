@@ -1,8 +1,10 @@
-// GET /api/auth/me — returns { user: { steamId } } or { user: null }.
 import { getSessionSteamId } from '../_lib/auth.js';
+import { getProfile } from '../_lib/profile.js';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   const steamId = getSessionSteamId(req);
   res.setHeader('Cache-Control', 'no-store');
-  res.json({ user: steamId ? { steamId } : null });
+  if (!steamId) return res.json({ user: null });
+  const { avatarUrl, personaName } = await getProfile(steamId);
+  res.json({ user: { steamId, avatarUrl, personaName } });
 }
