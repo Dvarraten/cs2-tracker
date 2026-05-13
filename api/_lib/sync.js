@@ -1,5 +1,5 @@
 import { loadState, saveState, DEFAULT_STATE } from './state.js';
-import { fetchTradeHistory } from './steam.js';
+import { fetchTradeOffers } from './steam.js';
 
 export const POLL_INTERVAL_MIN = 5;
 export const STALE_THRESHOLD_MS = POLL_INTERVAL_MIN * 60 * 1000;
@@ -46,47 +46,45 @@ export async function runSync({ force = false } = {}) {
       return { ok: true, initial: true, state: next };
     }
 
-    const response = await fetchTradeHistory(apiKey, state.lastTradeTime || 0);
+    const response = await fetchTradeOffers(apiKey, state.lastTradeTime || 0);
 
-    // Descriptions may be top-level or per-trade depending on Steam API version.
     const descIndex = buildDescIndex(response.descriptions);
-    const trades = (response.trades || []).filter(t => t.status === 3 || t.status === 11);
-    for (const trade of trades) {
-      for (const [k, v] of buildDescIndex(trade.descriptions)) {
-        if (!descIndex.has(k)) descIndex.set(k, v);
-      }
-    }
+    // State 3 = Accepted, State 11 = InEscrow (trade hold)
+    const VALID_STATES = new Set([3, 11]);
+    const received = (response.trade_offers_received || []).filter(o => VALID_STATES.has(o.trade_offer_state));
+    const sent = (response.trade_offers_sent || []).filter(o => VALID_STATES.has(o.trade_offer_state));
 
     const seen = new Set(state.pending.map(p => `${p.type}:${p.assetid}`));
     const append = [];
     let maxTime = state.lastTradeTime || 0;
 
-    for (const trade of trades) {
-      maxTime = Math.max(maxTime, trade.time_init || 0);
+    const addAssets = (assets, type, timeUpdated) => {
+      for (const asset of assets || []) {
+        if (Number(asset.appid) !== 730) continue;
+        if (String(asset.contextid) !== '2') continue;
+        const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
+        if (!desc || !desc.market_hash_name) continue;
+        const assetid = asset.assetid;
+        const key = `${type}:${assetid}`;
+        if (seen.has(key)) continue;
+        append.push({
+          type,
+          assetid,
+          marketHashName: desc.market_hash_name || desc.name || '(unknown)',
+          iconUrl: desc.icon_url || '',
+          detectedAt: new Date((timeUpdated || 0) * 1000).toISOString(),
+        });
+        seen.add(key);
+      }
+    };
 
-      const addAssets = (assets, type) => {
-        for (const asset of assets || []) {
-          if (Number(asset.appid) !== 730) continue;
-          if (String(asset.contextid) !== '2') continue;
-          const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
-          if (!desc || !desc.market_hash_name) continue;
-          // new_assetid is the item's ID in your inventory after the trade completed.
-          const assetid = asset.new_assetid || asset.assetid;
-          const key = `${type}:${assetid}`;
-          if (seen.has(key)) continue;
-          append.push({
-            type,
-            assetid,
-            marketHashName: desc.market_hash_name || desc.name || '(unknown)',
-            iconUrl: desc.icon_url || '',
-            detectedAt: new Date((trade.time_init || 0) * 1000).toISOString(),
-          });
-          seen.add(key);
-        }
-      };
-
-      addAssets(trade.assets_received, 'incoming');
-      addAssets(trade.assets_given, 'outgoing');
+    for (const offer of received) {
+      maxTime = Math.max(maxTime, offer.time_updated || offer.time_created || 0);
+      addAssets(offer.items_to_receive, 'incoming', offer.time_updated || offer.time_created);
+    }
+    for (const offer of sent) {
+      maxTime = Math.max(maxTime, offer.time_updated || offer.time_created || 0);
+      addAssets(offer.items_to_give, 'outgoing', offer.time_updated || offer.time_created);
     }
 
     const next = {

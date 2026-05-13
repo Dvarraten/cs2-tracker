@@ -250,25 +250,25 @@ async function fetchInventory() {
 }
 
 // ─── Trade history fetcher ──────────────────────────────────────────────────
-async function fetchTradeHistory(afterTime = 0) {
+async function fetchTradeOffers(afterTime = 0) {
   const apiKey = (process.env.STEAM_API_KEY || '').trim();
   if (!apiKey) throw new Error('STEAM_API_KEY is not set in server/.env');
 
   const params = new URLSearchParams({
     key: apiKey,
-    max_trades: '100',
-    include_failed: '0',
+    get_received_offers: '1',
+    get_sent_offers: '1',
     get_descriptions: '1',
     language: 'english',
-    navigating_back: '0',
+    active_only: '0',
   });
-  if (afterTime > 0) params.set('start_after_time', String(afterTime));
+  if (afterTime > 0) params.set('time_historical_cutoff', String(afterTime));
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 15000);
   try {
     const res = await fetch(
-      `https://api.steampowered.com/IEconService/GetTradeHistory/v1/?${params}`,
+      `https://api.steampowered.com/IEconService/GetTradeOffers/v1/?${params}`,
       { signal: ctrl.signal }
     );
     if (!res.ok) throw new Error(`Steam API HTTP ${res.status}`);
@@ -306,45 +306,43 @@ async function runSync() {
         return { ok: true, initial: true };
       }
 
-      const response = await fetchTradeHistory(state.lastTradeTime || 0);
+      const response = await fetchTradeOffers(state.lastTradeTime || 0);
 
       const descIndex = buildDescIndex(response.descriptions);
-      const trades = (response.trades || []).filter(t => t.status === 3 || t.status === 11);
-      for (const trade of trades) {
-        for (const [k, v] of buildDescIndex(trade.descriptions)) {
-          if (!descIndex.has(k)) descIndex.set(k, v);
-        }
-      }
+      const VALID_STATES = new Set([3, 11]);
+      const received = (response.trade_offers_received || []).filter(o => VALID_STATES.has(o.trade_offer_state));
+      const sent = (response.trade_offers_sent || []).filter(o => VALID_STATES.has(o.trade_offer_state));
 
       const seen = new Set(state.pending.map(p => `${p.type}:${p.assetid}`));
       const append = [];
       let maxTime = state.lastTradeTime || 0;
 
-      for (const trade of trades) {
-        maxTime = Math.max(maxTime, trade.time_init || 0);
+      const addAssets = (assets, type, timeUpdated) => {
+        for (const asset of assets || []) {
+          if (Number(asset.appid) !== 730) continue;
+          if (String(asset.contextid) !== '2') continue;
+          const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
+          if (!desc || !desc.market_hash_name) continue;
+          const key = `${type}:${asset.assetid}`;
+          if (seen.has(key)) continue;
+          append.push({
+            type,
+            assetid: asset.assetid,
+            marketHashName: desc.market_hash_name || desc.name || '(unknown)',
+            iconUrl: desc.icon_url || '',
+            detectedAt: new Date((timeUpdated || 0) * 1000).toISOString(),
+          });
+          seen.add(key);
+        }
+      };
 
-        const addAssets = (assets, type) => {
-          for (const asset of assets || []) {
-            if (Number(asset.appid) !== 730) continue;
-            if (String(asset.contextid) !== '2') continue;
-            const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
-            if (!desc || !desc.market_hash_name) continue;
-            const assetid = asset.new_assetid || asset.assetid;
-            const key = `${type}:${assetid}`;
-            if (seen.has(key)) continue;
-            append.push({
-              type,
-              assetid,
-              marketHashName: desc.market_hash_name || desc.name || '(unknown)',
-              iconUrl: desc.icon_url || '',
-              detectedAt: new Date((trade.time_init || 0) * 1000).toISOString(),
-            });
-            seen.add(key);
-          }
-        };
-
-        addAssets(trade.assets_received, 'incoming');
-        addAssets(trade.assets_given, 'outgoing');
+      for (const offer of received) {
+        maxTime = Math.max(maxTime, offer.time_updated || offer.time_created || 0);
+        addAssets(offer.items_to_receive, 'incoming', offer.time_updated || offer.time_created);
+      }
+      for (const offer of sent) {
+        maxTime = Math.max(maxTime, offer.time_updated || offer.time_created || 0);
+        addAssets(offer.items_to_give, 'outgoing', offer.time_updated || offer.time_created);
       }
 
       state.pending = state.pending.concat(append);

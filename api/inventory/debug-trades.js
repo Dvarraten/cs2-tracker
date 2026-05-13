@@ -1,33 +1,25 @@
 // GET /api/inventory/debug-trades
-// Returns the raw Steam trade history response for debugging.
-import { fetchTradeHistory } from '../_lib/steam.js';
+import { fetchTradeOffers } from '../_lib/steam.js';
 
 export default async function handler(req, res) {
   try {
-    const response = await fetchTradeHistory(process.env.STEAM_API_KEY, 0);
+    const response = await fetchTradeOffers(process.env.STEAM_API_KEY, 0);
+    const received = response.trade_offers_received || [];
+    const sent = response.trade_offers_sent || [];
     return res.json({
-      tradeCount: (response.trades || []).length,
-      statusBreakdown: (response.trades || []).reduce((acc, t) => {
-        acc[t.status] = (acc[t.status] || 0) + 1; return acc;
-      }, {}),
-      trades: (response.trades || []).slice(0, 5).map(t => ({
-        tradeid: t.tradeid,
-        time_init: t.time_init,
-        time_human: new Date(t.time_init * 1000).toISOString(),
-        status: t.status,
-        assets_received: (t.assets_received || []).map(a => ({
-          appid: a.appid,
-          contextid: a.contextid,
-          assetid: a.assetid,
-          classid: a.classid,
-        })),
-        assets_given: (t.assets_given || []).map(a => ({
-          appid: a.appid,
-          contextid: a.contextid,
-          assetid: a.assetid,
-        })),
-      })),
+      receivedCount: received.length,
+      sentCount: sent.length,
       descriptionCount: (response.descriptions || []).length,
+      stateBreakdown: [...received, ...sent].reduce((acc, o) => {
+        acc[o.trade_offer_state] = (acc[o.trade_offer_state] || 0) + 1; return acc;
+      }, {}),
+      recentReceived: received.slice(0, 3).map(o => ({
+        tradeofferid: o.tradeofferid,
+        state: o.trade_offer_state,
+        time_updated: o.time_updated,
+        time_human: new Date((o.time_updated || o.time_created) * 1000).toISOString(),
+        items_to_receive: (o.items_to_receive || []).map(a => ({ appid: a.appid, contextid: a.contextid, assetid: a.assetid, classid: a.classid })),
+      })),
     });
   } catch (err) {
     return res.status(500).json({ error: err.message || String(err) });
