@@ -69,7 +69,7 @@ export async function runSync({ force = false } = {}) {
           if (Number(asset.appid) !== 730) continue;
           if (String(asset.contextid) !== '2') continue;
           const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
-          if (!desc || !desc.marketable) continue;
+          if (!desc || !desc.market_hash_name) continue;
           // new_assetid is the item's ID in your inventory after the trade completed.
           const assetid = asset.new_assetid || asset.assetid;
           const key = `${type}:${assetid}`;
