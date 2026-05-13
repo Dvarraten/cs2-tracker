@@ -261,6 +261,7 @@ async function fetchTradeOffers(afterTime = 0) {
     get_descriptions: '1',
     language: 'english',
     active_only: '0',
+    historical_only: '0',
   });
   if (afterTime > 0) params.set('time_historical_cutoff', String(afterTime));
 
