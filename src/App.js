@@ -23,7 +23,7 @@ import Header from './components/Header';
 import HandleItemsModal from './components/HandleItemsModal';
 
 export default function CS2TradingTracker() {
-  const { user, loading: authLoading, login, logout } = useAuth();
+  const { user, login, logout } = useAuth();
 
   const {
     items, formData, setFormData, sellData, setSellData,
