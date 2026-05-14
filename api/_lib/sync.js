@@ -1,5 +1,5 @@
 import { loadState, saveState, DEFAULT_STATE } from './state.js';
-import { fetchTradeOffers } from './steam.js';
+import { fetchTradeOffers, fetchAssetClassInfo } from './steam.js';
 
 export const POLL_INTERVAL_MIN = 5;
 export const STALE_THRESHOLD_MS = POLL_INTERVAL_MIN * 60 * 1000;
@@ -49,10 +49,28 @@ export async function runSync({ force = false } = {}) {
     const response = await fetchTradeOffers(apiKey, state.lastTradeTime || 0);
 
     const descIndex = buildDescIndex(response.descriptions);
-    // State 3 = Accepted, State 11 = InEscrow (trade hold)
+
+    // Steam often omits descriptions for historical offers — resolve any gaps
+    // via GetAssetClassInfo so items without names aren't silently dropped.
     const VALID_STATES = new Set([3, 11]);
     const received = (response.trade_offers_received || []).filter(o => VALID_STATES.has(o.trade_offer_state));
     const sent = (response.trade_offers_sent || []).filter(o => VALID_STATES.has(o.trade_offer_state));
+
+    const allAssets = [
+      ...received.flatMap(o => o.items_to_receive || []),
+      ...sent.flatMap(o => o.items_to_give || []),
+    ].filter(a => Number(a.appid) === 730 && String(a.contextid) === '2');
+
+    const missingDescs = allAssets.filter(
+      a => !descIndex.has(`${a.classid}_${a.instanceid}`)
+    );
+    if (missingDescs.length && apiKey) {
+      const fallback = await fetchAssetClassInfo(apiKey, missingDescs.map(a => ({
+        classid: a.classid,
+        instanceid: a.instanceid,
+      })));
+      for (const [k, v] of fallback) descIndex.set(k, v);
+    }
 
     const seen = new Set(state.pending.map(p => `${p.type}:${p.assetid}`));
     const append = [];
@@ -62,7 +80,8 @@ export async function runSync({ force = false } = {}) {
       for (const asset of assets || []) {
         if (Number(asset.appid) !== 730) continue;
         if (String(asset.contextid) !== '2') continue;
-        const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
+        const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`)
+          || descIndex.get(`${asset.classid}_0`);
         if (!desc || !desc.market_hash_name) continue;
         const assetid = asset.assetid;
         const key = `${type}:${assetid}`;
