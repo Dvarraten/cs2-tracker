@@ -300,27 +300,38 @@ export async function fetchTradeOffers(apiKey, afterTime = 0) {
     callApi(histExtra),
   ]);
 
-  // Merge both responses, deduplicating offers by tradeofferid
+  // Merge descriptions from both calls.
+  const descMap = new Map();
+  for (const resp of [escrowResp, histResp]) {
+    for (const d of resp.descriptions || []) {
+      descMap.set(`${d.classid}_${d.instanceid}`, d);
+    }
+  }
+
+  // For state 3 (Accepted) offers: only include ones from the historical call,
+  // which is filtered by the lastTradeTime cursor. The escrow call returns all
+  // history and would cause old completed trades to be re-processed every sync.
+  // For state 11 (InEscrow) offers: include from both calls so holds entered
+  // before the last sync are still surfaced.
+  const histReceivedIds = new Set((histResp.trade_offers_received || []).map(o => o.tradeofferid));
+  const histSentIds = new Set((histResp.trade_offers_sent || []).map(o => o.tradeofferid));
+
   const seenIds = new Set();
   const received = [];
   const sent = [];
-  const descMap = new Map();
 
   for (const resp of [escrowResp, histResp]) {
     for (const offer of resp.trade_offers_received || []) {
-      if (!seenIds.has(offer.tradeofferid)) {
-        seenIds.add(offer.tradeofferid);
-        received.push(offer);
-      }
+      if (seenIds.has(offer.tradeofferid)) continue;
+      if (offer.trade_offer_state === 3 && !histReceivedIds.has(offer.tradeofferid)) continue;
+      seenIds.add(offer.tradeofferid);
+      received.push(offer);
     }
     for (const offer of resp.trade_offers_sent || []) {
-      if (!seenIds.has(offer.tradeofferid)) {
-        seenIds.add(offer.tradeofferid);
-        sent.push(offer);
-      }
-    }
-    for (const d of resp.descriptions || []) {
-      descMap.set(`${d.classid}_${d.instanceid}`, d);
+      if (seenIds.has(offer.tradeofferid)) continue;
+      if (offer.trade_offer_state === 3 && !histSentIds.has(offer.tradeofferid)) continue;
+      seenIds.add(offer.tradeofferid);
+      sent.push(offer);
     }
   }
 
