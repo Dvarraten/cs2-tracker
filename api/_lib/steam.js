@@ -146,36 +146,74 @@ export function buildSnapshotFromInventory(data) {
   return snapshot;
 }
 
-// Fetch trade offers (accepted + in-escrow) from the Steam Web API.
-// GetTradeOffers covers both completed and hold trades; GetTradeHistory
-// only shows transfers that have already cleared, missing escrow trades.
+// Fetch trade offers from the Steam Web API using two calls:
+// 1. active_only=1 — always returns pending + escrow (state 11) offers regardless of time cursor
+// 2. historical_only=1 — returns recently completed (state 3) offers filtered by time cursor
+// This prevents state 11 trades from being silently dropped by time_historical_cutoff.
 export async function fetchTradeOffers(apiKey, afterTime = 0) {
   if (!apiKey) throw new Error('STEAM_API_KEY env var is not set');
 
-  const params = new URLSearchParams({
-    key: apiKey,
-    get_received_offers: '1',
-    get_sent_offers: '1',
-    get_descriptions: '1',
-    language: 'english',
-    active_only: '0',
-    historical_only: '0',
-  });
-  if (afterTime > 0) params.set('time_historical_cutoff', String(afterTime));
-
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 15000);
-  try {
-    const res = await fetch(
-      `https://api.steampowered.com/IEconService/GetTradeOffers/v1/?${params}`
-    );
-    if (!res.ok) throw new Error(`Steam API HTTP ${res.status}`);
-    const data = await res.json();
-    if (!data.response) throw new Error('Steam API returned no response object');
-    return data.response;
-  } finally {
-    clearTimeout(timer);
+  async function callApi(extra) {
+    const params = new URLSearchParams({
+      key: apiKey,
+      get_received_offers: '1',
+      get_sent_offers: '1',
+      get_descriptions: '1',
+      language: 'english',
+    });
+    for (const [k, v] of Object.entries(extra)) params.set(k, v);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const res = await fetch(
+        `https://api.steampowered.com/IEconService/GetTradeOffers/v1/?${params}`
+      );
+      if (!res.ok) throw new Error(`Steam API HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.response) throw new Error('Steam API returned no response object');
+      return data.response;
+    } finally {
+      clearTimeout(timer);
+    }
   }
+
+  const histExtra = { active_only: '0', historical_only: '1' };
+  if (afterTime > 0) histExtra.time_historical_cutoff = String(afterTime);
+
+  const [activeResp, histResp] = await Promise.all([
+    callApi({ active_only: '1', historical_only: '0' }),
+    callApi(histExtra),
+  ]);
+
+  // Merge both responses, deduplicating offers by tradeofferid
+  const seenIds = new Set();
+  const received = [];
+  const sent = [];
+  const descMap = new Map();
+
+  for (const resp of [activeResp, histResp]) {
+    for (const offer of resp.trade_offers_received || []) {
+      if (!seenIds.has(offer.tradeofferid)) {
+        seenIds.add(offer.tradeofferid);
+        received.push(offer);
+      }
+    }
+    for (const offer of resp.trade_offers_sent || []) {
+      if (!seenIds.has(offer.tradeofferid)) {
+        seenIds.add(offer.tradeofferid);
+        sent.push(offer);
+      }
+    }
+    for (const d of resp.descriptions || []) {
+      descMap.set(`${d.classid}_${d.instanceid}`, d);
+    }
+  }
+
+  return {
+    trade_offers_received: received,
+    trade_offers_sent: sent,
+    descriptions: Array.from(descMap.values()),
+  };
 }
 
 export function diffSnapshots(prev, next) {
