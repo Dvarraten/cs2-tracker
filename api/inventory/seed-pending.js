@@ -131,6 +131,9 @@ export default async function handler(req, res) {
       lastSync: detectedAt,
       lastSyncOk: true,
       lastError: null,
+      // Set lastTradeTime to now so the next sync only picks up NEW trades
+      // from this point forward, not all of trade history.
+      lastTradeTime: now,
       // Hold the sync lock briefly so a concurrent lazy-sync triggered by the
       // frontend loading state can't overwrite the freshly seeded pending list.
       syncLockAt: Date.now(),
