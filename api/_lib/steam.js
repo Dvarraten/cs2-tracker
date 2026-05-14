@@ -146,12 +146,13 @@ export function buildSnapshotFromInventory(data) {
   return snapshot;
 }
 
-// Single escrow-only call: returns InEscrow (state 11) received offers from
-// the last 10 days. Much faster than fetchTradeOffers — used by seed-pending.
-export async function fetchEscrowOffers(apiKey) {
+// Fetches received trade offers from the last 7 days (state 3 = Accepted,
+// state 11 = InEscrow). Used by seed-pending to find items that are on a
+// trade hold and therefore hidden from the public inventory endpoint.
+export async function fetchRecentReceivedOffers(apiKey) {
   if (!apiKey) throw new Error('STEAM_API_KEY env var is not set');
   const accessToken = process.env.STEAM_ACCESS_TOKEN || '';
-  const escrowCutoff = String(Math.floor(Date.now() / 1000) - 10 * 24 * 60 * 60);
+  const cutoff = String(Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60);
   const params = new URLSearchParams({
     key: apiKey,
     get_received_offers: '1',
@@ -160,7 +161,7 @@ export async function fetchEscrowOffers(apiKey) {
     language: 'english',
     active_only: '0',
     historical_only: '0',
-    time_historical_cutoff: escrowCutoff,
+    time_historical_cutoff: cutoff,
   });
   if (accessToken) params.set('access_token', accessToken);
   const ctrl = new AbortController();
@@ -176,6 +177,11 @@ export async function fetchEscrowOffers(apiKey) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+// Kept for the debug-trades endpoint.
+export async function fetchEscrowOffers(apiKey) {
+  return fetchRecentReceivedOffers(apiKey);
 }
 
 // Fetch trade offers from the Steam Web API using two calls:

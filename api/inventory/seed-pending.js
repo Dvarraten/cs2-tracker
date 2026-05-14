@@ -14,7 +14,7 @@ import { loadState, saveState } from '../_lib/state.js';
 import {
   fetchInventory,
   buildSnapshotFromInventory,
-  fetchEscrowOffers,
+  fetchRecentReceivedOffers,
 } from '../_lib/steam.js';
 
 export default async function handler(req, res) {
@@ -32,11 +32,13 @@ export default async function handler(req, res) {
     const state = await loadState();
     const detectedAt = new Date().toISOString();
 
-    // Fetch current inventory and escrow offers in parallel.
+    // Fetch current inventory and recent received trade offers in parallel.
+    // Trade-hold items are hidden from the public inventory API but appear
+    // in accepted (state 3) or escrow (state 11) offers from the last 7 days.
     const apiKey = process.env.STEAM_API_KEY;
     const [data, tradeResp] = await Promise.all([
       fetchInventory(process.env.STEAM_ID),
-      apiKey ? fetchEscrowOffers(apiKey) : Promise.resolve(null),
+      apiKey ? fetchRecentReceivedOffers(apiKey) : Promise.resolve(null),
     ]);
 
     const snapshot = buildSnapshotFromInventory(data);
@@ -55,18 +57,19 @@ export default async function handler(req, res) {
       seen.add(key);
     }
 
-    // Add items from escrow (trade hold) offers that aren't in the inventory yet.
-    let escrowSeeded = 0;
+    // Add items from recent trade offers not already captured by the inventory.
+    // State 3 = Accepted (item delivered but may be on trade hold, hidden from
+    // public inventory). State 11 = InEscrow (not yet delivered).
+    let tradeSeeded = 0;
     if (tradeResp) {
       const descIndex = new Map();
       for (const d of tradeResp.descriptions || []) {
         descIndex.set(`${d.classid}_${d.instanceid}`, d);
       }
-      // State 11 = InEscrow
-      const escrowOffers = (tradeResp.trade_offers_received || []).filter(
-        (o) => o.trade_offer_state === 11
+      const recentOffers = (tradeResp.trade_offers_received || []).filter(
+        (o) => o.trade_offer_state === 3 || o.trade_offer_state === 11
       );
-      for (const offer of escrowOffers) {
+      for (const offer of recentOffers) {
         for (const asset of offer.items_to_receive || []) {
           if (Number(asset.appid) !== 730) continue;
           if (String(asset.contextid) !== '2') continue;
@@ -82,7 +85,7 @@ export default async function handler(req, res) {
             iconUrl: desc.icon_url || '',
           });
           seen.add(key);
-          escrowSeeded++;
+          tradeSeeded++;
         }
       }
     }
@@ -102,8 +105,8 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       seeded: append.length,
-      fromInventory: append.length - escrowSeeded,
-      fromEscrow: escrowSeeded,
+      fromInventory: append.length - tradeSeeded,
+      fromTrades: tradeSeeded,
       totalPending: next.pending.length,
     });
   } catch (err) {
