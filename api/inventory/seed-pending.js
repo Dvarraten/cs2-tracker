@@ -83,11 +83,13 @@ export default async function handler(req, res) {
       const missing = cs2Assets.filter(
         a => !descIndex.has(`${a.classid}_${a.instanceid}`)
       );
+      let fallbackResolved = 0;
       if (missing.length && apiKey) {
         const fallback = await fetchAssetClassInfo(apiKey, missing.map(a => ({
           classid: a.classid,
           instanceid: a.instanceid,
         })));
+        fallbackResolved = fallback.size;
         for (const [k, v] of fallback) descIndex.set(k, v);
       }
 
@@ -138,6 +140,7 @@ export default async function handler(req, res) {
         totalAssetsInRecentOffers: allAssets.length,
         cs2AssetsCount: cs2.length,
         descriptionCount: (tradeResp.descriptions || []).length,
+        fallbackResolved,
         sampleCs2Assets: cs2.slice(0, 3).map(a => ({
           assetid: a.assetid, appid: a.appid, classid: a.classid, instanceid: a.instanceid,
           alreadyInPending: seen.has(`incoming:${a.assetid}`),
