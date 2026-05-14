@@ -64,6 +64,7 @@ export default async function handler(req, res) {
     // Steam often omits descriptions for historical offers, so we fall back to
     // GetAssetClassInfo for any items without a name.
     let tradeSeeded = 0;
+    let fallbackResolved = 0;
     if (tradeResp) {
       const descIndex = new Map();
       for (const d of tradeResp.descriptions || []) {
@@ -83,7 +84,6 @@ export default async function handler(req, res) {
       const missing = cs2Assets.filter(
         a => !descIndex.has(`${a.classid}_${a.instanceid}`)
       );
-      let fallbackResolved = 0;
       if (missing.length && apiKey) {
         const fallback = await fetchAssetClassInfo(apiKey, missing.map(a => ({
           classid: a.classid,
