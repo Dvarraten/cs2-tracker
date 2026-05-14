@@ -138,16 +138,22 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, pendingMatc
   const [usdPrice, setUsdPrice] = useState('');
   const [cnyPrice, setCnyPrice] = useState('');
   const [platform, setPlatform] = useState('csfloat');
+  const [onHold, setOnHold] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
   const submit = () => {
     const v = parseFloat(usdPrice);
     if (!v || v <= 0) return;
     setConfirming(true);
+    const expectedDelivery = onHold
+      ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      : null;
     onAdd({
       itemName: entry.marketHashName,
       purchasePrice: v,
       platform,
+      pending: onHold,
+      expectedDelivery,
       notes: `From Steam inventory (asset ${entry.assetid})`,
       iconUrl: entry.iconUrl
         ? `https://community.akamai.steamstatic.com/economy/image/${entry.iconUrl}/96fx96f`
@@ -246,13 +252,22 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, pendingMatc
             <option value="youpin">Youpin</option>
             <option value="other">Other</option>
           </select>
+          <label className="flex items-center gap-1.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={onHold}
+              onChange={(e) => setOnHold(e.target.checked)}
+              className="rounded border-slate-600 bg-slate-700 text-indigo-500 focus:ring-0 focus:ring-offset-0"
+            />
+            <span className="text-xs text-slate-300">Trade hold</span>
+          </label>
           <button
             type="button"
             disabled={confirming || !parseFloat(usdPrice)}
             onClick={submit}
             className={`${theme.accentBg} text-white text-sm font-medium px-3 py-1.5 rounded-md disabled:opacity-40 disabled:cursor-not-allowed`}
           >
-            {confirming ? 'Adding…' : 'Add to tracker'}
+            {confirming ? 'Adding…' : onHold ? 'Add as pending' : 'Add to tracker'}
           </button>
         </div>
       )}
