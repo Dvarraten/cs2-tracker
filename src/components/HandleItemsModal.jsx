@@ -496,21 +496,28 @@ export default function HandleItemsModal({
     return best ? { item: best, matchType: 'fuzzy', matchScore: bestScore } : null;
   };
 
-  // Hide incoming entries whose name matches an item already in the tracker
-  // (count-aware: if you own 3× "AK-47 | Redline (FT)" in your tracker and
-  // Steam shows 5 such assets, the extra 2 still surface as incoming).
-  // The "hidden" entries can still be cleaned up from the backend via the
-  // bulk-dismiss button below.
+  // Hide incoming entries whose name matches a *pre-existing* tracked item
+  // (count-aware: if you own 3× "AK-47 | Redline (FT)" already in the
+  // tracker and Steam shows 5 such assets, the extra 2 still surface).
+  // "Pre-existing" means datePurchased is strictly before detectedAt —
+  // items added on the same day or later were likely added from this very
+  // incoming event and should not cancel out a sibling entry.
   const { visibleIncoming, hiddenIncoming } = useMemo(() => {
-    const remaining = new Map();
-    for (const [k, arr] of activeByName.entries()) remaining.set(k, arr.length);
+    const trackedDatesByName = new Map();
+    for (const [k, arr] of activeByName.entries()) {
+      trackedDatesByName.set(k, arr.map(it => (it.datePurchased || '').slice(0, 10)).sort());
+    }
+    const usedByName = new Map();
     const visible = [];
     const hidden = [];
     for (const entry of incoming) {
       const k = (entry.marketHashName || '').toLowerCase();
-      const left = remaining.get(k) || 0;
-      if (left > 0) {
-        remaining.set(k, left - 1);
+      const entryDate = (entry.detectedAt || '').slice(0, 10);
+      const dates = trackedDatesByName.get(k) || [];
+      const used = usedByName.get(k) || 0;
+      const preExisting = dates.filter(d => d < entryDate).length;
+      if (used < preExisting) {
+        usedByName.set(k, used + 1);
         hidden.push(entry);
       } else {
         visible.push(entry);
