@@ -214,11 +214,12 @@ export async function fetchAssetClassInfo(apiKey, classInstances) {
       const data = await res.json();
       const result = data.result || {};
       batch.forEach(({ classid, instanceid }) => {
-        const info = result[classid];
+        const key = `${classid}_${instanceid || '0'}`;
+        const info = result[key] || result[classid];
         if (info && info.market_hash_name) {
-          map.set(`${classid}_${instanceid || '0'}`, {
+          map.set(key, {
             market_hash_name: info.market_hash_name,
-            icon_url: info.icon_url_large || info.icon_url || '',
+            icon_url: info.icon_url || info.icon_url_large || '',
           });
         }
       });
