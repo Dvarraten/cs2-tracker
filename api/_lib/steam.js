@@ -155,7 +155,7 @@ export function buildSnapshotFromInventory(data) {
 export async function fetchRecentReceivedOffers(apiKey) {
   if (!apiKey) throw new Error('STEAM_API_KEY env var is not set');
   const accessToken = process.env.STEAM_ACCESS_TOKEN || '';
-  const cutoff = String(Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60);
+  const cutoff = String(Math.floor(Date.now() / 1000) - 16 * 24 * 60 * 60);
 
   async function call(extra) {
     const params = new URLSearchParams({

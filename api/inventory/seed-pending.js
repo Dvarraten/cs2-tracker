@@ -5,8 +5,12 @@
 // setup or after a fresh reset, when you want to bulk-pick which items to
 // track instead of typing them in by hand.
 //
-// Note: this can produce a long pending list (one entry per asset in your
-// inventory). The frontend modal lets you dismiss in batches.
+// Trade-hold items (hidden from the public inventory API) are found via
+// recent trade offers using this logic:
+//   - Offer < 7 days old, item not in inventory → on trade hold, include
+//   - Offer 7+ days old, item not in inventory → hold expired, was sold, skip
+//   - Item classid+instanceid already in inventory → captured by inventory
+//     path already, skip to avoid duplicates
 //
 // Like /reset, this is gated by ?confirm=yes to dodge accidental hits.
 
@@ -17,6 +21,8 @@ import {
   fetchRecentReceivedOffers,
   fetchAssetClassInfo,
 } from '../_lib/steam.js';
+
+const HOLD_MAX_SECS = 7 * 24 * 60 * 60;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -32,10 +38,8 @@ export default async function handler(req, res) {
   try {
     const state = await loadState();
     const detectedAt = new Date().toISOString();
+    const now = Math.floor(Date.now() / 1000);
 
-    // Fetch current inventory and recent received trade offers in parallel.
-    // Trade-hold items are hidden from the public inventory API but appear
-    // in accepted (state 3) or escrow (state 11) offers from the last 7 days.
     const apiKey = process.env.STEAM_API_KEY;
     const [data, tradeResp] = await Promise.all([
       fetchInventory(process.env.STEAM_ID),
@@ -44,13 +48,17 @@ export default async function handler(req, res) {
 
     const snapshot = buildSnapshotFromInventory(data);
 
-    // Dedupe against anything already pending so re-running the seed
-    // doesn't duplicate entries.
-    const seen = new Set(
-      state.pending.map((p) => `${p.type}:${p.assetid}`)
-    );
+    // Build a set of classid_instanceid from current inventory so we can
+    // skip trade-offer items that are already captured by the inventory path.
+    const inventoryClassIds = new Set();
+    for (const d of data.descriptions || []) {
+      inventoryClassIds.add(`${d.classid}_${d.instanceid}`);
+    }
+
+    const seen = new Set(state.pending.map((p) => `${p.type}:${p.assetid}`));
     const append = [];
 
+    // 1. All items currently visible in the public inventory.
     for (const [assetid, info] of Object.entries(snapshot)) {
       const key = `incoming:${assetid}`;
       if (seen.has(key)) continue;
@@ -58,12 +66,7 @@ export default async function handler(req, res) {
       seen.add(key);
     }
 
-    // Add items from recent trade offers not already captured by the inventory.
-    // State 3 = Accepted (item delivered but may be on trade hold, hidden from
-    // public inventory). State 11 = InEscrow (not yet delivered).
-    // Steam often omits descriptions for historical offers, so we fall back to
-    // GetAssetClassInfo for any items without a name.
-    let tradeSeeded = 0;
+    // 2. Trade-hold items hidden from the public inventory API.
     if (tradeResp) {
       const descIndex = new Map();
       for (const d of tradeResp.descriptions || []) {
@@ -73,14 +76,26 @@ export default async function handler(req, res) {
       const recentOffers = (tradeResp.trade_offers_received || []).filter(
         (o) => o.trade_offer_state === 3 || o.trade_offer_state === 11
       );
-      const cs2Assets = recentOffers.flatMap(o =>
-        (o.items_to_receive || []).filter(
-          a => Number(a.appid) === 730 && String(a.contextid) === '2'
-        )
-      );
 
-      // Fetch descriptions for any items Steam didn't include in the response.
-      const missing = cs2Assets.filter(
+      // Collect only CS2 assets from offers that could contain held items.
+      const candidates = [];
+      for (const offer of recentOffers) {
+        const offerAge = now - (offer.time_updated || offer.time_created || 0);
+        for (const asset of offer.items_to_receive || []) {
+          if (Number(asset.appid) !== 730) continue;
+          if (String(asset.contextid) !== '2') continue;
+          const ck = `${asset.classid}_${asset.instanceid}`;
+          // Already in inventory (new assetid) — inventory path handles it.
+          if (inventoryClassIds.has(ck)) continue;
+          // Hold expired and item not in inventory — it was sold.
+          if (offerAge > HOLD_MAX_SECS) continue;
+          candidates.push(asset);
+        }
+      }
+
+      // Resolve descriptions via GetAssetClassInfo (Steam omits them for
+      // historical offers).
+      const missing = candidates.filter(
         a => !descIndex.has(`${a.classid}_${a.instanceid}`)
       );
       if (missing.length && apiKey) {
@@ -91,7 +106,7 @@ export default async function handler(req, res) {
         for (const [k, v] of fallback) descIndex.set(k, v);
       }
 
-      for (const asset of cs2Assets) {
+      for (const asset of candidates) {
         const key = `incoming:${asset.assetid}`;
         if (seen.has(key)) continue;
         const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`)
@@ -102,10 +117,9 @@ export default async function handler(req, res) {
           detectedAt,
           assetid: asset.assetid,
           marketHashName: desc.market_hash_name,
-          iconUrl: desc.icon_url || desc.icon_url_large || '',
+          iconUrl: desc.icon_url || '',
         });
         seen.add(key);
-        tradeSeeded++;
       }
     }
 
