@@ -17,11 +17,12 @@ const EXTERIORS_CANON = [
   { name: "Battle-Scarred", abbr: "bs" },
 ];
 
-const CATEGORY_ORDER = ["weapon", "finish", "exterior"];
+const CATEGORY_ORDER = ["weapon", "finish", "exterior", "direct"];
 const CATEGORY_LABEL = {
   weapon:   "Weapon",
   finish:   "Skin",
   exterior: "Exterior",
+  direct:   "Item",
 };
 
 function makeAcronym(name) {
@@ -45,14 +46,18 @@ function buildEntry(name, extra = {}) {
 function buildIndex(itemsData) {
   const weapons = new Set();
   const finishes = new Set();
+  const directNames = new Set();
   for (const v of Object.values(itemsData)) {
     if (v.weapon) weapons.add(v.weapon);
     if (v.finish) finishes.add(v.finish);
+    // Agents, charms, and other items with no weapon/finish are searched by full name.
+    if (!v.weapon && !v.finish && v['full-name']) directNames.add(v['full-name']);
   }
   return {
     weapon:   [...weapons].sort().map((n) => buildEntry(n)),
     finish:   [...finishes].sort().map((n) => buildEntry(n)),
     exterior: EXTERIORS_CANON.map((e) => buildEntry(e.name, { abbr: e.abbr })),
+    direct:   [...directNames].sort().map((n) => buildEntry(n)),
   };
 }
 
@@ -95,7 +100,7 @@ function buildSuggestions(index, query, usedCategories) {
 
   const out = [];
   for (const cat of CATEGORY_ORDER) {
-    if (usedCategories.has(cat)) continue;
+    if (cat !== "direct" && usedCategories.has(cat)) continue;
     for (const e of index[cat]) {
       const score = scoreEntry(e, q);
       if (score > 0) out.push({ category: cat, name: e.name, score });
@@ -210,6 +215,16 @@ export default function ItemAutoComplete({ value, onChange, placeholder, theme }
   };
 
   const addTag = (suggestion) => {
+    if (suggestion.category === "direct") {
+      setTags([]);
+      setCurrentInput(suggestion.name);
+      setSuggestions([]);
+      setShowDropdown(false);
+      setSelectedIndex(0);
+      onChange(suggestion.name);
+      inputRef.current?.focus();
+      return;
+    }
     const next = [
       ...tags.filter((t) => t.category !== suggestion.category),
       { category: suggestion.category, name: suggestion.name },
