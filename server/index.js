@@ -249,10 +249,46 @@ async function fetchInventory() {
   };
 }
 
+// ─── Asset class info fallback ──────────────────────────────────────────────
+// Used when GetTradeOffers doesn't return descriptions for escrow items.
+async function fetchAssetClassInfo(appid, classInstances) {
+  if (!classInstances.length) return new Map();
+  const apiKey = (process.env.STEAM_API_KEY || '').trim();
+  const params = new URLSearchParams({
+    key: apiKey,
+    appid: String(appid),
+    class_count: String(classInstances.length),
+    language: 'english',
+  });
+  classInstances.forEach(({ classid, instanceid }, i) => {
+    params.set(`classid${i}`, classid);
+    params.set(`instanceid${i}`, instanceid || '0');
+  });
+  try {
+    const res = await fetch(`https://api.steampowered.com/ISteamEconomy/GetAssetClassInfo/v0001/?${params}`);
+    const data = await res.json();
+    const result = data.result || {};
+    const map = new Map();
+    classInstances.forEach(({ classid, instanceid }) => {
+      const info = result[classid];
+      if (info && info.market_hash_name) {
+        map.set(`${classid}_${instanceid || '0'}`, {
+          market_hash_name: info.market_hash_name,
+          icon_url: info.icon_url_large || info.icon_url || '',
+        });
+      }
+    });
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
 // ─── Trade history fetcher ──────────────────────────────────────────────────
 async function fetchTradeOffers(afterTime = 0) {
   const apiKey = (process.env.STEAM_API_KEY || '').trim();
   if (!apiKey) throw new Error('STEAM_API_KEY is not set in server/.env');
+  const accessToken = (process.env.STEAM_ACCESS_TOKEN || '').trim();
 
   async function callApi(extra) {
     const params = new URLSearchParams({
@@ -262,6 +298,7 @@ async function fetchTradeOffers(afterTime = 0) {
       get_descriptions: '1',
       language: 'english',
     });
+    if (accessToken) params.set('access_token', accessToken);
     for (const [k, v] of Object.entries(extra)) params.set(k, v);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 15000);
@@ -279,11 +316,12 @@ async function fetchTradeOffers(afterTime = 0) {
     }
   }
 
+  const escrowCutoff = String(Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60);
   const histExtra = { active_only: '0', historical_only: '1' };
   if (afterTime > 0) histExtra.time_historical_cutoff = String(afterTime);
 
-  const [activeResp, histResp] = await Promise.all([
-    callApi({ active_only: '1', historical_only: '0' }),
+  const [escrowResp, histResp] = await Promise.all([
+    callApi({ active_only: '0', historical_only: '0', time_historical_cutoff: escrowCutoff }),
     callApi(histExtra),
   ]);
 
@@ -292,7 +330,7 @@ async function fetchTradeOffers(afterTime = 0) {
   const sent = [];
   const descMap = new Map();
 
-  for (const resp of [activeResp, histResp]) {
+  for (const resp of [escrowResp, histResp]) {
     for (const offer of resp.trade_offers_received || []) {
       if (!seenIds.has(offer.tradeofferid)) {
         seenIds.add(offer.tradeofferid);
@@ -563,6 +601,180 @@ app.get('/api/inventory/debug', async (_req, res) => {
   } catch (err) {
     res.status(500).json({ url, error: err.message || String(err) });
   }
+});
+
+app.get('/api/inventory/debug-trades', async (_req, res) => {
+  try {
+    const response = await fetchTradeOffers(0);
+    const received = response.trade_offers_received || [];
+    const sent = response.trade_offers_sent || [];
+    const all = [...received, ...sent];
+    const descIndex = new Map((response.descriptions || []).map(d => [`${d.classid}_${d.instanceid}`, d]));
+
+    const cs2Received = received.filter(o => [3, 11].includes(o.trade_offer_state));
+    const cs2Items = cs2Received.flatMap(o =>
+      (o.items_to_receive || []).map(a => {
+        const desc = descIndex.get(`${a.classid}_${a.instanceid}`);
+        return {
+          appid: a.appid,
+          contextid: a.contextid,
+          assetid: a.assetid,
+          classid: a.classid,
+          instanceid: a.instanceid,
+          isCs2: Number(a.appid) === 730,
+          hasDesc: !!desc,
+          market_hash_name: desc?.market_hash_name || null,
+        };
+      })
+    );
+
+    res.json({
+      receivedCount: received.length,
+      sentCount: sent.length,
+      descriptionCount: (response.descriptions || []).length,
+      stateBreakdown: all.reduce((acc, o) => {
+        acc[o.trade_offer_state] = (acc[o.trade_offer_state] || 0) + 1; return acc;
+      }, {}),
+      cs2ValidStateOffers: cs2Received.length,
+      cs2Items: cs2Items.filter(a => a.isCs2),
+      nonCs2Items: cs2Items.filter(a => !a.isCs2).length,
+      recentReceived: received.slice(0, 3).map(o => ({
+        tradeofferid: o.tradeofferid,
+        state: o.trade_offer_state,
+        time_human: new Date((o.time_updated || o.time_created) * 1000).toISOString(),
+        items_to_receive: (o.items_to_receive || []).map(a => ({ appid: a.appid, contextid: a.contextid })),
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message || String(err) });
+  }
+});
+
+// Raw Steam API call with zero filtering — bypasses all our logic
+app.get('/api/inventory/debug-trades-raw', async (_req, res) => {
+  try {
+    const apiKey = (process.env.STEAM_API_KEY || '').trim();
+    const accessToken = (process.env.STEAM_ACCESS_TOKEN || '').trim();
+    const params = new URLSearchParams({
+      key: apiKey,
+      get_received_offers: '1',
+      get_sent_offers: '1',
+      get_descriptions: '0',
+      language: 'english',
+      active_only: '0',
+      historical_only: '0',
+    });
+    if (accessToken) params.set('access_token', accessToken);
+    const r = await fetch(`https://api.steampowered.com/IEconService/GetTradeOffers/v1/?${params}`);
+    const data = await r.json();
+    const resp = data.response || {};
+    const received = resp.trade_offers_received || [];
+    const sent = resp.trade_offers_sent || [];
+    const all = [...received, ...sent];
+    res.json({
+      totalOffers: all.length,
+      receivedCount: received.length,
+      sentCount: sent.length,
+      stateBreakdown: all.reduce((acc, o) => {
+        acc[o.trade_offer_state] = (acc[o.trade_offer_state] || 0) + 1; return acc;
+      }, {}),
+      appidBreakdown: all.flatMap(o => [
+        ...(o.items_to_receive || []),
+        ...(o.items_to_give || []),
+      ]).reduce((acc, a) => {
+        acc[a.appid] = (acc[a.appid] || 0) + 1; return acc;
+      }, {}),
+      allOffers: all.map(o => ({
+        tradeofferid: o.tradeofferid,
+        state: o.trade_offer_state,
+        time_human: new Date((o.time_updated || o.time_created || 0) * 1000).toISOString(),
+        items_to_receive: (o.items_to_receive || []).map(a => ({ appid: a.appid, contextid: a.contextid })),
+        items_to_give: (o.items_to_give || []).map(a => ({ appid: a.appid, contextid: a.contextid })),
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message || String(err) });
+  }
+});
+
+// One-time import: fetches live inventory + current escrow trades and adds
+// every CS2 item as a pending incoming item so the user can set purchase prices.
+app.post('/api/inventory/import-snapshot', async (_req, res) => {
+  const existingKeys = new Set((state.pending || []).map(p => `${p.type}:${p.assetid}`));
+  const toAdd = [];
+  const now = new Date().toISOString();
+
+  // 1. Live inventory — all items with a name, no marketability filter
+  try {
+    const invData = await fetchInventory();
+    const descIndex = new Map();
+    for (const d of invData.descriptions || []) {
+      descIndex.set(`${d.classid}_${d.instanceid}`, d);
+    }
+    console.log(`[import] inventory: ${invData.assets?.length} assets, ${invData.descriptions?.length} descriptions`);
+    let noDesc = 0, noName = 0;
+    for (const asset of invData.assets || []) {
+      const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
+      if (!desc) { noDesc++; continue; }
+      if (!desc.market_hash_name) { noName++; continue; }
+      const key = `incoming:${asset.assetid}`;
+      if (existingKeys.has(key)) continue;
+      existingKeys.add(key);
+      toAdd.push({
+        type: 'incoming',
+        assetid: asset.assetid,
+        marketHashName: desc.market_hash_name,
+        iconUrl: desc.icon_url || '',
+        detectedAt: now,
+      });
+    }
+    console.log(`[import] inventory: ${toAdd.length} added, ${noDesc} no-desc, ${noName} no-name`);
+  } catch (err) {
+    console.error('[import] inventory fetch failed:', err.message);
+  }
+
+  // 2. Escrow trades (state 11) — items in hold not yet in inventory
+  try {
+    const tradeResp = await fetchTradeOffers(0);
+    const descIndex = new Map();
+    for (const d of tradeResp.descriptions || []) {
+      descIndex.set(`${d.classid}_${d.instanceid || '0'}`, d);
+    }
+
+    const escrowOffers = (tradeResp.trade_offers_received || []).filter(o => o.trade_offer_state === 11);
+    const escrowAssets = escrowOffers.flatMap(o => (o.items_to_receive || []).filter(a => Number(a.appid) === 730));
+    console.log(`[import] escrow: ${escrowOffers.length} offers, ${escrowAssets.length} CS2 assets, ${descIndex.size} descriptions from API`);
+
+    // Fallback: fetch descriptions for any items missing from the response
+    const missing = escrowAssets.filter(a => !descIndex.has(`${a.classid}_${a.instanceid || '0'}`));
+    console.log(`[import] escrow: ${missing.length} items need GetAssetClassInfo fallback`);
+    if (missing.length) {
+      const fallback = await fetchAssetClassInfo(730, missing.map(a => ({ classid: a.classid, instanceid: a.instanceid })));
+      console.log(`[import] escrow: fallback returned ${fallback.size} descriptions`);
+      for (const [k, v] of fallback) descIndex.set(k, v);
+    }
+
+    for (const asset of escrowAssets) {
+      const desc = descIndex.get(`${asset.classid}_${asset.instanceid || '0'}`);
+      if (!desc || !desc.market_hash_name) continue;
+      const key = `incoming:${asset.assetid}`;
+      if (existingKeys.has(key)) continue;
+      existingKeys.add(key);
+      toAdd.push({
+        type: 'incoming',
+        assetid: asset.assetid,
+        marketHashName: desc.market_hash_name,
+        iconUrl: desc.icon_url || desc.icon_url_large || '',
+        detectedAt: now,
+      });
+    }
+  } catch (err) {
+    console.error('[import] escrow fetch failed:', err.message);
+  }
+
+  state.pending = [...(state.pending || []), ...toAdd];
+  await persistState();
+  res.json({ added: toAdd.length, totalPending: state.pending.length });
 });
 
 app.post('/api/inventory/dismiss', async (req, res) => {

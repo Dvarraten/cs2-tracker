@@ -147,11 +147,14 @@ export function buildSnapshotFromInventory(data) {
 }
 
 // Fetch trade offers from the Steam Web API using two calls:
-// 1. active_only=1 — always returns pending + escrow (state 11) offers regardless of time cursor
-// 2. historical_only=1 — returns recently completed (state 3) offers filtered by time cursor
-// This prevents state 11 trades from being silently dropped by time_historical_cutoff.
+// 1. Fixed 10-day lookback (active_only=0, historical_only=0) — always catches state 11
+//    (InEscrow) trades regardless of lastTradeTime cursor. Steam's active_only=1 does not
+//    reliably return state 11 since the offer itself is "resolved"; the fixed window covers
+//    the maximum possible CS2 trade hold (7 days).
+// 2. historical_only=1 with time cursor — incremental fetch for recently completed trades.
 export async function fetchTradeOffers(apiKey, afterTime = 0) {
   if (!apiKey) throw new Error('STEAM_API_KEY env var is not set');
+  const accessToken = process.env.STEAM_ACCESS_TOKEN || '';
 
   async function callApi(extra) {
     const params = new URLSearchParams({
@@ -161,6 +164,7 @@ export async function fetchTradeOffers(apiKey, afterTime = 0) {
       get_descriptions: '1',
       language: 'english',
     });
+    if (accessToken) params.set('access_token', accessToken);
     for (const [k, v] of Object.entries(extra)) params.set(k, v);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 15000);
@@ -177,11 +181,13 @@ export async function fetchTradeOffers(apiKey, afterTime = 0) {
     }
   }
 
+  // 10-day lookback always covers the full escrow window
+  const escrowCutoff = String(Math.floor(Date.now() / 1000) - 10 * 24 * 60 * 60);
   const histExtra = { active_only: '0', historical_only: '1' };
   if (afterTime > 0) histExtra.time_historical_cutoff = String(afterTime);
 
-  const [activeResp, histResp] = await Promise.all([
-    callApi({ active_only: '1', historical_only: '0' }),
+  const [escrowResp, histResp] = await Promise.all([
+    callApi({ active_only: '0', historical_only: '0', time_historical_cutoff: escrowCutoff }),
     callApi(histExtra),
   ]);
 
@@ -191,7 +197,7 @@ export async function fetchTradeOffers(apiKey, afterTime = 0) {
   const sent = [];
   const descMap = new Map();
 
-  for (const resp of [activeResp, histResp]) {
+  for (const resp of [escrowResp, histResp]) {
     for (const offer of resp.trade_offers_received || []) {
       if (!seenIds.has(offer.tradeofferid)) {
         seenIds.add(offer.tradeofferid);

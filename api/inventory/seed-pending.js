@@ -14,6 +14,7 @@ import { loadState, saveState } from '../_lib/state.js';
 import {
   fetchInventory,
   buildSnapshotFromInventory,
+  fetchTradeOffers,
 } from '../_lib/steam.js';
 
 export default async function handler(req, res) {
@@ -29,9 +30,16 @@ export default async function handler(req, res) {
 
   try {
     const state = await loadState();
-    const data = await fetchInventory(process.env.STEAM_ID);
-    const snapshot = buildSnapshotFromInventory(data);
     const detectedAt = new Date().toISOString();
+
+    // Fetch current inventory and escrow offers in parallel.
+    const apiKey = process.env.STEAM_API_KEY;
+    const [data, tradeResp] = await Promise.all([
+      fetchInventory(process.env.STEAM_ID),
+      apiKey ? fetchTradeOffers(apiKey, 0).catch(() => null) : Promise.resolve(null),
+    ]);
+
+    const snapshot = buildSnapshotFromInventory(data);
 
     // Dedupe against anything already pending so re-running the seed
     // doesn't duplicate entries.
@@ -39,22 +47,46 @@ export default async function handler(req, res) {
       state.pending.map((p) => `${p.type}:${p.assetid}`)
     );
     const append = [];
+
     for (const [assetid, info] of Object.entries(snapshot)) {
       const key = `incoming:${assetid}`;
       if (seen.has(key)) continue;
-      append.push({
-        type: 'incoming',
-        detectedAt,
-        assetid,
-        ...info,
-      });
+      append.push({ type: 'incoming', detectedAt, assetid, ...info });
       seen.add(key);
+    }
+
+    // Add items from escrow (trade hold) offers that aren't in the inventory yet.
+    if (tradeResp) {
+      const descIndex = new Map();
+      for (const d of tradeResp.descriptions || []) {
+        descIndex.set(`${d.classid}_${d.instanceid}`, d);
+      }
+      // State 11 = InEscrow
+      const escrowOffers = (tradeResp.trade_offers_received || []).filter(
+        (o) => o.trade_offer_state === 11
+      );
+      for (const offer of escrowOffers) {
+        for (const asset of offer.items_to_receive || []) {
+          if (Number(asset.appid) !== 730) continue;
+          if (String(asset.contextid) !== '2') continue;
+          const key = `incoming:${asset.assetid}`;
+          if (seen.has(key)) continue;
+          const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
+          if (!desc || !desc.market_hash_name) continue;
+          append.push({
+            type: 'incoming',
+            detectedAt,
+            assetid: asset.assetid,
+            marketHashName: desc.market_hash_name || desc.name || '(unknown)',
+            iconUrl: desc.icon_url || '',
+          });
+          seen.add(key);
+        }
+      }
     }
 
     const next = {
       ...state,
-      // Update snapshot too so subsequent normal syncs only surface NEW
-      // items (otherwise the next diff would also try to add everything).
       snapshot,
       hasInitialSnapshot: true,
       pending: state.pending.concat(append),
