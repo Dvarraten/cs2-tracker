@@ -22,12 +22,13 @@ async function fetchJson(url) {
 }
 
 (async () => {
-  const [skins, agents] = await Promise.all([
+  const [skins, agents, charms] = await Promise.all([
     fetchJson(`${BASE_URL}/skins_not_grouped.json`),
     fetchJson(`${BASE_URL}/agents.json`).catch(() => []),
+    fetchJson(`${BASE_URL}/keychains.json`).catch(() => []),
   ]);
 
-  console.log(`[items] skins: ${skins.length}, agents: ${agents.length}`);
+  console.log(`[items] skins: ${skins.length}, agents: ${agents.length}, charms: ${charms.length}`);
 
   const out = {};
   let skipped = 0;
@@ -80,6 +81,25 @@ async function fetchJson(url) {
     };
   }
 
+  for (const charm of charms) {
+    const fullName = charm.name;
+    if (!fullName) { skipped++; continue; }
+    out[fullName] = {
+      'full-name': fullName,
+      name: fullName,
+      type: 'Normal',
+      exterior: null,
+      weapon: null,
+      finish: null,
+      rarity: charm.rarity ? charm.rarity.name : null,
+      color: charm.rarity ? charm.rarity.color : null,
+      image: charm.image || '',
+      stattrak: false,
+      souvenir: false,
+      'float-caps': null,
+    };
+  }
+
   fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
   fs.writeFileSync(OUT_PATH, JSON.stringify(out));
 
@@ -95,9 +115,8 @@ async function fetchJson(url) {
     'Sport Gloves',
     'Butterfly Knife',
     'Michael Syfers',
-    'FBI Sniper',
+    'Butane',
     'Pandora',
-    'Vice',
   ];
   for (const probe of probes) {
     const hits = Object.keys(out).filter((k) => k.includes(probe)).length;
