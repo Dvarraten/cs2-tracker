@@ -22,7 +22,7 @@ import {
   fetchAssetClassInfo,
 } from '../_lib/steam.js';
 
-const HOLD_MAX_SECS = 7 * 24 * 60 * 60;
+const HOLD_MAX_SECS = 15 * 24 * 60 * 60;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

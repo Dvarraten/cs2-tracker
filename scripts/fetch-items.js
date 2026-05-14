@@ -12,43 +12,34 @@
 const fs = require('fs');
 const path = require('path');
 
-const SRC_URL =
-  'https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/skins_not_grouped.json';
+const BASE_URL = 'https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en';
 const OUT_PATH = path.join(__dirname, '..', 'public', 'items.json');
 
+async function fetchJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
+  return res.json();
+}
+
 (async () => {
-  console.log(`[items] fetching ${SRC_URL}…`);
-  const res = await fetch(SRC_URL);
-  if (!res.ok) {
-    console.error(`[items] HTTP ${res.status} from ByMykel`);
-    process.exit(1);
-  }
-  const data = await res.json();
-  if (!Array.isArray(data)) {
-    console.error('[items] expected an array, got', typeof data);
-    process.exit(1);
-  }
-  console.log(`[items] got ${data.length} entries — transforming…`);
+  const [skins, agents] = await Promise.all([
+    fetchJson(`${BASE_URL}/skins_not_grouped.json`),
+    fetchJson(`${BASE_URL}/agents.json`).catch(() => []),
+  ]);
+
+  console.log(`[items] skins: ${skins.length}, agents: ${agents.length}`);
 
   const out = {};
   let skipped = 0;
 
-  for (const item of data) {
+  for (const item of skins) {
     const fullName = item.name || item.market_hash_name;
-    if (!fullName) {
-      skipped++;
-      continue;
-    }
+    if (!fullName) { skipped++; continue; }
 
-    // Strip trailing " (Wear)" to derive the "base name" we expose to the
-    // autocomplete's "Skin" tag. For agents/items without wear, fall back
-    // to fullName.
     let baseName = fullName;
     if (item.wear && item.wear.name) {
       const suffix = ` (${item.wear.name})`;
-      if (fullName.endsWith(suffix)) {
-        baseName = fullName.slice(0, fullName.length - suffix.length);
-      }
+      if (fullName.endsWith(suffix)) baseName = fullName.slice(0, fullName.length - suffix.length);
     }
 
     out[fullName] = {
@@ -70,6 +61,25 @@ const OUT_PATH = path.join(__dirname, '..', 'public', 'items.json');
     };
   }
 
+  for (const agent of agents) {
+    const fullName = agent.name;
+    if (!fullName) { skipped++; continue; }
+    out[fullName] = {
+      'full-name': fullName,
+      name: fullName,
+      type: 'Normal',
+      exterior: null,
+      weapon: null,
+      finish: null,
+      rarity: agent.rarity ? agent.rarity.name : null,
+      color: agent.rarity ? agent.rarity.color : null,
+      image: agent.image || '',
+      stattrak: false,
+      souvenir: false,
+      'float-caps': null,
+    };
+  }
+
   fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
   fs.writeFileSync(OUT_PATH, JSON.stringify(out));
 
@@ -82,14 +92,11 @@ const OUT_PATH = path.join(__dirname, '..', 'public', 'items.json');
   // Quick sanity probe so you can see at a glance that new skins came through,
   // including the categories the old (Feb 2024) dataset was missing.
   const probes = [
-    'Dead Hand',
-    'Terminal',
-    'Kukri',
     'Sport Gloves',
-    'Hand Wraps',
-    'Driver Gloves',
-    'Specialist Gloves',
-    'Cobalt Skulls',
+    'Butterfly Knife',
+    'Michael Syfers',
+    'FBI Sniper',
+    'Pandora',
     'Vice',
   ];
   for (const probe of probes) {
