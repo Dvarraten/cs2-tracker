@@ -88,7 +88,6 @@ export default async function handler(req, res) {
           classid: a.classid,
           instanceid: a.instanceid,
         })));
-        fallbackResolved = fallback.size;
         for (const [k, v] of fallback) descIndex.set(k, v);
       }
 
