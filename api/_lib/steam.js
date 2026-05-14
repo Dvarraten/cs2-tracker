@@ -146,37 +146,60 @@ export function buildSnapshotFromInventory(data) {
   return snapshot;
 }
 
-// Fetches received trade offers from the last 7 days (state 3 = Accepted,
-// state 11 = InEscrow). Used by seed-pending to find items that are on a
-// trade hold and therefore hidden from the public inventory endpoint.
+// Fetches received trade offers relevant to seeding pending items:
+// - historical_only=1 + 7-day cutoff: recently accepted (state 3) offers.
+//   time_historical_cutoff is only respected when historical_only=1.
+// - A second call with active_only=0/historical_only=0 + short window for
+//   any InEscrow (state 11) offers.
+// Results are merged and deduplicated by tradeofferid.
 export async function fetchRecentReceivedOffers(apiKey) {
   if (!apiKey) throw new Error('STEAM_API_KEY env var is not set');
   const accessToken = process.env.STEAM_ACCESS_TOKEN || '';
   const cutoff = String(Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60);
-  const params = new URLSearchParams({
-    key: apiKey,
-    get_received_offers: '1',
-    get_sent_offers: '0',
-    get_descriptions: '1',
-    language: 'english',
-    active_only: '0',
-    historical_only: '0',
-    time_historical_cutoff: cutoff,
-  });
-  if (accessToken) params.set('access_token', accessToken);
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 15000);
-  try {
-    const res = await fetch(
-      `https://api.steampowered.com/IEconService/GetTradeOffers/v1/?${params}`
-    );
-    if (!res.ok) throw new Error(`Steam API HTTP ${res.status}`);
-    const data = await res.json();
-    if (!data.response) throw new Error('Steam API returned no response object');
-    return data.response;
-  } finally {
-    clearTimeout(timer);
+
+  async function call(extra) {
+    const params = new URLSearchParams({
+      key: apiKey,
+      get_received_offers: '1',
+      get_sent_offers: '0',
+      get_descriptions: '0',
+      language: 'english',
+    });
+    if (accessToken) params.set('access_token', accessToken);
+    for (const [k, v] of Object.entries(extra)) params.set(k, v);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const res = await fetch(
+        `https://api.steampowered.com/IEconService/GetTradeOffers/v1/?${params}`
+      );
+      if (!res.ok) throw new Error(`Steam API HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.response) throw new Error('Steam API returned no response object');
+      return data.response;
+    } finally {
+      clearTimeout(timer);
+    }
   }
+
+  const [histResp, escrowResp] = await Promise.all([
+    // historical_only=1 makes time_historical_cutoff actually work
+    call({ active_only: '0', historical_only: '1', time_historical_cutoff: cutoff }),
+    // escrow offers are "active" so need a separate call
+    call({ active_only: '0', historical_only: '0', time_historical_cutoff: cutoff }),
+  ]);
+
+  const seen = new Set();
+  const received = [];
+  for (const resp of [histResp, escrowResp]) {
+    for (const offer of resp.trade_offers_received || []) {
+      if (!seen.has(offer.tradeofferid)) {
+        seen.add(offer.tradeofferid);
+        received.push(offer);
+      }
+    }
+  }
+  return { trade_offers_received: received, descriptions: [] };
 }
 
 // Kept for the debug-trades endpoint.

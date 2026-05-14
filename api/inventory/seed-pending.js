@@ -64,7 +64,6 @@ export default async function handler(req, res) {
     // Steam often omits descriptions for historical offers, so we fall back to
     // GetAssetClassInfo for any items without a name.
     let tradeSeeded = 0;
-    let fallbackResolved = 0;
     if (tradeResp) {
       const descIndex = new Map();
       for (const d of tradeResp.descriptions || []) {
@@ -123,38 +122,10 @@ export default async function handler(req, res) {
     };
     await saveState(next);
 
-    // Debug block — remove once trade-hold seeding is confirmed working.
-    const _debug = tradeResp ? (() => {
-      const recentOffers = (tradeResp.trade_offers_received || []).filter(
-        o => o.trade_offer_state === 3 || o.trade_offer_state === 11
-      );
-      const allAssets = recentOffers.flatMap(o => o.items_to_receive || []);
-      const cs2 = allAssets.filter(a => Number(a.appid) === 730);
-      const stateBreakdown = (tradeResp.trade_offers_received || []).reduce((acc, o) => {
-        acc[o.trade_offer_state] = (acc[o.trade_offer_state] || 0) + 1; return acc;
-      }, {});
-      return {
-        totalReceived: (tradeResp.trade_offers_received || []).length,
-        stateBreakdown,
-        recentOffersCount: recentOffers.length,
-        totalAssetsInRecentOffers: allAssets.length,
-        cs2AssetsCount: cs2.length,
-        descriptionCount: (tradeResp.descriptions || []).length,
-        fallbackResolved,
-        sampleCs2Assets: cs2.slice(0, 3).map(a => ({
-          assetid: a.assetid, appid: a.appid, classid: a.classid, instanceid: a.instanceid,
-          alreadyInPending: seen.has(`incoming:${a.assetid}`),
-        })),
-      };
-    })() : null;
-
     return res.status(200).json({
       ok: true,
       seeded: append.length,
-      fromInventory: append.length - tradeSeeded,
-      fromTrades: tradeSeeded,
       totalPending: next.pending.length,
-      _debug,
     });
   } catch (err) {
     return res
