@@ -146,6 +146,38 @@ export function buildSnapshotFromInventory(data) {
   return snapshot;
 }
 
+// Single escrow-only call: returns InEscrow (state 11) received offers from
+// the last 10 days. Much faster than fetchTradeOffers — used by seed-pending.
+export async function fetchEscrowOffers(apiKey) {
+  if (!apiKey) throw new Error('STEAM_API_KEY env var is not set');
+  const accessToken = process.env.STEAM_ACCESS_TOKEN || '';
+  const escrowCutoff = String(Math.floor(Date.now() / 1000) - 10 * 24 * 60 * 60);
+  const params = new URLSearchParams({
+    key: apiKey,
+    get_received_offers: '1',
+    get_sent_offers: '0',
+    get_descriptions: '1',
+    language: 'english',
+    active_only: '0',
+    historical_only: '0',
+    time_historical_cutoff: escrowCutoff,
+  });
+  if (accessToken) params.set('access_token', accessToken);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const res = await fetch(
+      `https://api.steampowered.com/IEconService/GetTradeOffers/v1/?${params}`
+    );
+    if (!res.ok) throw new Error(`Steam API HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.response) throw new Error('Steam API returned no response object');
+    return data.response;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Fetch trade offers from the Steam Web API using two calls:
 // 1. Fixed 10-day lookback (active_only=0, historical_only=0) — always catches state 11
 //    (InEscrow) trades regardless of lastTradeTime cursor. Steam's active_only=1 does not

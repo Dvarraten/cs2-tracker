@@ -14,7 +14,7 @@ import { loadState, saveState } from '../_lib/state.js';
 import {
   fetchInventory,
   buildSnapshotFromInventory,
-  fetchTradeOffers,
+  fetchEscrowOffers,
 } from '../_lib/steam.js';
 
 export default async function handler(req, res) {
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     const apiKey = process.env.STEAM_API_KEY;
     const [data, tradeResp] = await Promise.all([
       fetchInventory(process.env.STEAM_ID),
-      apiKey ? fetchTradeOffers(apiKey, 0).catch(() => null) : Promise.resolve(null),
+      apiKey ? fetchEscrowOffers(apiKey) : Promise.resolve(null),
     ]);
 
     const snapshot = buildSnapshotFromInventory(data);
@@ -56,6 +56,7 @@ export default async function handler(req, res) {
     }
 
     // Add items from escrow (trade hold) offers that aren't in the inventory yet.
+    let escrowSeeded = 0;
     if (tradeResp) {
       const descIndex = new Map();
       for (const d of tradeResp.descriptions || []) {
@@ -81,6 +82,7 @@ export default async function handler(req, res) {
             iconUrl: desc.icon_url || '',
           });
           seen.add(key);
+          escrowSeeded++;
         }
       }
     }
@@ -100,6 +102,8 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       seeded: append.length,
+      fromInventory: append.length - escrowSeeded,
+      fromEscrow: escrowSeeded,
       totalPending: next.pending.length,
     });
   } catch (err) {
