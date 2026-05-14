@@ -15,6 +15,7 @@ import {
   fetchInventory,
   buildSnapshotFromInventory,
   fetchRecentReceivedOffers,
+  fetchAssetClassInfo,
 } from '../_lib/steam.js';
 
 export default async function handler(req, res) {
@@ -60,33 +61,51 @@ export default async function handler(req, res) {
     // Add items from recent trade offers not already captured by the inventory.
     // State 3 = Accepted (item delivered but may be on trade hold, hidden from
     // public inventory). State 11 = InEscrow (not yet delivered).
+    // Steam often omits descriptions for historical offers, so we fall back to
+    // GetAssetClassInfo for any items without a name.
     let tradeSeeded = 0;
     if (tradeResp) {
       const descIndex = new Map();
       for (const d of tradeResp.descriptions || []) {
         descIndex.set(`${d.classid}_${d.instanceid}`, d);
       }
+
       const recentOffers = (tradeResp.trade_offers_received || []).filter(
         (o) => o.trade_offer_state === 3 || o.trade_offer_state === 11
       );
-      for (const offer of recentOffers) {
-        for (const asset of offer.items_to_receive || []) {
-          if (Number(asset.appid) !== 730) continue;
-          if (String(asset.contextid) !== '2') continue;
-          const key = `incoming:${asset.assetid}`;
-          if (seen.has(key)) continue;
-          const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
-          if (!desc || !desc.market_hash_name) continue;
-          append.push({
-            type: 'incoming',
-            detectedAt,
-            assetid: asset.assetid,
-            marketHashName: desc.market_hash_name || desc.name || '(unknown)',
-            iconUrl: desc.icon_url || '',
-          });
-          seen.add(key);
-          tradeSeeded++;
-        }
+      const cs2Assets = recentOffers.flatMap(o =>
+        (o.items_to_receive || []).filter(
+          a => Number(a.appid) === 730 && String(a.contextid) === '2'
+        )
+      );
+
+      // Fetch descriptions for any items Steam didn't include in the response.
+      const missing = cs2Assets.filter(
+        a => !descIndex.has(`${a.classid}_${a.instanceid}`)
+      );
+      if (missing.length && apiKey) {
+        const fallback = await fetchAssetClassInfo(apiKey, missing.map(a => ({
+          classid: a.classid,
+          instanceid: a.instanceid,
+        })));
+        for (const [k, v] of fallback) descIndex.set(k, v);
+      }
+
+      for (const asset of cs2Assets) {
+        const key = `incoming:${asset.assetid}`;
+        if (seen.has(key)) continue;
+        const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`)
+          || descIndex.get(`${asset.classid}_0`);
+        if (!desc || !desc.market_hash_name) continue;
+        append.push({
+          type: 'incoming',
+          detectedAt,
+          assetid: asset.assetid,
+          marketHashName: desc.market_hash_name,
+          iconUrl: desc.icon_url || desc.icon_url_large || '',
+        });
+        seen.add(key);
+        tradeSeeded++;
       }
     }
 

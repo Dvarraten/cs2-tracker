@@ -184,6 +184,45 @@ export async function fetchEscrowOffers(apiKey) {
   return fetchRecentReceivedOffers(apiKey);
 }
 
+// Fetch item descriptions from Steam when GetTradeOffers doesn't return them.
+// classInstances is an array of { classid, instanceid } objects.
+export async function fetchAssetClassInfo(apiKey, classInstances) {
+  if (!classInstances.length) return new Map();
+  const params = new URLSearchParams({
+    key: apiKey,
+    appid: '730',
+    class_count: String(classInstances.length),
+    language: 'english',
+  });
+  classInstances.forEach(({ classid, instanceid }, i) => {
+    params.set(`classid${i}`, classid);
+    params.set(`instanceid${i}`, instanceid || '0');
+  });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const res = await fetch(
+      `https://api.steampowered.com/ISteamEconomy/GetAssetClassInfo/v0001/?${params}`
+    );
+    if (!res.ok) throw new Error(`Steam API HTTP ${res.status}`);
+    const data = await res.json();
+    const result = data.result || {};
+    const map = new Map();
+    classInstances.forEach(({ classid, instanceid }) => {
+      const info = result[classid];
+      if (info && info.market_hash_name) {
+        map.set(`${classid}_${instanceid || '0'}`, {
+          market_hash_name: info.market_hash_name,
+          icon_url: info.icon_url_large || info.icon_url || '',
+        });
+      }
+    });
+    return map;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Fetch trade offers from the Steam Web API using two calls:
 // 1. Fixed 10-day lookback (active_only=0, historical_only=0) — always catches state 11
 //    (InEscrow) trades regardless of lastTradeTime cursor. Steam's active_only=1 does not
