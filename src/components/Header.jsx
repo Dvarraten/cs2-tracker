@@ -11,7 +11,10 @@ export default function Header({
   setSearchTerm,
   theme,
   onAnalyticsClick,
+  onAddItemClick,
   onHandleItemsClick,
+  showAddItem = false,
+  showHandleItems = false,
   pendingCount = 0,
   user,
   onLogin,
@@ -33,14 +36,16 @@ export default function Header({
     return () => document.removeEventListener("mousedown", handler);
   }, [dropdownOpen]);
 
-  const scrollTo = (id) => {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const navBtn = (active) =>
+    `px-3 py-1.5 rounded-lg text-sm transition-all ${
+      active
+        ? "text-white bg-white/10"
+        : "text-slate-400 hover:text-white hover:bg-white/8"
+    }`;
 
   return (
     <header className={`w-full border-b border-white/8 sticky top-0 z-50 ${theme?.header || "bg-[#080e1a]"}`}>
-      <div className="max-w-[1800px] mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="mx-auto px-6 h-16 flex items-center justify-between">
 
         {/* LEFT: Logo + Nav */}
         <div className="flex items-center gap-8">
@@ -48,15 +53,12 @@ export default function Header({
             CS2TradingTracker
           </span>
           <nav className="hidden md:flex items-center gap-1">
-            <button
-              onClick={() => scrollTo("section-add")}
-              className="text-slate-400 hover:text-white hover:bg-white/8 px-3 py-1.5 rounded-lg text-sm transition-all"
-            >
+            <button onClick={onAddItemClick} className={navBtn(showAddItem)}>
               Add Item
             </button>
             <button
               onClick={onHandleItemsClick}
-              className="relative text-slate-400 hover:text-white hover:bg-white/8 px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-2"
+              className={`relative flex items-center gap-2 ${navBtn(showHandleItems)}`}
             >
               <span>Handle Items</span>
               {pendingCount > 0 && (
@@ -65,10 +67,7 @@ export default function Header({
                 </span>
               )}
             </button>
-            <button
-              onClick={onAnalyticsClick}
-              className="text-slate-400 hover:text-white hover:bg-white/8 px-3 py-1.5 rounded-lg text-sm transition-all"
-            >
+            <button onClick={onAnalyticsClick} className={navBtn(false)}>
               Analytics
             </button>
           </nav>

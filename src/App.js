@@ -17,7 +17,6 @@ import AddItemForm from './components/AddItemForm';
 import RecentSales from './components/RecentSales';
 import ProfitChart from './components/ProfitChart';
 import CurrencyConverter from './components/Sidebar/CurrencyConverter';
-import QuickLinks from './components/Sidebar/QuickLinks';
 import ThemePicker from './components/ThemePicker';
 import TabsAndSearchbar from './components/TabsAndSearchbar';
 import Header from './components/Header';
@@ -40,11 +39,6 @@ export default function CS2TradingTracker() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
 
-  const scrollToHandleItems = () => {
-    const el = document.getElementById('section-handle');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   const {
     usdAmount, setUsdAmount, rmbAmount, setRmbAmount,
     exchangeRate, lastUpdated, handleUsdChange, handleRmbChange
@@ -57,42 +51,53 @@ export default function CS2TradingTracker() {
   const [chartPeriod, setChartPeriod] = useState('30d');
   const [theme, setTheme] = useState(() => localStorage.getItem('cs2-theme') || 'default');
   const [showThemePicker, setShowThemePicker] = useState(false);
-  const [showQuickLinks, setShowQuickLinks] = useState(false);
+  const [showAddItem, setShowAddItem] = useState(false);
+  const [showHandleItems, setShowHandleItems] = useState(false);
 
   const themeStyles = themes[theme];
-  const { weeklyProfit, monthlyProfit, profitChartData } = useChartData(items, chartPeriod);
+  const { profitChartData } = useChartData(items, chartPeriod);
 
   useEffect(() => { localStorage.setItem('cs2-theme', theme); }, [theme]);
 
   useEffect(() => {
     if (
       activeTab === 'active' &&
-      (sortBy === 'profit-high' ||
-        sortBy === 'profit-low' ||
-        sortBy === 'profit-dollar-high' ||
-        sortBy === 'profit-dollar-low')
+      (sortBy === 'profit-high' || sortBy === 'profit-low' ||
+        sortBy === 'profit-dollar-high' || sortBy === 'profit-dollar-low')
     ) {
       setSortBy('newest');
     }
   }, [activeTab, sortBy]);
 
-  // Lock body scroll when modal open
   useEffect(() => {
     document.body.style.overflow = showAnalytics ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [showAnalytics]);
 
+  // Auto-promote pending items whose trade hold has expired
+  useEffect(() => {
+    const now = Date.now();
+    items
+      .filter(i => i.pending && !i.sold && i.expectedDelivery)
+      .forEach(i => {
+        const ts = typeof i.expectedDelivery === 'string'
+          ? new Date(i.expectedDelivery).getTime()
+          : i.expectedDelivery;
+        if (!isNaN(ts) && ts <= now) promotePendingItem(i.id);
+      });
+  }, [items]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const stats = {
-    totalActive: items.filter(i => !i.sold && !i.pending).length,
+    totalActive: items.filter(i => !i.sold).length,
     totalPending: items.filter(i => !i.sold && i.pending).length,
     totalSold: items.filter(i => i.sold).length,
     totalProfit: items.filter(i => i.sold).reduce((sum, i) => sum + i.profit, 0),
-    totalInvested: items.filter(i => !i.sold && !i.pending).reduce((sum, i) => sum + i.purchasePrice, 0),
+    totalInvested: items.filter(i => !i.sold).reduce((sum, i) => sum + i.purchasePrice, 0),
   };
 
   const filteredItems = items.filter(item => {
     const matchesTab =
-      activeTab === 'active' ? (!item.sold && !item.pending)
+      activeTab === 'active' ? !item.sold
       : activeTab === 'pending' ? (!item.sold && !!item.pending)
       : item.sold;
     const matchesSearch =
@@ -101,21 +106,12 @@ export default function CS2TradingTracker() {
     return matchesTab && matchesSearch;
   });
 
-  // For the Sold tab, "newest"/"oldest" means most recently *sold* (not bought).
   const soldTime = (it) =>
     it.soldAt ?? (it.dateSold ? new Date(it.dateSold).getTime() : 0);
 
   const sortedItems = [...filteredItems].sort((a, b) => {
-    if (sortBy === 'newest') {
-      return activeTab === 'sold'
-        ? soldTime(b) - soldTime(a) || (b.id - a.id)
-        : b.id - a.id;
-    }
-    if (sortBy === 'oldest') {
-      return activeTab === 'sold'
-        ? soldTime(a) - soldTime(b) || (a.id - b.id)
-        : a.id - b.id;
-    }
+    if (sortBy === 'newest') return activeTab === 'sold' ? soldTime(b) - soldTime(a) || (b.id - a.id) : b.id - a.id;
+    if (sortBy === 'oldest') return activeTab === 'sold' ? soldTime(a) - soldTime(b) || (a.id - b.id) : a.id - b.id;
     if (sortBy === 'price-high') return b.purchasePrice - a.purchasePrice;
     if (sortBy === 'price-low') return a.purchasePrice - b.purchasePrice;
     if (sortBy === 'profit-high') return (b.profitPercent ?? -Infinity) - (a.profitPercent ?? -Infinity);
@@ -127,20 +123,15 @@ export default function CS2TradingTracker() {
     return 0;
   });
 
-  // Selection helpers (used by bulk-delete toolbar)
   const toggleSelect = (id) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
   const clearSelection = () => setSelectedIds(new Set());
-  const exitSelectMode = () => {
-    setSelectMode(false);
-    clearSelection();
-  };
+  const exitSelectMode = () => { setSelectMode(false); clearSelection(); };
   const confirmBulkDelete = () => {
     if (selectedIds.size === 0) return;
     if (!window.confirm(`Delete ${selectedIds.size} item${selectedIds.size === 1 ? '' : 's'}? This cannot be undone.`)) return;
@@ -149,10 +140,7 @@ export default function CS2TradingTracker() {
   };
 
   return (
-    <div
-      className="min-h-screen"
-      onClick={() => showThemePicker && setShowThemePicker(false)}
-    >
+    <div className="min-h-screen" onClick={() => showThemePicker && setShowThemePicker(false)}>
       <div className={`fixed inset-0 -z-10 pointer-events-none ${themeStyles.bg}`} />
 
       {showWelcome && (
@@ -165,30 +153,26 @@ export default function CS2TradingTracker() {
         />
       )}
 
-      {/* Analytics modal */}
       {showAnalytics && (
         <ProfitChart
           profitChartData={profitChartData}
           chartPeriod={chartPeriod}
           setChartPeriod={setChartPeriod}
-          weeklyProfit={weeklyProfit}
-          monthlyProfit={monthlyProfit}
-          theme={themeStyles}
+theme={themeStyles}
           items={items}
           onClose={() => setShowAnalytics(false)}
         />
       )}
-
-      {/* Handle Items lives inline next to AddItemForm now (see below).
-          The modal mode is no longer mounted at the page root — header
-          button just scrolls to the inline panel. */}
 
       <Header
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         theme={themeStyles}
         onAnalyticsClick={() => setShowAnalytics(true)}
-        onHandleItemsClick={scrollToHandleItems}
+        onAddItemClick={() => setShowAddItem(v => !v)}
+        onHandleItemsClick={() => setShowHandleItems(v => !v)}
+        showAddItem={showAddItem}
+        showHandleItems={showHandleItems}
         pendingCount={steamSync.pendingCount}
         user={user}
         onLogin={login}
@@ -207,106 +191,118 @@ export default function CS2TradingTracker() {
         </div>
       </Header>
 
-      <div className="max-w-[1800px] mx-auto p-6">
-        <div className="mb-6">
-          <StatsCards stats={stats} theme={themeStyles} />
-        </div>
+      <div className="flex gap-6 p-6 items-start">
 
-        {/* Main Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr] gap-8">
-          {/* Left Sidebar */}
-          <div className="space-y-2">
-            <CurrencyConverter
-              usdAmount={usdAmount} setUsdAmount={setUsdAmount}
-              rmbAmount={rmbAmount} setRmbAmount={setRmbAmount}
-              exchangeRate={exchangeRate} lastUpdated={lastUpdated}
-              handleUsdChange={handleUsdChange} handleRmbChange={handleRmbChange}
-              theme={themeStyles}
-            />
-            <RecentSales items={items} theme={themeStyles} />
-            <QuickLinks
-              theme={themeStyles}
-              setShowQuickLinks={setShowQuickLinks}
-              showQuickLinks={showQuickLinks}
-            />
-            <div className="space-y-2">
+        {/* Sidebar */}
+        <aside className="w-80 shrink-0 flex flex-col gap-4 sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto pb-4">
+
+          {/* Overview */}
+          <div className={`${themeStyles.panel} border ${themeStyles.panelBorder} rounded-2xl p-4`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Overview</h3>
               <button
                 onClick={() => setShowAnalytics(true)}
-                className={`w-full ${themeStyles.card} hover:bg-white/20 backdrop-blur-sm rounded-lg px-4 py-3 border ${themeStyles.cardBorder} text-white transition-all flex items-center gap-3`}
+                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-300 hover:bg-white/8 transition-colors"
+                title="View analytics"
               >
-                <BarChart3 size={18} />
-                <span className="text-sm">Show Analytics</span>
-              </button>
-              <button
-                onClick={() => exportToCSV(items)}
-                className={`w-full ${themeStyles.card} hover:bg-white/20 backdrop-blur-sm rounded-lg px-4 py-3 border ${themeStyles.cardBorder} text-white transition-all flex items-center gap-3`}
-              >
-                <Download size={18} />
-                <span className="text-sm">Export to CSV</span>
+                <BarChart3 size={14} />
               </button>
             </div>
+            <StatsCards stats={stats} theme={themeStyles} />
           </div>
 
-          {/* Main Content */}
-          <div className="space-y-2">
-            <div id="section-add" className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <AddItemForm
-                formData={formData} setFormData={setFormData}
-                handleAddItem={handleAddItem} theme={themeStyles}
-              />
-              {/* On lg+, AddItemForm dictates the row height — HandleItems
-                  is absolutely positioned inside its cell so its content
-                  can grow without pushing the row taller. Internal body
-                  scrolls instead. On smaller screens the grid collapses
-                  to a single column and HandleItems renders normally. */}
-              <div className="relative lg:min-h-0">
-                <div className="lg:absolute lg:inset-0">
-                  <HandleItemsModal
-                    embedded
-                    open
-                    onClose={() => {}}
-                    theme={themeStyles}
-                    items={items}
-                    addItemDirect={addItemDirect}
-                    sellItemDirect={sellItemDirect}
-                    promotePendingItem={promotePendingItem}
-                    exchangeRate={exchangeRate}
-                    {...steamSync}
-                    onSync={steamSync.sync}
-                    onDismiss={steamSync.dismiss}
-                  />
-                </div>
-              </div>
-            </div>
+          {/* Recent Sales */}
+          <div className={`${themeStyles.panel} border ${themeStyles.panelBorder} rounded-2xl p-4`}>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Recent Sales</h3>
+            <RecentSales items={items} theme={themeStyles} />
+          </div>
 
-            <div id="section-items" />
-            <TabsAndSearchbar
+          {/* Currency Converter */}
+          <div className={`${themeStyles.panel} border ${themeStyles.panelBorder} rounded-2xl p-4`}>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Currency</h3>
+            <CurrencyConverter
+              usdAmount={usdAmount}
+              rmbAmount={rmbAmount}
+              exchangeRate={exchangeRate}
+              lastUpdated={lastUpdated}
+              handleUsdChange={handleUsdChange}
+              handleRmbChange={handleRmbChange}
               theme={themeStyles}
-              setActiveTab={setActiveTab} activeTab={activeTab}
-              stats={stats}
-              searchTerm={searchTerm} setSearchTerm={setSearchTerm}
-              sortBy={sortBy} setSortBy={setSortBy}
-              selectMode={selectMode}
-              selectedIds={selectedIds}
-              onEnterSelectMode={() => setSelectMode(true)}
-              onCancelSelectMode={exitSelectMode}
-              onConfirmBulkDelete={confirmBulkDelete}
-            />
-
-            <ItemGrid
-              sellPlatform={sellPlatform} setSellData={setSellData}
-              sellData={sellData} setSellPlatform={setSellPlatform}
-              handleSellItem={handleSellItem} handleDeleteItem={handleDeleteItem}
-              promotePendingItem={promotePendingItem}
-              theme={themeStyles} items={items} sortedItems={sortedItems}
-              searchTerm={searchTerm} activeTab={activeTab}
-              selectMode={selectMode}
-              selectedIds={selectedIds}
-              onToggleSelect={toggleSelect}
-              TrendingUp={TrendingUp} Trash2={Trash2}
             />
           </div>
-        </div>
+
+          {/* Utility buttons */}
+          <button
+            onClick={() => setShowAnalytics(true)}
+            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border ${themeStyles.cardBorder} ${themeStyles.subtext} hover:text-white text-sm transition-colors`}
+          >
+            <BarChart3 size={14} />
+            Analytics
+          </button>
+          <button
+            onClick={() => exportToCSV(items)}
+            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border ${themeStyles.cardBorder} ${themeStyles.subtext} hover:text-white text-sm transition-colors`}
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 min-w-0 flex flex-col gap-4">
+
+          {/* Toggleable panels */}
+          {(showAddItem || showHandleItems) && (
+            <div className={`grid gap-6 ${showAddItem && showHandleItems ? 'lg:grid-cols-2' : 'grid-cols-1'}`}>
+              {showAddItem && (
+                <AddItemForm
+                  formData={formData} setFormData={setFormData}
+                  handleAddItem={handleAddItem} theme={themeStyles}
+                />
+              )}
+              {showHandleItems && (
+                <HandleItemsModal
+                  embedded open onClose={() => {}}
+                  theme={themeStyles}
+                  items={items}
+                  addItemDirect={addItemDirect}
+                  sellItemDirect={sellItemDirect}
+                  promotePendingItem={promotePendingItem}
+                  exchangeRate={exchangeRate}
+                  {...steamSync}
+                  onSync={steamSync.sync}
+                  onDismiss={steamSync.dismiss}
+                />
+              )}
+            </div>
+          )}
+
+          <TabsAndSearchbar
+            theme={themeStyles}
+            setActiveTab={setActiveTab} activeTab={activeTab}
+            stats={stats}
+            searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+            sortBy={sortBy} setSortBy={setSortBy}
+            selectMode={selectMode}
+            selectedIds={selectedIds}
+            onEnterSelectMode={() => setSelectMode(true)}
+            onCancelSelectMode={exitSelectMode}
+            onConfirmBulkDelete={confirmBulkDelete}
+          />
+
+          <ItemGrid
+            sellPlatform={sellPlatform} setSellData={setSellData}
+            sellData={sellData} setSellPlatform={setSellPlatform}
+            handleSellItem={handleSellItem} handleDeleteItem={handleDeleteItem}
+            promotePendingItem={promotePendingItem}
+            theme={themeStyles} items={items} sortedItems={sortedItems}
+            searchTerm={searchTerm} activeTab={activeTab}
+            selectMode={selectMode}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            TrendingUp={TrendingUp} Trash2={Trash2}
+          />
+        </main>
       </div>
     </div>
   );
