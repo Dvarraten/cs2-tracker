@@ -207,8 +207,8 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, pendingMatc
                 </span>
               )}
             </div>
-            <div className="text-amber-300/80 truncate">
-              "{pendingMatch.item.itemName}" — paid ${pendingMatch.item.purchasePrice.toFixed(2)}
+            <div className="text-warn/80 truncate">
+              "{pendingMatch.item.itemName}" — paid <span className="font-mono">${pendingMatch.item.purchasePrice.toFixed(2)}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -356,7 +356,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
       </div>
 
       {isFuzzyOnly && (
-        <div className="text-[11px] text-amber-300/90 bg-amber-500/10 rounded-md px-2 py-1">
+        <div className="text-[11px] text-warn bg-warn/10 rounded-md px-2 py-1">
           No exact name match — showing fuzzy suggestions. Use "Browse all" if none of these are right.
         </div>
       )}
@@ -372,7 +372,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
       )}
 
       {visibleCandidates.length === 0 ? (
-        <div className="text-xs text-amber-300/90 bg-amber-500/10 rounded-md px-2 py-1.5">
+        <div className="text-xs text-warn bg-warn/10 rounded-md px-2 py-1.5">
           {browseAll
             ? 'No active items match that search. Try a different word, or dismiss if it wasn\'t a tracked sale.'
             : 'No tracked item matches this name. Use "Browse all" to pick one manually, or dismiss.'}
@@ -657,14 +657,14 @@ export default function HandleItemsModal({
             onClick={() => setTab('incoming')}
             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors ${
               tab === 'incoming'
-                ? 'text-white bg-white/5 border-b-2 border-emerald-400'
+                ? 'text-white bg-white/5 border-b-2 border-profit'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <ArrowDownCircle size={14} className="text-emerald-400" />
+            <ArrowDownCircle size={14} className="text-profit" />
             Incoming
             {incomingCount > 0 && (
-              <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+              <span className="bg-profit/20 text-profit text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                 {incomingCount}
               </span>
             )}
@@ -772,7 +772,7 @@ export default function HandleItemsModal({
     return (
       <div
         id="section-handle"
-        className={`relative w-full h-full ${theme.panel} ${theme.panelBorder} rounded-xl border shadow-lg flex flex-col overflow-hidden`}
+        className={`relative w-full min-h-[480px] ${theme.panel} ${theme.panelBorder} rounded-xl border shadow-lg flex flex-col overflow-hidden`}
       >
         {innerUi}
       </div>

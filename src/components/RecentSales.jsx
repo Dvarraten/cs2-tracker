@@ -1,64 +1,50 @@
 import React from "react";
-import { TrendingUp } from "lucide-react";
-import { PlatformBadge } from "./PlatformBadge";
 
 export default function RecentSales({ items, theme }) {
-  const sold = items
-    .filter((i) => i.sold)
+  const sold = [...items]
+    .filter(i => i.sold)
     .sort((a, b) => {
-      // Prefer the precise soldAt timestamp; fall back to dateSold for items
-      // sold before we started recording soldAt. id is the final tiebreaker
-      // (id = Date.now() at purchase, so newer purchases win when everything
-      // else is equal — still a reasonable proxy).
-      const aTime = a.soldAt
-        ?? (a.dateSold ? new Date(a.dateSold).getTime() : 0);
-      const bTime = b.soldAt
-        ?? (b.dateSold ? new Date(b.dateSold).getTime() : 0);
-      if (bTime !== aTime) return bTime - aTime;
-      return (b.id || 0) - (a.id || 0);
+      const aTime = a.soldAt ?? (a.dateSold ? new Date(a.dateSold).getTime() : 0);
+      const bTime = b.soldAt ?? (b.dateSold ? new Date(b.dateSold).getTime() : 0);
+      return bTime - aTime || (b.id - a.id);
     })
-    .slice(0, 5);
+    .slice(0, 6);
+
+  if (!sold.length) {
+    return <div className="text-center py-6 text-slate-600 text-sm">No sales yet</div>;
+  }
 
   return (
-    <div className={`${theme.panel} backdrop-blur-sm rounded-xl p-5 border ${theme.panelBorder}`}>
-      <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-        <TrendingUp size={18} className="text-emerald-400" />
-        Recent Sales
-      </h3>
-
-      {sold.length === 0 ? (
-        <div className="text-center py-6 text-slate-400">
-          <TrendingUp size={28} className="mx-auto mb-2 opacity-30" />
-          <p className="text-sm">No sales yet</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {sold.map((item) => (
-            <div key={item.id} className={`relative rounded-lg px-3 py-2.5 border ${theme.soldCard} overflow-hidden`}>
-              <span className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${item.profit >= 0 ? "bg-emerald-500" : "bg-red-500"}`} />
-              <div className="pl-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-white truncate">{item.itemName}</span>
-                  {item.soldPlatform && <PlatformBadge platform={item.soldPlatform} size="xs" />}
-                </div>
-                <div className="flex justify-between items-center mt-0.5">
-                  <span className="text-slate-400 text-xs">
-                    ${item.purchasePrice.toFixed(2)} → ${item.salePrice.toFixed(2)}
-                  </span>
-                  {item.dateSold && (
-                    <span className="text-xs text-slate-500">
-                      {new Date(item.dateSold).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                    </span>
-                  )}
-                </div>
-                <span className={`text-sm font-semibold ${item.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                  {item.profit >= 0 ? "+" : ""}${item.profit.toFixed(2)} ({item.profit >= 0 ? "+" : ""}{item.profitPercent.toFixed(1)}%)
-                </span>
-              </div>
+    <div className="space-y-2">
+      {sold.map(item => {
+        const profit = item.profit ?? 0;
+        const isGain = profit >= 0;
+        return (
+          <div
+            key={item.id}
+            className={`flex items-center gap-3 p-2.5 rounded-lg ${theme.card} border ${theme.cardBorder} transition-colors`}
+          >
+            <div className={`w-0.5 self-stretch rounded-full shrink-0 ${isGain ? "bg-profit" : "bg-loss"}`} />
+            {item.iconUrl && (
+              <img src={item.iconUrl} alt={item.itemName} className="w-8 h-8 object-contain shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-slate-300 truncate font-medium">{item.itemName}</p>
+              <p className="text-xs text-slate-600 mt-0.5 font-mono">
+                ${item.purchasePrice.toFixed(2)} → ${(item.salePrice ?? 0).toFixed(2)}
+              </p>
             </div>
-          ))}
-        </div>
-      )}
+            <div className="text-right shrink-0">
+              <p className={`text-xs font-mono font-semibold ${isGain ? "text-profit" : "text-loss"}`}>
+                {isGain ? "+" : ""}${profit.toFixed(2)}
+              </p>
+              <p className={`text-xs font-mono ${isGain ? "text-profit/70" : "text-loss/70"}`}>
+                {isGain ? "+" : ""}{(item.profitPercent ?? 0).toFixed(1)}%
+              </p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

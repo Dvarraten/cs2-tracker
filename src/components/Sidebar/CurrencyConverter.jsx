@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Copy, Check, Coins } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 
 function CopyButton({ value }) {
   const [copied, setCopied] = useState(false);
@@ -15,11 +15,11 @@ function CopyButton({ value }) {
       onClick={handleCopy}
       disabled={!value}
       title="Copy value"
-      className={`p-1.5 rounded-md transition-all
-        ${copied
-          ? "text-emerald-400 bg-emerald-400/10"
-          : "text-slate-500 hover:text-slate-300 hover:bg-white/8 disabled:opacity-30 disabled:cursor-not-allowed"
-        }`}
+      className={`p-1.5 rounded-md transition-all shrink-0 ${
+        copied
+          ? "text-profit bg-profit/10"
+          : "text-slate-600 hover:text-slate-300 hover:bg-white/8 disabled:opacity-30 disabled:cursor-not-allowed"
+      }`}
     >
       {copied ? <Check size={13} /> : <Copy size={13} />}
     </button>
@@ -29,53 +29,40 @@ function CopyButton({ value }) {
 export default function CurrencyConverter({
   usdAmount, rmbAmount,
   exchangeRate, lastUpdated,
-  handleUsdChange, handleRmbChange, theme
+  handleUsdChange, handleRmbChange, theme,
 }) {
   return (
-    <div className={`${theme.panel} backdrop-blur-sm rounded-xl p-5 border ${theme.panelBorder}`}>
-      <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-        <Coins size={18} className="text-blue-400" />
-        Currency Converter
-      </h3>
-      <div className="space-y-3">
-        <div>
-          <label className={`block ${theme.subtext} text-xs mb-1.5`}>USD</label>
-          <div className="flex items-center gap-1.5">
-            <input
-              type="text"
-              inputMode="decimal"
-              value={usdAmount}
-              onChange={(e) => handleUsdChange(e.target.value)}
-              className={`w-full ${theme.input} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border`}
-              placeholder="-"
-            />
-            <CopyButton value={usdAmount} />
-          </div>
+    <div className="space-y-2">
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-mono pointer-events-none">$</span>
+        <input
+          type="text"
+          inputMode="decimal"
+          value={usdAmount}
+          onChange={(e) => handleUsdChange(e.target.value)}
+          placeholder="USD"
+          className={`w-full ${theme.input} pl-7 pr-8 py-2 rounded-lg text-sm font-mono text-slate-200 placeholder-slate-600 focus:outline-none transition-colors border`}
+        />
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+          <CopyButton value={usdAmount} />
         </div>
-        <div>
-          <label className={`block ${theme.subtext} text-xs mb-1.5`}>RMB (CNY)</label>
-          <div className="flex items-center gap-1.5">
-            <input
-              type="text"
-              inputMode="decimal"
-              value={rmbAmount}
-              onChange={(e) => handleRmbChange(e.target.value)}
-              className={`w-full ${theme.input} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border`}
-              placeholder="-"
-            />
-            <CopyButton value={rmbAmount} />
-          </div>
+      </div>
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-mono pointer-events-none">¥</span>
+        <input
+          type="text"
+          inputMode="decimal"
+          value={rmbAmount}
+          onChange={(e) => handleRmbChange(e.target.value)}
+          placeholder="RMB"
+          className={`w-full ${theme.input} pl-7 pr-8 py-2 rounded-lg text-sm font-mono text-slate-200 placeholder-slate-600 focus:outline-none transition-colors border`}
+        />
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+          <CopyButton value={rmbAmount} />
         </div>
       </div>
       {exchangeRate && (
-        <div className={`mt-3 pt-3 border-t ${theme.cardBorder}`}>
-          <p className={`${theme.subtext} text-xs`}>
-            Rate: 1 USD = {exchangeRate.toFixed(4)} CNY
-          </p>
-          {lastUpdated && (
-            <p className="text-slate-500 text-xs mt-1">Updated: {lastUpdated}</p>
-          )}
-        </div>
+        <p className="text-xs text-slate-700 text-center">1 USD ≈ {exchangeRate.toFixed(2)} CNY</p>
       )}
     </div>
   );
