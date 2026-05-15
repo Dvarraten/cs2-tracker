@@ -14,6 +14,11 @@ function itemsKey(steamId) {
   return `skinroi:items:${steamId}`;
 }
 
+// Legacy key used before the cs2-tracker → skinroi rename.
+function legacyItemsKey(steamId) {
+  return `cs2-tracker:items:${steamId}`;
+}
+
 export default async function handler(req, res) {
   const steamId = getSessionSteamId(req);
   if (!steamId) return res.status(401).json({ error: 'not authenticated' });
@@ -22,8 +27,23 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const client = getClient();
-    const items = await client.get(itemsKey(steamId));
-    return res.json({ items: Array.isArray(items) ? items : [] });
+    const raw = await client.get(itemsKey(steamId));
+
+    if (raw !== null) {
+      return res.json({ items: Array.isArray(raw) ? raw : [] });
+    }
+
+    // New key missing — check legacy key and migrate if found.
+    const legacy = await client.get(legacyItemsKey(steamId));
+    if (Array.isArray(legacy) && legacy.length > 0) {
+      await client.set(itemsKey(steamId), legacy);
+      await client.del(legacyItemsKey(steamId));
+      return res.json({ items: legacy, migrated: true });
+    }
+
+    // Key has never been written — signal the client to migrate localStorage
+    // items rather than overwrite with [].
+    return res.json({ items: [], firstLogin: true });
   }
 
   if (req.method === 'POST') {

@@ -24,8 +24,20 @@ export const useItems = (steamId) => {
     if (steamId) {
       fetch('/api/items')
         .then(r => r.json())
-        .then(({ items }) => {
-          setItems(Array.isArray(items) ? items : []);
+        .then(({ items, firstLogin }) => {
+          if (firstLogin) {
+            // Key never written — migrate any existing localStorage items so
+            // they aren't lost when the user logs in for the first time.
+            try {
+              const local = localStorage.getItem('cs2-trading-items');
+              const localItems = local ? JSON.parse(local) : [];
+              setItems(Array.isArray(localItems) ? localItems : []);
+            } catch {
+              setItems([]);
+            }
+          } else {
+            setItems(Array.isArray(items) ? items : []);
+          }
           setIsLoaded(true);
         })
         .catch(() => setIsLoaded(true));
