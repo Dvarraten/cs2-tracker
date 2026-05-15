@@ -28,12 +28,6 @@ export default async function handler(req, res) {
   if (!match) return res.status(400).send('Invalid Steam ID in response');
   const steamId = match[1];
 
-  // Restrict to the configured owner (personal tracker).
-  const allowedId = (process.env.STEAM_ID || '').trim();
-  if (allowedId && steamId !== allowedId) {
-    return res.status(403).send('This tracker is private');
-  }
-
   setSessionCookie(res, steamId);
   res.redirect(302, '/');
 }
