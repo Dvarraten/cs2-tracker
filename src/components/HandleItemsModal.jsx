@@ -457,6 +457,10 @@ export default function HandleItemsModal({
   sellItemDirect,
   promotePendingItem,
   exchangeRate,
+  usdAmount,
+  rmbAmount,
+  handleUsdChange,
+  handleRmbChange,
   embedded = false,
 }) {
   const [tab, setTab] = useState('incoming');
@@ -590,47 +594,62 @@ export default function HandleItemsModal({
   // tree so we can wrap it in either a modal frame or an inline panel.
   const innerUi = (
     <>
-      {/* Header — title + last-sync timestamp + Sync now button on one row */}
-        <div className="flex items-center justify-between p-4 gap-3 border-b border-transparent flex-wrap">
+      {/* Header */}
+        <div className={`flex items-center justify-between px-5 py-4 border-b ${theme.panelBorder || theme.cardBorder} shrink-0`}>
+          <h3 className="font-semibold text-slate-100">Handle Items</h3>
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold text-white flex items-center gap-2">
-              <Inbox size={18} className="text-amber-400" />
-              Handle Items
-            </h3>
-            {pending.length > 0 && (
-              <span className="bg-red-500/20 text-red-300 text-xs font-semibold px-2 py-0.5 rounded-full">
-                {pending.length} pending
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-slate-500">
+            <span className="text-[11px] text-slate-600">
               {hasInitialSnapshot && lastSync
-                ? <>Last sync: {new Date(lastSync).toLocaleTimeString()}</>
-                : !hasInitialSnapshot ? 'No snapshot yet'
-                : 'never'}
+                ? `Synced ${new Date(lastSync).toLocaleTimeString()}`
+                : !hasInitialSnapshot ? 'No snapshot yet' : ''}
             </span>
             <button
               type="button"
               onClick={onSync}
               disabled={busy}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs ${theme.card} border ${theme.cardBorder} ${theme.subtext} hover:text-white disabled:opacity-50`}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs ${theme.card} border ${theme.cardBorder} ${theme.subtext} hover:text-white disabled:opacity-50 transition-colors`}
               title="Sync with Steam now"
             >
               <RefreshCw size={12} className={busy ? 'animate-spin' : ''} />
               {busy ? 'Syncing…' : 'Sync now'}
             </button>
             {!embedded && (
-              <button
-                type="button"
-                onClick={onClose}
-                className="text-slate-400 hover:text-white p-1.5 rounded hover:bg-white/5"
-              >
+              <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-300 transition-colors p-1">
                 <X size={18} />
               </button>
             )}
           </div>
         </div>
+
+        {/* Compact currency converter */}
+        {handleUsdChange && (
+          <div className={`flex items-center gap-2 px-5 py-2.5 border-b ${theme.panelBorder || theme.cardBorder}`}>
+            <div className="relative">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs font-mono pointer-events-none">$</span>
+              <input
+                type="text" inputMode="decimal"
+                value={usdAmount || ''}
+                onChange={e => handleUsdChange(e.target.value)}
+                placeholder="USD"
+                className={`w-24 ${theme.input} pl-5 pr-2 py-1.5 rounded-md text-xs font-mono text-slate-200 placeholder-slate-700 focus:outline-none border`}
+              />
+            </div>
+            <span className="text-slate-700 text-xs">≈</span>
+            <div className="relative">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs font-mono pointer-events-none">¥</span>
+              <input
+                type="text" inputMode="decimal"
+                value={rmbAmount || ''}
+                onChange={e => handleRmbChange(e.target.value)}
+                placeholder="CNY"
+                className={`w-24 ${theme.input} pl-5 pr-2 py-1.5 rounded-md text-xs font-mono text-slate-200 placeholder-slate-700 focus:outline-none border`}
+              />
+            </div>
+            {exchangeRate && (
+              <span className="text-slate-700 text-[10px] ml-1">1 USD ≈ {exchangeRate.toFixed(2)} CNY</span>
+            )}
+          </div>
+        )}
 
         {/* Error / unreachable banner — only shown when something's off. */}
         {(reachable === false || lastSyncOk === false) && (
@@ -674,14 +693,14 @@ export default function HandleItemsModal({
             onClick={() => setTab('outgoing')}
             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors ${
               tab === 'outgoing'
-                ? 'text-white bg-white/5 border-b-2 border-rose-400'
+                ? 'text-white bg-white/5 border-b-2 border-loss'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <ArrowUpCircle size={14} className="text-rose-400" />
+            <ArrowUpCircle size={14} className="text-loss" />
             Outgoing
             {outgoingCount > 0 && (
-              <span className="bg-rose-500/20 text-rose-300 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+              <span className="bg-loss/20 text-loss text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                 {outgoingCount}
               </span>
             )}

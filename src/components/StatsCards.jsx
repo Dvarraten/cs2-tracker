@@ -43,7 +43,6 @@ export default function StatsCards({ stats, theme }) {
     {
       label: "Active",
       value: <AnimatedNumber value={stats.totalActive} />,
-      sub: `${stats.totalPending} pending`,
       icon: Package,
       iconColor: "text-slate-400",
       iconBg: "bg-slate-500/10",

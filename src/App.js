@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, TrendingUp, BarChart3, Download } from 'lucide-react';
+import { Trash2, TrendingUp, BarChart3, Download, X } from 'lucide-react';
 import { themes } from './themes/themes';
 import './index.css';
 
@@ -194,7 +194,7 @@ theme={themeStyles}
       <div className="flex gap-6 p-6 items-start">
 
         {/* Sidebar */}
-        <aside className="w-80 shrink-0 flex flex-col gap-4 sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto pb-4">
+        <aside className="w-[360px] shrink-0 flex flex-col gap-4 sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto pb-4">
 
           {/* Overview */}
           <div className={`${themeStyles.panel} border ${themeStyles.panelBorder} rounded-2xl p-4`}>
@@ -251,32 +251,6 @@ theme={themeStyles}
         {/* Main Content */}
         <main className="flex-1 min-w-0 flex flex-col gap-4">
 
-          {/* Toggleable panels */}
-          {(showAddItem || showHandleItems) && (
-            <div className={`grid gap-6 ${showAddItem && showHandleItems ? 'lg:grid-cols-2' : 'grid-cols-1'}`}>
-              {showAddItem && (
-                <AddItemForm
-                  formData={formData} setFormData={setFormData}
-                  handleAddItem={handleAddItem} theme={themeStyles}
-                />
-              )}
-              {showHandleItems && (
-                <HandleItemsModal
-                  embedded open onClose={() => {}}
-                  theme={themeStyles}
-                  items={items}
-                  addItemDirect={addItemDirect}
-                  sellItemDirect={sellItemDirect}
-                  promotePendingItem={promotePendingItem}
-                  exchangeRate={exchangeRate}
-                  {...steamSync}
-                  onSync={steamSync.sync}
-                  onDismiss={steamSync.dismiss}
-                />
-              )}
-            </div>
-          )}
-
           <TabsAndSearchbar
             theme={themeStyles}
             setActiveTab={setActiveTab} activeTab={activeTab}
@@ -304,6 +278,59 @@ theme={themeStyles}
           />
         </main>
       </div>
+
+      {/* Add Item modal */}
+      {showAddItem && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowAddItem(false)}>
+          <div
+            className={`relative w-full max-w-xl max-h-[85vh] flex flex-col ${themeStyles.panel} border ${themeStyles.panelBorder} rounded-2xl shadow-2xl overflow-hidden`}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className={`flex items-center justify-between px-5 py-4 border-b ${themeStyles.panelBorder} shrink-0`}>
+              <h2 className="font-semibold text-slate-100">Add New Item</h2>
+              <button onClick={() => setShowAddItem(false)} className="text-slate-500 hover:text-slate-300 transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              <AddItemForm
+                formData={formData} setFormData={setFormData}
+                handleAddItem={handleAddItem} theme={themeStyles} bare
+              />
+              <div className={`border-t ${themeStyles.panelBorder} pt-4`}>
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Currency</h3>
+                <CurrencyConverter
+                  usdAmount={usdAmount} rmbAmount={rmbAmount}
+                  exchangeRate={exchangeRate} lastUpdated={lastUpdated}
+                  handleUsdChange={handleUsdChange} handleRmbChange={handleRmbChange}
+                  theme={themeStyles}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Handle Items modal */}
+      {showHandleItems && (
+        <HandleItemsModal
+          open={showHandleItems}
+          onClose={() => setShowHandleItems(false)}
+          theme={themeStyles}
+          items={items}
+          addItemDirect={addItemDirect}
+          sellItemDirect={sellItemDirect}
+          promotePendingItem={promotePendingItem}
+          exchangeRate={exchangeRate}
+          usdAmount={usdAmount}
+          rmbAmount={rmbAmount}
+          handleUsdChange={handleUsdChange}
+          handleRmbChange={handleRmbChange}
+          {...steamSync}
+          onSync={steamSync.sync}
+          onDismiss={steamSync.dismiss}
+        />
+      )}
     </div>
   );
 }

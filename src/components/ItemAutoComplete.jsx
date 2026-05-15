@@ -17,6 +17,13 @@ const EXTERIORS_CANON = [
   { name: "Battle-Scarred", abbr: "bs" },
 ];
 
+const DOPPLER_PHASES = [
+  'Doppler Phase 1', 'Doppler Phase 2', 'Doppler Phase 3', 'Doppler Phase 4',
+  'Doppler Ruby', 'Doppler Sapphire', 'Doppler Black Pearl',
+  'Gamma Doppler Phase 1', 'Gamma Doppler Phase 2', 'Gamma Doppler Phase 3', 'Gamma Doppler Phase 4',
+  'Gamma Doppler Emerald',
+];
+
 const CATEGORY_ORDER = ["weapon", "finish", "exterior", "direct"];
 const CATEGORY_LABEL = {
   weapon:   "Weapon",
@@ -53,6 +60,9 @@ function buildIndex(itemsData) {
       weapons.set(v.weapon, weapons.get(v.weapon) || hasStar);
     }
     if (v.finish) finishes.add(v.finish);
+  }
+  for (const p of DOPPLER_PHASES) finishes.add(p);
+  for (const v of Object.values(itemsData)) {
     if (!v.weapon && !v.finish && v['full-name']) directNames.add(v['full-name']);
   }
   return {

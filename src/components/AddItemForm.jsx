@@ -25,7 +25,7 @@ const PLATFORMS = [
 const label = "block text-xs text-slate-500 font-medium uppercase tracking-wide mb-2";
 const inputH = "h-9";
 
-export default function AddItemForm({ formData, setFormData, handleAddItem, theme }) {
+export default function AddItemForm({ formData, setFormData, handleAddItem, theme, bare = false }) {
   const [success, setSuccess] = useState(false);
 
   const resolvedIcon = useItemImage({ name: formData.itemName });
@@ -52,13 +52,15 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
   })();
 
   return (
-    <div className={`${theme.panel} ${theme.panelBorder} rounded-xl p-5 border`}>
+    <div className={bare ? '' : `${theme.panel} ${theme.panelBorder} rounded-xl p-5 border`}>
 
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-5">
-        <PackagePlus size={16} className="text-slate-400" />
-        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Add New Item</h3>
-      </div>
+      {/* Header — hidden in bare/modal mode, modal provides its own */}
+      {!bare && (
+        <div className="flex items-center gap-2 mb-5">
+          <PackagePlus size={16} className="text-slate-400" />
+          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Add New Item</h3>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
