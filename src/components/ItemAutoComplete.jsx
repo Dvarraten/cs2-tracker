@@ -284,6 +284,7 @@ export default function ItemAutoComplete({ value, onChange, placeholder, theme }
         break;
       case "Enter":
       case "Tab":
+      case " ":
         if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
           e.preventDefault();
           addTag(suggestions[selectedIndex]);
