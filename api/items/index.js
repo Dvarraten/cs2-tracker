@@ -11,7 +11,7 @@ function getClient() {
 }
 
 function itemsKey(steamId) {
-  return `cs2-tracker:items:${steamId}`;
+  return `skinroi:items:${steamId}`;
 }
 
 export default async function handler(req, res) {

@@ -28,7 +28,7 @@ async function fetchFromSteam(steamId) {
 
 export async function getProfile(steamId) {
   const redis = getRedis();
-  const key = `cs2-tracker:profile:${steamId}`;
+  const key = `skinroi:profile:${steamId}`;
 
   if (redis) {
     const cached = await redis.get(key).catch(() => null);

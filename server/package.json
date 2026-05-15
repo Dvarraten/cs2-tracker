@@ -1,8 +1,8 @@
 {
-  "name": "cs2-tracker-server",
+  "name": "skinroi-server",
   "version": "0.1.0",
   "private": true,
-  "description": "Local Steam inventory proxy + diff tracker for the cs2-tracker frontend.",
+  "description": "Local Steam inventory proxy + diff tracker for the SkinROI frontend.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

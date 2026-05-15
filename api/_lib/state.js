@@ -15,7 +15,7 @@
 
 import { Redis } from '@upstash/redis';
 
-const STATE_KEY = 'cs2-tracker:state';
+const STATE_KEY = 'skinroi:state';
 
 export const DEFAULT_STATE = {
   lastSync: null,

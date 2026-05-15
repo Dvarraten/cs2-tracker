@@ -1,4 +1,4 @@
-// Local Steam inventory proxy for the cs2-tracker frontend.
+// Local Steam inventory proxy for the SkinROI frontend.
 //
 // Responsibilities:
 //   1. Periodically fetch the user's public CS2 inventory from
@@ -41,12 +41,12 @@ async function getRedis() {
 }
 
 function itemsKey(steamId) {
-  return `cs2-tracker:items:${steamId}`;
+  return `skinroi:items:${steamId}`;
 }
 
 async function getSteamProfile(steamId) {
   const redis = await getRedis();
-  const key = `cs2-tracker:profile:${steamId}`;
+  const key = `skinroi:profile:${steamId}`;
   if (redis) {
     const cached = await redis.get(key).catch(() => null);
     if (cached) return cached;
@@ -462,7 +462,7 @@ app.use((req, _res, next) => {
 function buildStatusPayload() {
   return {
     ok: true,
-    service: 'cs2-tracker local Steam sync',
+    service: 'skinroi local Steam sync',
     steamIdConfigured: Boolean(STEAM_ID),
     pollIntervalMin: POLL_INTERVAL_MIN,
     lastSync: state.lastSync,
@@ -801,7 +801,7 @@ app.use((_req, res) => res.status(404).json({ error: 'not found' }));
 
   app.listen(PORT, '127.0.0.1', () => {
     console.log(
-      `[boot] cs2-tracker server listening on http://127.0.0.1:${PORT}`
+      `[boot] skinroi server listening on http://127.0.0.1:${PORT}`
     );
     console.log(
       `[boot] polling Steam every ${POLL_INTERVAL_MIN} min for SteamID ${STEAM_ID.slice(0, 7)}…`

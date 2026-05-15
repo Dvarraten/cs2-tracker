@@ -21,6 +21,7 @@ import ThemePicker from './components/ThemePicker';
 import TabsAndSearchbar from './components/TabsAndSearchbar';
 import Header from './components/Header';
 import HandleItemsModal from './components/HandleItemsModal';
+import AboutModal from './components/AboutModal';
 
 export default function CS2TradingTracker() {
   const { user, loading: authLoading, login, logout } = useAuth();
@@ -53,6 +54,7 @@ export default function CS2TradingTracker() {
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
   const [showHandleItems, setShowHandleItems] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   const themeStyles = themes[theme];
   const { profitChartData } = useChartData(items, chartPeriod);
@@ -171,6 +173,7 @@ theme={themeStyles}
         onAnalyticsClick={() => setShowAnalytics(true)}
         onAddItemClick={() => setShowAddItem(v => !v)}
         onHandleItemsClick={() => setShowHandleItems(v => !v)}
+        onAboutClick={() => setShowAbout(true)}
         showAddItem={showAddItem}
         showHandleItems={showHandleItems}
         pendingCount={steamSync.pendingCount}
@@ -310,6 +313,8 @@ theme={themeStyles}
           </div>
         </div>
       )}
+
+      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
 
       {/* Handle Items modal */}
       {showHandleItems && (

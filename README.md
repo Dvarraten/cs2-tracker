@@ -1,4 +1,4 @@
-# cs2-tracker
+# SkinROI
 
 A personal Profit/Loss tracker for buying and selling **Counter-Strike 2** skins across multiple third-party markets in different regions (CSFloat, Buff163, YouPin, CSMoney Market).
 
@@ -64,8 +64,8 @@ For local development the Vercel functions are replaced by a tiny Express server
 ### 1. Frontend + items dataset
 
 ```bash
-git clone https://github.com/Dvarraten/cs2-tracker.git
-cd cs2-tracker
+git clone https://github.com/Dvarraten/skinroi.git
+cd skinroi
 npm install
 
 # Pull the latest CS2 skin list (~22 MB) into public/items.json
@@ -182,7 +182,7 @@ If you fork this for your own use, replace the SteamID in `server/.env.example` 
 ## Project structure
 
 ```
-cs2-tracker/
+skinroi/
 ├── api/                       # Vercel functions (production backend)
 │   ├── _lib/
 │   │   ├── state.js           # Upstash Redis adapter

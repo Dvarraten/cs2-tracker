@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { BarChart3, LogOut, ExternalLink, Download, User } from "lucide-react";
 import steamLogo from "../assets/platforms/steam.png";
+import logoSrc from "../utils/skinroi-logo.svg";
 
 function SteamIcon({ className }) {
   return <img src={steamLogo} alt="" className={className} />;
@@ -13,6 +14,7 @@ export default function Header({
   onAnalyticsClick,
   onAddItemClick,
   onHandleItemsClick,
+  onAboutClick,
   showAddItem = false,
   showHandleItems = false,
   pendingCount = 0,
@@ -49,9 +51,7 @@ export default function Header({
 
         {/* LEFT: Logo + Nav */}
         <div className="flex items-center gap-8">
-          <span className="text-white font-semibold text-lg tracking-tight">
-            CS2TradingTracker
-          </span>
+          <img src={logoSrc} alt="SkinROI" style={{ height: '52px', width: 'auto' }} />
           <nav className="hidden md:flex items-center gap-1">
             <button onClick={onAddItemClick} className={navBtn(showAddItem)}>
               Add Item
@@ -69,6 +69,9 @@ export default function Header({
             </button>
             <button onClick={onAnalyticsClick} className={navBtn(false)}>
               Analytics
+            </button>
+            <button onClick={onAboutClick} className={navBtn(false)}>
+              About
             </button>
           </nav>
         </div>
