@@ -14,18 +14,14 @@ import dmarketIcon  from "../assets/platforms/dmarket.webp";
 function ItemThumbnail({ item }) {
   const url = useItemImage({ directIconUrl: item.iconUrl, name: item.itemName });
   if (!url) {
-    return (
-      <div className="w-12 h-12 rounded-md bg-white/5 flex items-center justify-center text-[9px] text-slate-500 flex-shrink-0">
-        no img
-      </div>
-    );
+    return <div className="w-14 h-14 rounded-lg bg-white/5" />;
   }
   return (
     <img
       src={url}
       alt=""
       loading="lazy"
-      className="w-12 h-12 rounded-md bg-white/5 object-contain flex-shrink-0"
+      className="h-20 w-full object-contain"
     />
   );
 }
@@ -33,12 +29,15 @@ function ItemThumbnail({ item }) {
 // Returns "3 days left" / "Due today" / "Overdue 2d" depending on diff.
 function formatDeliveryCountdown(expectedDelivery) {
   if (!expectedDelivery) return null;
-  const ms = expectedDelivery - Date.now();
-  const days = Math.round(ms / (24 * 60 * 60 * 1000));
-  if (days > 1) return { label: `${days} days left`, overdue: false };
-  if (days === 1) return { label: '1 day left', overdue: false };
+  const ts = typeof expectedDelivery === 'string'
+    ? new Date(expectedDelivery).getTime()
+    : expectedDelivery;
+  if (isNaN(ts)) return null;
+  const days = Math.round((ts - Date.now()) / (24 * 60 * 60 * 1000));
+  if (days > 1) return { label: `${days}d hold`, overdue: false };
+  if (days === 1) return { label: '1d hold', overdue: false };
   if (days === 0) return { label: 'Due today', overdue: false };
-  return { label: `Overdue ${Math.abs(days)}d`, overdue: true };
+  return { label: 'Tradeable', overdue: true };
 }
 
 const SELL_PLATFORMS = [
@@ -49,8 +48,6 @@ const SELL_PLATFORMS = [
   { value: "dmarket",  label: "DMarket",  icon: dmarketIcon,  fee: "5%"   },
   { value: "youpin",   label: "Youpin",   icon: youpinIcon,   fee: "0.5%" },
 ];
-
-const HOLD_DURATION = 1000;
 
 function lerpColor(a, b, t) {
   const ah = a.replace('#','');
@@ -78,37 +75,33 @@ function getThemeAccentHex(accentClass) {
   return '#3b82f6';
 }
 
-function HoldToDeleteButton({ onDelete, deleteProgress }) {
-  const intervalRef = useRef(null);
-  const startTimeRef = useRef(null);
+function DeleteButton({ onDelete }) {
+  const [confirming, setConfirming] = useState(false);
+  const timerRef = useRef(null);
 
-  const startHold = useCallback((e) => {
-    e.preventDefault();
-    startTimeRef.current = Date.now();
-    intervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTimeRef.current;
-      const pct = Math.min((elapsed / HOLD_DURATION) * 100, 100);
-      onDelete(pct);
-      if (pct >= 100) clearInterval(intervalRef.current);
-    }, 16);
-  }, [onDelete]);
+  const handleClick = () => {
+    if (!confirming) {
+      setConfirming(true);
+      timerRef.current = setTimeout(() => setConfirming(false), 2500);
+    } else {
+      clearTimeout(timerRef.current);
+      onDelete();
+    }
+  };
 
-  const cancelHold = useCallback(() => {
-    clearInterval(intervalRef.current);
-    if (deleteProgress < 100) onDelete(0);
-  }, [onDelete, deleteProgress]);
+  useEffect(() => () => clearTimeout(timerRef.current), []);
 
   return (
     <button
-      onMouseDown={startHold} onMouseUp={cancelHold} onMouseLeave={cancelHold}
-      onTouchStart={startHold} onTouchEnd={cancelHold}
-      className="relative overflow-hidden text-red-400 hover:text-red-300 p-1.5 rounded-lg transition-colors select-none"
-      title="Hold to delete"
+      onClick={handleClick}
+      title={confirming ? 'Click again to delete' : 'Delete item'}
+      className={`p-1.5 rounded-lg transition-all ${
+        confirming
+          ? 'text-white bg-red-500 hover:bg-red-400'
+          : 'text-slate-600 hover:text-red-400 hover:bg-red-500/10'
+      }`}
     >
-      {deleteProgress > 0 && (
-        <span className="absolute inset-0 bg-red-500/25 rounded-lg" style={{ width: `${deleteProgress}%`, transition: 'none' }} />
-      )}
-      <Trash2 size={16} className="relative z-10" />
+      <Trash2 size={14} />
     </button>
   );
 }
@@ -192,13 +185,13 @@ function SellPlatformPicker({ value, onChange, theme }) {
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors
-          ${theme.card} ${theme.cardBorder} text-white hover:bg-white/5`}
+        className={`w-full h-9 flex items-center justify-between gap-2 px-3 rounded-lg border text-xs font-medium transition-colors
+          ${theme.inputSell} text-white`}
       >
         <span className="flex items-center gap-2 min-w-0">
           <PlatformIcon platform={selected} size={14} />
           <span className="truncate">{selected.label}</span>
-          <span className={`${theme.subtext} text-[10px]`}>· fee {selected.fee}</span>
+          <span className={`${theme.subtext} text-[10px]`}>{selected.fee}</span>
         </span>
         <ChevronDown
           size={14}
@@ -234,14 +227,14 @@ function SellPlatformPicker({ value, onChange, theme }) {
                     setOpen(false);
                   }}
                   className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 text-xs transition-colors
-                    ${isSelected ? "bg-white/10 text-white" : "text-slate-200 hover:bg-white/200"}`}
+                    ${isSelected ? "bg-white/10 text-white" : "text-slate-200 hover:bg-white/10"}`}
                 >
                   <span className="flex items-center gap-2 min-w-0">
                     <PlatformIcon platform={p} size={14} />
                     <span className="truncate">{p.label}</span>
                   </span>
                   <span className={`${theme.subtext} text-[10px] shrink-0`}>
-                    fee {p.fee}
+                    {p.fee}
                   </span>
                 </button>
               );
@@ -259,7 +252,6 @@ function ItemCard({
   handleSellItem, handleDeleteItem, promotePendingItem,
   selectMode, isSelected, onToggleSelect,
 }) {
-  const [deleteProgress, setDeleteProgress] = useState(0);
   const [barColor, setBarColor] = useState(accentHex);
   const [exiting, setExiting] = useState(false);
   const [soldFeedback, setSoldFeedback] = useState(false);
@@ -288,27 +280,18 @@ function ItemCard({
     });
   };
 
-  const onDeleteProgress = (pct) => {
-    setDeleteProgress(pct);
-    if (pct === 0) {
-      setBarColor(accentHex);
-    } else {
-      setBarColor(lerpColor(accentHex, '#f53232', pct / 100));
-    }
-    if (pct >= 100) {
-      setExiting(true);
-      setTimeout(() => handleDeleteItem(item.id), 400);
-    }
+  const onDelete = () => {
+    setExiting(true);
+    setTimeout(() => handleDeleteItem(item.id), 400);
   };
 
-  // Pending items get an amber sidebar, sold use profit colour, otherwise theme accent.
-  const pendingBarColor = '#f59e0b';
+  const countdown = item.pending ? formatDeliveryCountdown(item.expectedDelivery) : null;
+  const isOnHold = item.pending && countdown && !countdown.overdue;
   const currentBarColor = item.sold
     ? soldBarColor
-    : item.pending
-    ? pendingBarColor
-    : barColor;
-  const countdown = item.pending ? formatDeliveryCountdown(item.expectedDelivery) : null;
+    : isOnHold
+    ? '#f59e0b'   // amber while trade hold active
+    : barColor;   // accent (blue) when tradeable or normal active
 
   const fee = !item.sold && sellData[item.id] && parseFloat(sellData[item.id]) > 0
     ? getPlatformFee(sellPlatform[item.id] || 'csfloat') : null;
@@ -320,9 +303,9 @@ function ItemCard({
       className={`relative ${theme.panel} backdrop-blur-sm rounded-xl border ${
         selectMode && isSelected ? 'border-red-500 ring-2 ring-red-500/40' : theme.cardBorder
       }
-        hover:border-white/20 transition-all duration-300 overflow-hidden flex
+        transition-all duration-300 overflow-hidden flex
         ${exiting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
-        ${soldFeedback && !item.sold ? 'ring-2 ring-emerald-400/60' : ''}
+        ${soldFeedback && !item.sold ? 'ring-2 ring-profit/60' : ''}
         ${selectMode ? 'cursor-pointer' : ''}
       `}
       style={{ animationDelay: `${index * 40}ms`, animation: 'fadeSlideIn 0.3s ease both' }}
@@ -347,64 +330,67 @@ function ItemCard({
         style={{ backgroundColor: currentBarColor, transition: 'background-color 0.1s' }}
       />
 
-      {/* Card content — flex-col so the sell/sold block sticks to the bottom
-          via mt-auto, regardless of whether notes are present */}
-      <div className="flex-1 p-4 min-w-0 flex flex-col">
-        <div className="flex justify-between items-start gap-2 mb-2">
-          {selectMode && !item.sold && (
-            <button
-              type="button"
-              onClick={() => onToggleSelect && onToggleSelect(item.id)}
-              className={`mt-1 w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
-                isSelected
-                  ? 'bg-red-500 border-red-500'
-                  : `${theme.cardBorder} hover:border-white/40`
-              }`}
-              aria-label={isSelected ? 'Deselect' : 'Select'}
-            >
-              {isSelected && <CheckCircle size={12} className="text-white" />}
-            </button>
-          )}
-          <ItemThumbnail item={item} />
-          <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-white leading-snug truncate">{item.itemName}</h3>
-            {item.pending && countdown && (
-              <div
-                className={`mt-1 inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                  countdown.overdue
-                    ? 'bg-red-500/15 text-red-300'
-                    : 'bg-amber-500/15 text-amber-300'
-                }`}
-              >
-                <Clock size={10} />
-                {countdown.label}
-              </div>
-            )}
-          </div>
-          {!selectMode && (
-            <HoldToDeleteButton onDelete={onDeleteProgress} deleteProgress={deleteProgress} />
-          )}
-        </div>
+      {/* Card content */}
+      <div className="flex-1 p-3 min-w-0 flex flex-col">
 
-        <div className="text-sm text-slate-400 space-y-1.5 mb-3">
-          <div className="flex justify-between items-center">
-            <span>Price:</span>
-            <span className="text-white font-semibold">${item.purchasePrice.toFixed(2)}</span>
+        {/* Delete button — absolute top-right */}
+        {!selectMode && (
+          <div className="absolute top-1.5 right-1.5 z-10">
+            <DeleteButton onDelete={onDelete} />
           </div>
-          <div className="flex justify-between items-center">
-            <span>Bought:</span>
-            <span className="text-slate-300">{item.datePurchased}</span>
+        )}
+
+        {/* Select checkbox indicator — absolute top-left (visual only; overlay handles clicks) */}
+        {selectMode && !item.sold && (
+          <div className="absolute top-2 left-3 z-10">
+            <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+              isSelected ? 'bg-red-500 border-red-500' : 'border-white/30 bg-white/5'
+            }`}>
+              {isSelected && <CheckCircle size={10} className="text-white" />}
+            </div>
           </div>
-          {item.platform && (
-            <div className="flex justify-between items-center">
-              <span>Platform:</span>
-              <PlatformBadge platform={item.platform} size="xs" />
+        )}
+
+        {/* Gradient image area — flush to card edges */}
+        <div className="-mx-3 -mt-3 mb-3 h-24 relative flex justify-center items-center bg-gradient-to-b from-white/[0.06] to-black/25">
+          <ItemThumbnail item={item} />
+          {item.pending && countdown && (
+            <div className="absolute bottom-1.5 left-0 right-0 flex justify-center pointer-events-none">
+              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                countdown.overdue
+                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/20'
+                  : 'bg-warn/20 text-warn border-warn/20'
+              }`}>
+                {countdown.label}
+              </span>
             </div>
           )}
         </div>
 
+        {/* Name */}
+        <h3 className="text-xs font-medium text-slate-200 leading-snug mb-1.5 line-clamp-2">
+          {item.itemName}
+        </h3>
+
+        {/* Meta row — price · date · platform, no labels */}
+        <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] mb-3">
+          <span className="font-mono text-white font-semibold">${item.purchasePrice.toFixed(2)}</span>
+          <span className="text-slate-600">·</span>
+          <span className="text-slate-500">
+            {item.datePurchased
+              ? new Date(item.datePurchased).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              : ''}
+          </span>
+          {item.platform && (
+            <>
+              <span className="text-slate-600">·</span>
+              <PlatformBadge platform={item.platform} size="xs" />
+            </>
+          )}
+        </div>
+
         {item.notes && (
-          <p className="text-amber-300 text-xs mb-3 line-clamp-2">Notes: {item.notes}</p>
+          <p className="text-warn text-[10px] mb-2 line-clamp-1">{item.notes}</p>
         )}
 
         {/* Bottom-anchored action zone */}
@@ -432,87 +418,72 @@ function ItemCard({
               </button>
             </div>
           ) : !item.sold ? (
-            <div className="space-y-2">
-              {/* Platform picker — half-width so it visually matches the
-                  sale-price input below */}
-              <div className="w-1/2">
+            <div className="space-y-1.5">
+              {/* Platform · Price · Sell — picker and price 50/50, sell fixed */}
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: '1fr 1fr auto' }}>
                 <SellPlatformPicker
                   value={sellPlatform[item.id] || 'csfloat'}
                   onChange={(val) => setSellPlatform(prev => ({ ...prev, [item.id]: val }))}
                   theme={theme}
                 />
-              </div>
-
-              {/* Sale price (exactly half-width, CSFloat-style) · Est. profit
-                  fills the gap when a price is typed · Sell pinned right. */}
-              <div className="flex gap-2 items-stretch">
-                <input
-                  type="number" step="0.01"
-                  value={sellData[item.id] || ''}
-                  onChange={(e) => setSellData(prev => ({ ...prev, [item.id]: e.target.value }))}
-                  className={`w-1/2 flex-shrink-0 min-w-0 ${theme.inputSell} rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                  placeholder="Sale price..."
-                />
-
-                {/* Always-rendered gap so Sell stays right-aligned even when
-                    no price is typed yet. Inner content only shows once we
-                    have a profit estimate. */}
-                <div className="flex-1 min-w-0 flex items-stretch">
-                  {estProfit !== null && (
-                    <div
-                      className={`flex-1 min-w-0 rounded-lg px-2 flex flex-col items-center justify-center text-center transition-all
-                        ${estProfit >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}
-                    >
-                      <span className="text-[10px] opacity-70 leading-none">Est. profit</span>
-                      <span className="text-xs font-semibold leading-tight whitespace-nowrap">
-                        {estProfit >= 0 ? '+' : ''}${estProfit.toFixed(2)}
-                        <span className="opacity-70 ml-1">
-                          ({estProfitPct >= 0 ? '+' : ''}{estProfitPct.toFixed(0)}%)
-                        </span>
-                      </span>
-                    </div>
-                  )}
+                <div className="relative">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-mono pointer-events-none">$</span>
+                  <input
+                    type="number" step="0.01"
+                    value={sellData[item.id] || ''}
+                    onChange={(e) => setSellData(prev => ({ ...prev, [item.id]: e.target.value }))}
+                    className={`w-full h-9 ${theme.inputSell} rounded-lg pl-5 pr-2 text-white text-sm font-mono focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                    placeholder="0.00"
+                  />
                 </div>
-
                 <button
                   onClick={onSell}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 active:scale-95 flex items-center justify-center gap-1.5 flex-shrink-0
-                    ${soldFeedback ? 'bg-emerald-400 text-white scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                  className={`px-3 h-9 rounded-lg text-sm font-medium transition-all duration-300 active:scale-95 flex items-center gap-1
+                    ${soldFeedback ? 'bg-profit text-white scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
                 >
-                  {soldFeedback ? <><CheckCircle size={14} /> Sold!</> : 'Sell'}
+                  {soldFeedback ? <><CheckCircle size={13} /> Sold!</> : 'Sell'}
                 </button>
               </div>
+              {/* Est. profit — shown below when price is typed */}
+              {estProfit !== null && (
+                <div className={`rounded-md py-1 px-2 text-xs font-mono font-semibold text-center ${estProfit >= 0 ? 'bg-profit/10 text-profit' : 'bg-loss/10 text-loss'}`}>
+                  {estProfit >= 0 ? '+' : ''}${estProfit.toFixed(2)}
+                  <span className="opacity-60 ml-1">({estProfitPct >= 0 ? '+' : ''}{estProfitPct.toFixed(0)}%)</span>
+                </div>
+              )}
             </div>
           ) : (
-            <div className={`${theme.soldCard} rounded-lg p-3 border`}>
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp size={16} className={item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'} />
-                <span className="text-white font-semibold text-sm">SOLD</span>
-                {item.soldPlatform && <PlatformBadge platform={item.soldPlatform} size="xs" />}
+            <div className="space-y-1.5">
+              {/* Price flow */}
+              <div className="flex items-center gap-1 text-[11px] font-mono">
+                <span className="text-slate-400">${item.purchasePrice.toFixed(2)}</span>
+                <span className="text-slate-600">→</span>
+                <span className="text-white font-semibold">${item.salePrice.toFixed(2)}</span>
               </div>
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Sale:</span>
-                  <span className="text-white font-semibold">${item.salePrice.toFixed(2)}</span>
-                </div>
-                {item.dateSold && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Sold date:</span>
-                    <span className="text-slate-300">{item.dateSold}</span>
-                  </div>
+              {/* Date flow */}
+              <div className="flex items-center gap-1 text-[11px]">
+                <span className="text-slate-600">
+                  {item.datePurchased ? new Date(item.datePurchased).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+                </span>
+                <span className="text-slate-700">→</span>
+                <span className="text-slate-500">
+                  {item.dateSold ? new Date(item.dateSold).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+                </span>
+                {item.soldPlatform && (
+                  <>
+                    <span className="text-slate-700">·</span>
+                    <PlatformBadge platform={item.soldPlatform} size="xs" />
+                  </>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-slate-400">After fees:</span>
-                  <span className="text-white font-semibold">
-                    ${(item.salePrice * (1 - getPlatformFee(item.soldPlatform))).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Profit:</span>
-                  <span className={`font-semibold ${item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {item.profit >= 0 ? '+' : ''}${item.profit.toFixed(2)} ({item.profitPercent.toFixed(1)}%)
-                  </span>
-                </div>
+              </div>
+              {/* Profit */}
+              <div className={`rounded-md py-1.5 px-2 flex items-center justify-between ${item.profit >= 0 ? 'bg-profit/10' : 'bg-loss/10'}`}>
+                <span className={`text-xs font-mono font-semibold ${item.profit >= 0 ? 'text-profit' : 'text-loss'}`}>
+                  {item.profit >= 0 ? '+' : ''}${item.profit.toFixed(2)}
+                </span>
+                <span className={`text-xs font-mono ${item.profit >= 0 ? 'text-profit/70' : 'text-loss/70'}`}>
+                  {item.profit >= 0 ? '+' : ''}{item.profitPercent.toFixed(1)}%
+                </span>
               </div>
             </div>
           )}
@@ -575,7 +546,7 @@ export default function ItemGrid({
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
         <style>{`
           @keyframes fadeSlideIn {
             from { opacity: 0; transform: translateY(8px); }
