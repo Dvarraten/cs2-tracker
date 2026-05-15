@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, ArrowDownCircle, ArrowUpCircle, RefreshCw, AlertTriangle, Inbox } from 'lucide-react';
+import { X, ArrowDownCircle, ArrowUpCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 
 const STEAM_IMG_BASE = 'https://community.akamai.steamstatic.com/economy/image/';
 
