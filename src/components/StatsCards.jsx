@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Package, TrendingUp, TrendingDown, DollarSign, BarChart3 } from "lucide-react";
+import { Package, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 
 function AnimatedNumber({ value, prefix = "", suffix = "", decimals = 0 }) {
   const [display, setDisplay] = useState(value);

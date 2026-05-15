@@ -40,7 +40,7 @@ export default function CS2TradingTracker() {
   const [selectedIds, setSelectedIds] = useState(() => new Set());
 
   const {
-    usdAmount, setUsdAmount, rmbAmount, setRmbAmount,
+    usdAmount, rmbAmount,
     exchangeRate, lastUpdated, handleUsdChange, handleRmbChange
   } = useExchangeRate();
 

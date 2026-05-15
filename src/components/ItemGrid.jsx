@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { TrendingUp, Trash2, CheckCircle, ChevronDown, Clock, PackageCheck } from "lucide-react";
+import { Trash2, CheckCircle, ChevronDown, PackageCheck } from "lucide-react";
 import { getPlatformFee } from "../utils/platformFees";
 import { PlatformBadge } from "./PlatformBadge";
 import { useItemImage } from "../utils/itemImages";
@@ -396,13 +396,13 @@ function ItemCard({
         {/* Bottom-anchored action zone */}
         <div className="mt-auto">
           {item.pending && !item.sold ? (
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <button
                 type="button"
                 onClick={() => promotePendingItem && promotePendingItem(item.id)}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium ${theme.accentBg} text-white transition-colors`}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg text-xs font-medium ${theme.card} border ${theme.cardBorder} text-slate-300 hover:text-white hover:border-white/20 transition-colors`}
               >
-                <PackageCheck size={14} />
+                <PackageCheck size={13} />
                 Mark received
               </button>
               <button
@@ -412,7 +412,7 @@ function ItemCard({
                     handleDeleteItem(item.id);
                   }
                 }}
-                className={`px-3 py-2 rounded-lg text-sm ${theme.card} border ${theme.cardBorder} ${theme.subtext} hover:text-white transition-colors`}
+                className={`px-3 h-9 rounded-lg text-xs ${theme.card} border ${theme.cardBorder} text-slate-600 hover:text-slate-300 transition-colors`}
               >
                 Cancel
               </button>
