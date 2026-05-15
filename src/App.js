@@ -10,6 +10,7 @@ import { useExchangeRate } from './hooks/useExchangeRate';
 import { useChartData } from './hooks/useChartData';
 import { useSteamSync } from './hooks/useSteamSync';
 import { exportToCSV } from './utils/exportCSV';
+import { importFromCSV } from './utils/importCSV';
 
 import StatsCards from './components/StatsCards';
 import ItemGrid from './components/ItemGrid';
@@ -31,10 +32,21 @@ export default function CS2TradingTracker() {
   const showWelcome = !authLoading && !user && !authDismissed;
 
   const {
-    items, formData, setFormData, sellData, setSellData,
+    items, setItems, formData, setFormData, sellData, setSellData,
     sellPlatform, setSellPlatform, handleAddItem, handleSellItem, handleDeleteItem,
     addItemDirect, sellItemDirect, promotePendingItem, handleBulkDelete,
   } = useItems(user?.steamId);
+
+  const handleImportCSV = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imported = importFromCSV(e.target.result);
+      if (imported.length === 0) return;
+      setItems(prev => [...imported, ...prev]);
+    };
+    reader.readAsText(file);
+  };
 
   const steamSync = useSteamSync();
   const [selectMode, setSelectMode] = useState(false);
@@ -50,7 +62,7 @@ export default function CS2TradingTracker() {
   const [sortBy, setSortBy] = useState('newest');
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [chartPeriod, setChartPeriod] = useState('30d');
-  const [theme, setTheme] = useState(() => localStorage.getItem('cs2-theme') || 'default');
+  const [theme, setTheme] = useState(() => { const t = localStorage.getItem('cs2-theme'); return t === 'v2' ? 'dark' : (t || 'default'); });
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
   const [showHandleItems, setShowHandleItems] = useState(false);
@@ -167,8 +179,6 @@ theme={themeStyles}
       )}
 
       <Header
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
         theme={themeStyles}
         onAnalyticsClick={() => setShowAnalytics(true)}
         onAddItemClick={() => setShowAddItem(v => !v)}
@@ -181,6 +191,7 @@ theme={themeStyles}
         onLogin={login}
         onLogout={logout}
         onExportCSV={() => exportToCSV(items)}
+        onImportCSV={handleImportCSV}
       >
         <div onClick={e => e.stopPropagation()}>
           <ThemePicker

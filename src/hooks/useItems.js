@@ -220,6 +220,7 @@ export const useItems = (steamId) => {
 
   return {
     items,
+    setItems,
     formData,
     setFormData,
     sellData,

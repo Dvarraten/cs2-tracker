@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { BarChart3, LogOut, ExternalLink, Download, User } from "lucide-react";
+import { BarChart3, LogOut, ExternalLink, Download, Upload, User } from "lucide-react";
 import steamLogo from "../assets/platforms/steam.png";
 import logoSrc from "../utils/skinroi-logo.svg";
 
@@ -8,8 +8,6 @@ function SteamIcon({ className }) {
 }
 
 export default function Header({
-  searchTerm,
-  setSearchTerm,
   theme,
   onAnalyticsClick,
   onAddItemClick,
@@ -22,8 +20,10 @@ export default function Header({
   onLogin,
   onLogout,
   onExportCSV,
+  onImportCSV,
   children,
 }) {
+  const importInputRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -78,13 +78,6 @@ export default function Header({
 
         {/* RIGHT */}
         <div className="flex items-center gap-3">
-          <input
-            type="text"
-            placeholder="Search items..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={`hidden md:block border rounded-lg px-3 py-1.5 text-sm focus:outline-none transition-colors w-52 ${theme?.input || "bg-white/5 border-white/10 text-white placeholder-slate-500"}`}
-          />
           {children}
 
           {user ? (
@@ -143,6 +136,28 @@ export default function Header({
                         <Download size={15} />
                         Export CSV
                       </button>
+                    )}
+                    {onImportCSV && (
+                      <>
+                        <input
+                          ref={importInputRef}
+                          type="file"
+                          accept=".csv"
+                          className="hidden"
+                          onChange={(e) => {
+                            onImportCSV(e.target.files?.[0]);
+                            e.target.value = '';
+                            setDropdownOpen(false);
+                          }}
+                        />
+                        <button
+                          onClick={() => importInputRef.current?.click()}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/8 transition-all"
+                        >
+                          <Upload size={15} />
+                          Import CSV
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={() => { onAnalyticsClick(); setDropdownOpen(false); }}
