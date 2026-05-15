@@ -78,21 +78,37 @@ function getThemeAccentHex(accentClass) {
 function DeleteButton({ onDelete }) {
   const [confirming, setConfirming] = useState(false);
   const timerRef = useRef(null);
+  const btnRef = useRef(null);
+
+  const reset = () => {
+    clearTimeout(timerRef.current);
+    setConfirming(false);
+  };
 
   const handleClick = () => {
     if (!confirming) {
       setConfirming(true);
-      timerRef.current = setTimeout(() => setConfirming(false), 2500);
+      timerRef.current = setTimeout(reset, 2500);
     } else {
       clearTimeout(timerRef.current);
       onDelete();
     }
   };
 
+  useEffect(() => {
+    if (!confirming) return;
+    const handler = (e) => {
+      if (btnRef.current && !btnRef.current.contains(e.target)) reset();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [confirming]);
+
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
   return (
     <button
+      ref={btnRef}
       onClick={handleClick}
       title={confirming ? 'Click again to delete' : 'Delete item'}
       className={`p-1.5 rounded-lg transition-all ${
