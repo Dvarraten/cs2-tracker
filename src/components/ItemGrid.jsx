@@ -388,22 +388,24 @@ function ItemCard({
           {item.itemName}
         </h3>
 
-        {/* Meta row — price · date · platform, no labels */}
-        <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] mb-3">
-          <span className="font-mono text-white font-semibold">${item.purchasePrice.toFixed(2)}</span>
-          <span className="text-slate-600">·</span>
-          <span className="text-slate-500">
-            {item.datePurchased
-              ? new Date(item.datePurchased).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-              : ''}
-          </span>
-          {item.platform && (
-            <>
-              <span className="text-slate-600">·</span>
-              <PlatformBadge platform={item.platform} size="xs" />
-            </>
-          )}
-        </div>
+        {/* Meta row — price · date · platform (active/pending only) */}
+        {!item.sold && (
+          <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] mb-3">
+            <span className="font-mono text-white font-semibold">${item.purchasePrice.toFixed(2)}</span>
+            <span className="text-slate-600">·</span>
+            <span className="text-slate-500">
+              {item.datePurchased
+                ? new Date(item.datePurchased).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                : ''}
+            </span>
+            {item.platform && (
+              <>
+                <span className="text-slate-600">·</span>
+                <PlatformBadge platform={item.platform} size="xs" />
+              </>
+            )}
+          </div>
+        )}
 
         {item.notes && (
           <p className="text-warn text-[10px] mb-2 line-clamp-1">{item.notes}</p>
@@ -470,11 +472,11 @@ function ItemCard({
             </div>
           ) : (
             <div className="space-y-1.5">
-              {/* Price flow */}
+              {/* Price flow: bought → net sold (after fees) */}
               <div className="flex items-center gap-1 text-[11px] font-mono">
                 <span className="text-slate-400">${item.purchasePrice.toFixed(2)}</span>
                 <span className="text-slate-600">→</span>
-                <span className="text-white font-semibold">${item.salePrice.toFixed(2)}</span>
+                <span className="text-white font-semibold">${(item.purchasePrice + item.profit).toFixed(2)}</span>
               </div>
               {/* Date flow */}
               <div className="flex items-center gap-1 text-[11px]">
@@ -485,12 +487,16 @@ function ItemCard({
                 <span className="text-slate-500">
                   {item.dateSold ? new Date(item.dateSold).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                 </span>
-                {item.soldPlatform && (
-                  <>
-                    <span className="text-slate-700">·</span>
-                    <PlatformBadge platform={item.soldPlatform} size="xs" />
-                  </>
-                )}
+              </div>
+              {/* Platform flow */}
+              <div className="flex items-center gap-1 text-[11px]">
+                {item.platform
+                  ? <PlatformBadge platform={item.platform} size="xs" />
+                  : <span className="text-slate-700">—</span>}
+                <span className="text-slate-700">→</span>
+                {item.soldPlatform
+                  ? <PlatformBadge platform={item.soldPlatform} size="xs" />
+                  : <span className="text-slate-700">—</span>}
               </div>
               {/* Profit */}
               <div className={`rounded-md py-1.5 px-2 flex items-center justify-between ${item.profit >= 0 ? 'bg-profit/10' : 'bg-loss/10'}`}>
