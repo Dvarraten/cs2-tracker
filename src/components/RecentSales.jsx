@@ -25,8 +25,12 @@ export default function RecentSales({ items, theme }) {
             className={`flex items-center gap-3 p-2.5 rounded-lg ${theme.card} border ${theme.cardBorder} transition-colors`}
           >
             <div className={`w-0.5 self-stretch rounded-full shrink-0 ${isGain ? "bg-profit" : "bg-loss"}`} />
-            {item.iconUrl && (
+            {item.iconUrl ? (
               <img src={item.iconUrl} alt={item.itemName} className="w-8 h-8 object-contain shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded shrink-0 bg-white/5 flex items-center justify-center text-slate-600 text-[10px] font-bold uppercase">
+                {item.itemName?.[0] ?? "?"}
+              </div>
             )}
             <div className="flex-1 min-w-0">
               <p className="text-xs text-slate-300 truncate font-medium">{item.itemName}</p>
