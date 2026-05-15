@@ -1,31 +1,40 @@
 import React from "react";
+import { Search } from "lucide-react";
 
-// Tab button with a card-style background and a flush left-edge bar
-// (mirrors the colored sidebar on RecentSales rows). Each tab gets its
-// own accent colour: active=blue, pending=amber, sold=emerald.
+const SORTS = {
+  active: [
+    { label: 'Date',     desc: 'newest',        asc: 'oldest'        },
+    { label: 'Price',    desc: 'price-high',    asc: 'price-low'     },
+    { label: 'Delivery', desc: 'delivery-late', asc: 'delivery-soon' },
+  ],
+  pending: [
+    { label: 'Date',     desc: 'newest',          asc: 'oldest'           },
+    { label: 'Price',    desc: 'price-high',      asc: 'price-low'        },
+    { label: 'Delivery', desc: 'delivery-late',   asc: 'delivery-soon'    },
+  ],
+  sold: [
+    { label: 'Date',     desc: 'newest',              asc: 'oldest'             },
+    { label: 'Price',    desc: 'price-high',           asc: 'price-low'          },
+    { label: 'Profit $', desc: 'profit-dollar-high',   asc: 'profit-dollar-low'  },
+    { label: 'Profit %', desc: 'profit-high',          asc: 'profit-low'         },
+  ],
+};
+
 function TabButton({ label, count, isActive, onClick, theme, accentClass, badgeClass }) {
   return (
     <button
       onClick={onClick}
-      className={`relative pl-5 pr-5 py-2.5 rounded-lg font-medium transition-all border flex items-center gap-2 overflow-hidden ${
+      className={`relative pl-5 pr-4 py-2 rounded-lg text-sm font-medium transition-all border flex items-center gap-2 overflow-hidden ${
         isActive
           ? `${theme.card} ${theme.cardBorder} text-white`
           : `bg-transparent ${theme.cardBorder} ${theme.subtext} hover:text-white hover:bg-white/5`
       }`}
     >
-      {isActive && (
-        <span
-          className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${accentClass}`}
-        />
-      )}
+      {isActive && <span className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${accentClass}`} />}
       <span>{label}</span>
-      {count !== undefined && (
-        <span
-          className={`text-xs font-semibold rounded-full px-2 py-0.5 ${badgeClass}`}
-        >
-          {count}
-        </span>
-      )}
+      <span className={`text-xs font-semibold font-mono rounded-full px-1.5 py-0.5 ${badgeClass}`}>
+        {count}
+      </span>
     </button>
   );
 }
@@ -34,112 +43,113 @@ export default function TabsAndSearchbar({
   theme, setActiveTab, activeTab, stats, searchTerm, setSearchTerm, sortBy, setSortBy,
   selectMode, selectedIds, onEnterSelectMode, onCancelSelectMode, onConfirmBulkDelete,
 }) {
+  const sorts = SORTS[activeTab] ?? SORTS.active;
+
+  const isSortActive = (sort) => sortBy === sort.desc || sortBy === sort.asc;
+
+  const handleSortClick = (sort) => {
+    if (sortBy === sort.desc) setSortBy(sort.asc);
+    else if (sortBy === sort.asc) setSortBy(sort.desc);
+    else setSortBy(sort.desc);
+  };
+
+  const sortArrow = (sort) => {
+    if (sortBy === sort.desc) return ' ↓';
+    if (sortBy === sort.asc)  return ' ↑';
+    return '';
+  };
+
+  const switchTab = (tab) => {
+    setActiveTab(tab);
+    setSortBy('newest');
+  };
+
   return (
-    <div className="mb-6">
-      <div className="flex gap-2 mb-2 mt-8 flex-wrap">
+    <div>
+      {/* Tabs */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
         <TabButton
-          label="Active Items"
-          count={stats.totalActive}
-          isActive={activeTab === 'active'}
-          onClick={() => setActiveTab('active')}
-          theme={theme}
-          accentClass="bg-blue-500"
-          badgeClass={
-            activeTab === 'active' ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-400'
-          }
+          label="Active" count={stats.totalActive}
+          isActive={activeTab === 'active'} onClick={() => switchTab('active')}
+          theme={theme} accentClass="bg-blue-500"
+          badgeClass={activeTab === 'active' ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-500'}
         />
         <TabButton
-          label="Pending"
-          count={stats.totalPending}
-          isActive={activeTab === 'pending'}
-          onClick={() => setActiveTab('pending')}
-          theme={theme}
-          accentClass="bg-amber-500"
+          label="Pending" count={stats.totalPending}
+          isActive={activeTab === 'pending'} onClick={() => switchTab('pending')}
+          theme={theme} accentClass="bg-warn"
           badgeClass={
             stats.totalPending > 0
-              ? 'bg-amber-500/20 text-amber-300'
-              : activeTab === 'pending'
-              ? 'bg-white/15 text-white'
-              : 'bg-white/5 text-slate-400'
+              ? 'bg-warn/20 text-warn'
+              : activeTab === 'pending' ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-500'
           }
         />
         <TabButton
-          label="Sold Items"
-          count={stats.totalSold}
-          isActive={activeTab === 'sold'}
-          onClick={() => setActiveTab('sold')}
-          theme={theme}
-          accentClass="bg-emerald-500"
-          badgeClass={
-            activeTab === 'sold' ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-400'
-          }
+          label="Sold" count={stats.totalSold}
+          isActive={activeTab === 'sold'} onClick={() => switchTab('sold')}
+          theme={theme} accentClass="bg-profit"
+          badgeClass={activeTab === 'sold' ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-500'}
         />
       </div>
 
-      <div className="flex gap-3 flex-wrap items-center">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search items..."
-          className={`flex-1 min-w-[250px] ${theme.input} rounded-lg px-4 py-2.5 text-white
-            placeholder-slate-400 focus:outline-none transition-colors border`}
-        />
+      {/* Search + sort + bulk */}
+      <div className="flex items-center gap-2 flex-wrap">
 
-        {/* Bulk-select toolbar — inline with search/sort, available on
-            every tab (active / pending / sold). */}
+        {/* Search with icon */}
+        <div className="relative flex-1 min-w-[180px]">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search items…"
+            className={`w-full pl-8 pr-3 py-2 ${theme.input} rounded-lg text-sm text-white placeholder-slate-600 focus:outline-none transition-colors border`}
+          />
+        </div>
+
+        {/* Sort buttons */}
+        <div className="flex items-center gap-1">
+          {sorts.map(sort => (
+            <button
+              key={sort.label}
+              onClick={() => handleSortClick(sort)}
+              className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                isSortActive(sort)
+                  ? `${theme.card} border ${theme.cardBorder} text-slate-200`
+                  : `text-slate-600 hover:text-slate-300 hover:bg-white/5`
+              }`}
+            >
+              {sort.label}{sortArrow(sort)}
+            </button>
+          ))}
+        </div>
+
+        {/* Bulk select */}
         {!selectMode ? (
           <button
             onClick={onEnterSelectMode}
-            className={`text-sm px-3 py-2.5 rounded-lg border ${theme.cardBorder} ${theme.card} ${theme.subtext} hover:text-white transition-colors`}
+            className={`text-xs px-3 py-2 rounded-lg border ${theme.cardBorder} ${theme.subtext} hover:text-white transition-colors`}
           >
-            Select multiple
+            Select
           </button>
         ) : (
           <>
-            <span className={`text-xs ${theme.subtext}`}>
-              {selectedIds?.size || 0} selected
-            </span>
+            <span className={`text-xs ${theme.subtext}`}>{selectedIds?.size || 0} selected</span>
             <button
               onClick={onConfirmBulkDelete}
               disabled={!selectedIds || selectedIds.size === 0}
-              className="text-sm px-3 py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="text-xs px-3 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-medium disabled:opacity-40 transition-colors"
             >
-              Delete selected
+              Delete
             </button>
             <button
               onClick={onCancelSelectMode}
-              className={`text-sm px-3 py-2.5 rounded-lg border ${theme.cardBorder} ${theme.card} ${theme.subtext} hover:text-white transition-colors`}
+              className={`text-xs px-3 py-2 rounded-lg border ${theme.cardBorder} ${theme.subtext} hover:text-white transition-colors`}
             >
               Cancel
             </button>
           </>
         )}
-
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className={`${theme.input} rounded-lg px-4 py-2.5 text-white focus:outline-none transition-colors border`}
-        >
-          <option value="newest" className="bg-slate-900">Newest First</option>
-          <option value="oldest" className="bg-slate-900">Oldest First</option>
-          <option value="price-high" className="bg-slate-900">Price: High to Low</option>
-          <option value="price-low" className="bg-slate-900">Price: Low to High</option>
-          {activeTab === 'pending' && (
-            <>
-              <option value="delivery-soon" className="bg-slate-900">Delivery: Soonest First</option>
-              <option value="delivery-late" className="bg-slate-900">Delivery: Latest First</option>
-            </>
-          )}
-          {activeTab === 'sold' && (
-            <>
-              <option value="profit-dollar-high" className="bg-slate-900">Profit $: High to Low</option>
-              <option value="profit-dollar-low" className="bg-slate-900">Profit $: Low to High</option>
-              <option value="profit-high" className="bg-slate-900">Profit %: High to Low</option>
-              <option value="profit-low" className="bg-slate-900">Profit %: Low to High</option>
-            </>
-          )}
-        </select>
       </div>
     </div>
   );
