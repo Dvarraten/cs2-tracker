@@ -44,17 +44,19 @@ function buildEntry(name, extra = {}) {
 }
 
 function buildIndex(itemsData) {
-  const weapons = new Set();
+  const weapons = new Map(); // weapon name → needs ★
   const finishes = new Set();
   const directNames = new Set();
   for (const v of Object.values(itemsData)) {
-    if (v.weapon) weapons.add(v.weapon);
+    if (v.weapon) {
+      const hasStar = v['full-name']?.startsWith('★');
+      weapons.set(v.weapon, weapons.get(v.weapon) || hasStar);
+    }
     if (v.finish) finishes.add(v.finish);
-    // Agents, charms, and other items with no weapon/finish are searched by full name.
     if (!v.weapon && !v.finish && v['full-name']) directNames.add(v['full-name']);
   }
   return {
-    weapon:   [...weapons].sort().map((n) => buildEntry(n)),
+    weapon:   [...weapons.entries()].sort(([a],[b]) => a.localeCompare(b)).map(([n, star]) => buildEntry(n, { star })),
     finish:   [...finishes].sort().map((n) => buildEntry(n)),
     exterior: EXTERIORS_CANON.map((e) => buildEntry(e.name, { abbr: e.abbr })),
     direct:   [...directNames].sort().map((n) => buildEntry(n)),
@@ -103,7 +105,7 @@ function buildSuggestions(index, query, usedCategories) {
     if (cat !== "direct" && usedCategories.has(cat)) continue;
     for (const e of index[cat]) {
       const score = scoreEntry(e, q);
-      if (score > 0) out.push({ category: cat, name: e.name, score });
+      if (score > 0) out.push({ category: cat, name: e.name, score, star: e.star });
     }
   }
   out.sort((a, b) => {
@@ -119,11 +121,11 @@ function buildSuggestions(index, query, usedCategories) {
 // ─── Tag → display string ───────────────────────────────────────────────────
 function combineTagsToValue(tags) {
   const byCat = {};
-  for (const t of tags) byCat[t.category] = t.name;
+  for (const t of tags) byCat[t.category] = t;
   let s = "";
-  if (byCat.weapon)   s = byCat.weapon;
-  if (byCat.finish)   s = s ? `${s} | ${byCat.finish}` : byCat.finish;
-  if (byCat.exterior) s = s ? `${s} (${byCat.exterior})` : `(${byCat.exterior})`;
+  if (byCat.weapon)   s = byCat.weapon.star ? `★ ${byCat.weapon.name}` : byCat.weapon.name;
+  if (byCat.finish)   s = s ? `${s} | ${byCat.finish.name}` : byCat.finish.name;
+  if (byCat.exterior) s = s ? `${s} (${byCat.exterior.name})` : `(${byCat.exterior.name})`;
   return s;
 }
 
@@ -227,7 +229,7 @@ export default function ItemAutoComplete({ value, onChange, placeholder, theme }
     }
     const next = [
       ...tags.filter((t) => t.category !== suggestion.category),
-      { category: suggestion.category, name: suggestion.name },
+      { category: suggestion.category, name: suggestion.name, star: suggestion.star },
     ].sort(
       (a, b) =>
         CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category)
