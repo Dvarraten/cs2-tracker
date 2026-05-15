@@ -18,7 +18,26 @@ module.exports = {
     },
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        bg: {
+          base: '#0a0b0f',
+          card: '#111318',
+          panel: '#161b26',
+          input: '#1a1f2e',
+          hover: '#1e2330',
+        },
+        border: { DEFAULT: '#1e2028', subtle: '#161a22' },
+        accent: '#3b82f6',
+        profit: '#22c55e',
+        loss: '#ef4444',
+        warn: '#f59e0b',
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+    },
   },
   plugins: [],
 };

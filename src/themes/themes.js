@@ -215,7 +215,35 @@ export const themes = {
     chartColors: ["#a1a1aa", "#71717a", "#d4d4d8", "#52525b", "#27272a", "#f4f4f5"],
   },
 
-  // ── 8. Olive (SAP #3 – #75980b) ─────────────────────────────────────────
+  // ── 8. v2 ───────────────────────────────────────────────────────────────
+  v2: {
+    name: "v2",
+    dot: "bg-[#3b82f6]",
+    bg: "bg-[#0a0b0f]",
+    card: "bg-[#111318]",
+    cardHover: "hover:border-[#1e2028]/80",
+    cardBorder: "border-[#1e2028]",
+    panel: "bg-[#0d1117]",
+    panelBorder: "border-[#1e2028]",
+    input: "bg-[#1a1f2e] border-[#1e2028] focus:border-[#3b82f6]/60",
+    inputSell: "bg-[#1a1f2e] border-[#1e2028] focus:border-[#3b82f6]/60",
+    tabActive: "bg-[#3b82f6] text-white",
+    tabInactive: "bg-[#111318] text-slate-300 hover:bg-[#1e2330] border border-[#1e2028]",
+    accent: "text-[#3b82f6]",
+    accentBg: "bg-[#3b82f6] hover:bg-[#2563eb]",
+    subtext: "text-slate-400",
+    soldCard: "bg-[#1a1f2e] border-[#1e2028]",
+    sidebarItem: "bg-[#1e2330] hover:bg-[#252b3a] border-[#1e2028]",
+    header: "bg-[#0a0b0f]",
+    chartGrid: "#1e2028",
+    chartAxis: SAP_CHART_COLORS.neutral,
+    chartTooltipBg: "#111318",
+    chartTooltipBorder: "#3b82f650",
+    chartLine: "#3b82f6",
+    chartColors: ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"],
+  },
+
+  // ── 9. Olive (SAP #3 – #75980b) ─────────────────────────────────────────
   olive: {
     name: "Olive",
     dot: "bg-[#75980b]",
