@@ -8,7 +8,9 @@ export const exportToCSV = (items) => {
     'Website Sold On',
     'Sold Price',
     'Profit $',
-    'Profit %'
+    'Profit %',
+    'Notes',
+    'Pending'
   ];
 
   const formatNumber = (num) => {
@@ -34,7 +36,9 @@ export const exportToCSV = (items) => {
     escapeCSV(item.soldPlatform || ''),
     item.salePrice ? formatNumber(item.salePrice) : '',
     item.profit !== null ? formatNumber(item.profit) : '',
-    item.profitPercent !== null ? formatNumber(item.profitPercent) : ''
+    item.profitPercent !== null ? formatNumber(item.profitPercent) : '',
+    escapeCSV(item.notes || ''),
+    item.pending ? 'true' : 'false'
   ]);
 
   const csvContent = [

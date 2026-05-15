@@ -33,6 +33,7 @@ export const importFromCSV = (csvText) => {
       const [
         itemName, datePurchased, platform, purchasePriceRaw,
         dateSold, soldPlatform, salePriceRaw, profitRaw, profitPercentRaw,
+        notes, pendingRaw,
       ] = cols;
 
       if (!itemName || !itemName.trim()) return null;
@@ -55,8 +56,8 @@ export const importFromCSV = (csvText) => {
         salePrice: salePrice,
         profit: isSold ? profit : null,
         profitPercent: isSold ? profitPercent : null,
-        notes: '',
-        pending: false,
+        notes: notes ? notes.trim() : '',
+        pending: pendingRaw ? pendingRaw.trim() === 'true' : false,
         expectedDelivery: null,
         iconUrl: null,
       };
