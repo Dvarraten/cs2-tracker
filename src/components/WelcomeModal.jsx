@@ -9,7 +9,7 @@ export default function WelcomeModal({ onLogin, onContinue }) {
         <div className="flex flex-col items-center gap-2">
           <img src={logoSrc} alt="SkinROI" style={{ height: '80px', width: 'auto' }} />
           <p className="text-slate-400 text-sm">
-            Track your CS2 skin trades and returns
+            Track your CS2 skin investments across markets and see your real profit, fees, and ROI at a glance.
           </p>
         </div>
 

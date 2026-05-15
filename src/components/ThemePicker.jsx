@@ -1,4 +1,5 @@
 import React from "react";
+import { Palette } from "lucide-react";
 
 export default function ThemePicker({
   themeStyles,
@@ -12,23 +13,10 @@ export default function ThemePicker({
     <div className="relative" onClick={(e) => e.stopPropagation()}>
       <button
         onClick={() => setShowThemePicker((p) => !p)}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${themeStyles.cardBorder} ${themeStyles.card} text-white text-sm hover:border-white/20 transition-all`}
+        className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/8 transition-all"
+        title="Change theme"
       >
-        <span className={`w-2.5 h-2.5 rounded-full ${themeStyles.dot}`} />
-        <span className="hidden sm:inline">{themeStyles.name}</span>
-        <svg
-          className="w-3.5 h-3.5 text-white/50"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        <Palette size={18} />
       </button>
 
       {showThemePicker && (
