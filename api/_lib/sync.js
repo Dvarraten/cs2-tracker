@@ -1,5 +1,11 @@
 import { loadState, saveState, DEFAULT_STATE } from './state.js';
-import { fetchTradeOffers, fetchAssetClassInfo } from './steam.js';
+import {
+  fetchTradeOffers,
+  fetchInventory,
+  buildSnapshotFromInventory,
+  diffSnapshots,
+  fetchAssetClassInfo,
+} from './steam.js';
 
 export const POLL_INTERVAL_MIN = 5;
 export const STALE_THRESHOLD_MS = POLL_INTERVAL_MIN * 60 * 1000;
@@ -30,12 +36,21 @@ export async function runSync({ force = false } = {}) {
 
   try {
     const apiKey = process.env.STEAM_API_KEY;
+    const steamId = process.env.STEAM_ID;
 
     // First run: record current time as baseline, generate no events.
     if (!state.hasInitialSnapshot) {
+      let snapshot = state.snapshot ?? null;
+      if (steamId && snapshot === null) {
+        try {
+          const data = await fetchInventory(steamId);
+          snapshot = buildSnapshotFromInventory(data);
+        } catch { /* leave snapshot null */ }
+      }
       const next = {
         ...state,
         hasInitialSnapshot: true,
+        snapshot,
         lastTradeTime: Math.floor(Date.now() / 1000) - 24 * 60 * 60,
         lastSync: startedAt,
         lastSyncOk: true,
@@ -46,7 +61,11 @@ export async function runSync({ force = false } = {}) {
       return { ok: true, initial: true, state: next };
     }
 
-    const response = await fetchTradeOffers(apiKey, state.lastTradeTime || 0);
+    // Run trade offer check and inventory fetch in parallel.
+    const [response, inventoryData] = await Promise.all([
+      fetchTradeOffers(apiKey, state.lastTradeTime || 0),
+      steamId ? fetchInventory(steamId).catch(() => null) : Promise.resolve(null),
+    ]);
 
     const descIndex = buildDescIndex(response.descriptions);
 
@@ -106,9 +125,33 @@ export async function runSync({ force = false } = {}) {
       addAssets(offer.items_to_give, 'outgoing', offer.time_updated || offer.time_created);
     }
 
+    // Inventory snapshot diff — catches items from Steam Market purchases
+    // that don't create trade offers (they land directly in inventory with
+    // a market_tradable_restriction hold).
+    let newSnapshot = state.snapshot ?? null;
+    if (inventoryData) {
+      newSnapshot = buildSnapshotFromInventory(inventoryData);
+      if (state.snapshot != null) {
+        const { incoming: newItems } = diffSnapshots(state.snapshot, newSnapshot);
+        for (const item of newItems) {
+          const key = `incoming:${item.assetid}`;
+          if (seen.has(key)) continue;
+          append.push({
+            type: 'incoming',
+            assetid: item.assetid,
+            marketHashName: item.marketHashName,
+            iconUrl: item.iconUrl,
+            detectedAt: startedAt,
+          });
+          seen.add(key);
+        }
+      }
+    }
+
     const next = {
       ...state,
       pending: state.pending.concat(append),
+      snapshot: newSnapshot !== null ? newSnapshot : state.snapshot,
       lastTradeTime: maxTime,
       lastSync: startedAt,
       lastSyncOk: true,
