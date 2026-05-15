@@ -154,7 +154,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, pendingMatc
       platform,
       pending: onHold,
       expectedDelivery,
-      notes: `From Steam inventory (asset ${entry.assetid})`,
+      notes: '',
       iconUrl: entry.iconUrl
         ? `https://community.akamai.steamstatic.com/economy/image/${entry.iconUrl}/96fx96f`
         : null,
