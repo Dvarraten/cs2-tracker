@@ -48,13 +48,25 @@ function getClient() {
   return _client;
 }
 
+const LEGACY_STATE_KEY = 'cs2-tracker:state';
+
 export async function loadState() {
   const client = getClient();
   const raw = await client.get(STATE_KEY);
-  if (!raw) return { ...DEFAULT_STATE };
-  // @upstash/redis auto-deserialises JSON; older clients return strings.
-  const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-  return { ...DEFAULT_STATE, ...parsed };
+  if (raw) {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return { ...DEFAULT_STATE, ...parsed };
+  }
+  // Migrate from old key if present.
+  const legacy = await client.get(LEGACY_STATE_KEY).catch(() => null);
+  if (legacy) {
+    const parsed = typeof legacy === 'string' ? JSON.parse(legacy) : legacy;
+    const migrated = { ...DEFAULT_STATE, ...parsed };
+    await client.set(STATE_KEY, migrated);
+    await client.del(LEGACY_STATE_KEY);
+    return migrated;
+  }
+  return { ...DEFAULT_STATE };
 }
 
 export async function saveState(state) {
