@@ -22,11 +22,12 @@ const PLATFORMS = [
   { value: "other",    label: "Other",    icon: null,         fee: "?" },
 ];
 
+const label = "block text-xs text-slate-500 font-medium uppercase tracking-wide mb-2";
+const inputH = "h-9";
+
 export default function AddItemForm({ formData, setFormData, handleAddItem, theme }) {
   const [success, setSuccess] = useState(false);
 
-  // Resolve the item's icon (from items.json) so we can stash it on the
-  // tracked item — gives newly-added cards a thumbnail right away.
   const resolvedIcon = useItemImage({ name: formData.itemName });
   useEffect(() => {
     if (resolvedIcon && resolvedIcon !== formData.iconUrl) {
@@ -45,41 +46,42 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
     setTimeout(() => setSuccess(false), 2000);
   };
 
-  // Default expected delivery: 8 days out (Steam's actual trade hold window),
-  // formatted YYYY-MM-DD for <input type="date">.
   const defaultDeliveryISO = (() => {
     const d = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000);
     return d.toISOString().split('T')[0];
   })();
 
   return (
-    <div id="section-add" className={`${theme.panel} ${theme.panelBorder} rounded-xl p-5 border`}>
-      <h3 className="text-base font-semibold text-white mb-3 flex items-center gap-2">
-        <PackagePlus size={18} className="text-indigo-400" />
-        Add New Item
-      </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+    <div className={`${theme.panel} ${theme.panelBorder} rounded-xl p-5 border`}>
+
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-5">
+        <PackagePlus size={16} className="text-slate-400" />
+        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Add New Item</h3>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         {/* Item Name */}
         <div>
-          <label className={`block ${theme.subtext} mb-1.5 text-xs font-medium`}>Item Name</label>
+          <label className={label}>Item Name</label>
           <ItemAutoComplete
             value={formData.itemName}
             onChange={(val) => setFormData({ ...formData, itemName: val })}
-            placeholder="-"
+            placeholder="Search items…"
             theme={theme}
           />
         </div>
 
         {/* Purchase Price */}
         <div>
-          <label className={`block ${theme.subtext} mb-1.5 text-xs font-medium`}>Purchase Price ($)</label>
+          <label className={label}>Purchase Price ($)</label>
           <div className="relative">
             <input
-              type="number" step="1" value={formData.purchasePrice}
+              type="number" step="0.01" value={formData.purchasePrice}
               onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
-              className={`w-full h-[40px] ${theme.input} rounded-lg px-3 pr-9 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-              placeholder="-"
+              className={`w-full ${inputH} ${theme.input} rounded-lg px-3 pr-9 text-sm font-mono text-white placeholder-slate-600 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+              placeholder="0.00"
             />
             <PasteButton onPaste={(val) => {
               const num = parseFloat(val);
@@ -88,35 +90,9 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
           </div>
         </div>
 
-        {/* Quantity */}
+        {/* Platform */}
         <div>
-          <label className={`block ${theme.subtext} mb-1.5 text-xs font-medium`}>Quantity</label>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setFormData({ ...formData, quantity: Math.max(1, (parseInt(formData.quantity) || 1) - 1) })}
-              className={`${theme.card} hover:bg-white/10 text-white h-[40px] w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors flex-shrink-0 border ${theme.cardBorder}`}
-            >−</button>
-            <input
-              type="number" min="1" max="999" value={formData.quantity}
-              onChange={(e) => setFormData({ ...formData, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-              className={`w-full h-[40px] ${theme.input} rounded-lg px-3 text-sm text-white text-center placeholder-slate-500 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-            />
-            <button
-              onClick={() => setFormData({ ...formData, quantity: (parseInt(formData.quantity) || 1) + 1 })}
-              className={`${theme.card} hover:bg-white/10 text-white h-[40px] w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors flex-shrink-0 border ${theme.cardBorder}`}
-            >+</button>
-          </div>
-          {formData.quantity > 1 && (
-            <p className="text-xs text-emerald-400 mt-1">
-              Total: {formData.quantity} items (${formData.purchasePrice
-                ? (parseFloat(formData.purchasePrice) * formData.quantity).toFixed(2) : "0.00"})
-            </p>
-          )}
-        </div>
-
-        {/* Platform picker (dropdown — same component as the sell picker) */}
-        <div>
-          <label className={`block ${theme.subtext} mb-1.5 text-xs font-medium`}>Platform</label>
+          <label className={label}>Platform</label>
           <PlatformPicker
             value={formData.platform}
             onChange={(val) => setFormData({ ...formData, platform: val })}
@@ -125,46 +101,63 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
           />
         </div>
 
-        {/* Notes */}
-        <div className="md:col-span-2 mb-2">
-          <label className={`block ${theme.subtext} mb-1.5 text-xs font-medium`}>Notes</label>
+        {/* Quantity */}
+        <div>
+          <label className={label}>
+            Quantity
+            {formData.quantity > 1 && formData.purchasePrice && (
+              <span className="ml-2 text-profit normal-case font-mono tracking-normal">
+                = ${(parseFloat(formData.purchasePrice) * formData.quantity).toFixed(2)} total
+              </span>
+            )}
+          </label>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFormData({ ...formData, quantity: Math.max(1, (parseInt(formData.quantity) || 1) - 1) })}
+              className={`${theme.card} hover:bg-white/10 text-white ${inputH} w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors shrink-0 border ${theme.cardBorder}`}
+            >−</button>
+            <input
+              type="number" min="1" max="999" value={formData.quantity}
+              onChange={(e) => setFormData({ ...formData, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+              className={`w-full ${inputH} ${theme.input} rounded-lg px-3 text-sm font-mono text-white text-center focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+            />
+            <button
+              onClick={() => setFormData({ ...formData, quantity: (parseInt(formData.quantity) || 1) + 1 })}
+              className={`${theme.card} hover:bg-white/10 text-white ${inputH} w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors shrink-0 border ${theme.cardBorder}`}
+            >+</button>
+          </div>
+        </div>
+
+        {/* Notes — full width */}
+        <div className="md:col-span-2">
+          <label className={label}>Notes</label>
           <input
             type="text" value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            className={`w-full h-[40px] ${theme.input} rounded-lg px-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors border`}
-            placeholder="-"
+            className={`w-full ${inputH} ${theme.input} rounded-lg px-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-colors border`}
+            placeholder="Optional notes…"
           />
         </div>
       </div>
 
-      {/* Action row: Add Item + On trade hold toggle (+ delivery date when on) */}
-      <div className="flex gap-3 mt-3 items-center flex-wrap">
+      {/* Action row */}
+      <div className={`flex flex-wrap gap-3 mt-5 pt-4 border-t ${theme.cardBorder} items-center`}>
         <button
           onClick={onAdd}
-          className={`relative flex items-center gap-2 pl-5 pr-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 border overflow-hidden
+          className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 active:scale-95
             ${success
-              ? 'bg-emerald-500 border-emerald-400 scale-95 text-white'
-              : `${theme.card} ${theme.cardBorder} text-white hover:bg-white/5 active:scale-95`
+              ? 'bg-profit text-white'
+              : `${theme.accentBg} text-white`
             }`}
         >
-          {!success && (
-            <span
-              className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${
-                formData.pending ? 'bg-amber-500' : 'bg-blue-500'
-              }`}
-            />
-          )}
-          {success ? (
-            <><CheckCircle size={16} /><span>Added!</span></>
-          ) : formData.pending ? (
-            <><Clock size={16} className="text-amber-400" /><span>{formData.quantity > 1 ? `Add ${formData.quantity} Pending` : 'Add Pending'}</span></>
-          ) : (
-            <span>{formData.quantity > 1 ? `Add ${formData.quantity} Items` : "Add Item"}</span>
-          )}
+          {success
+            ? <><CheckCircle size={15} /> Added!</>
+            : formData.pending
+              ? <><Clock size={15} className="text-white/70" />{formData.quantity > 1 ? `Add ${formData.quantity} Pending` : 'Add Pending'}</>
+              : formData.quantity > 1 ? `Add ${formData.quantity} Items` : 'Add Item'
+          }
         </button>
 
-        {/* On trade hold — same shape as Add Item, always amber side bar.
-            Toggled state is conveyed via a subtle ring + amber clock icon. */}
         <button
           type="button"
           onClick={() => {
@@ -172,30 +165,26 @@ export default function AddItemForm({ formData, setFormData, handleAddItem, them
             setFormData({
               ...formData,
               pending: next,
-              expectedDelivery: next
-                ? formData.expectedDelivery || defaultDeliveryISO
-                : '',
+              expectedDelivery: next ? formData.expectedDelivery || defaultDeliveryISO : '',
             });
           }}
           title="Item is on trade hold (not yet received)"
-          className={`relative flex items-center gap-2 pl-5 pr-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 border overflow-hidden
-            ${theme.card} ${theme.cardBorder} text-white hover:bg-white/5 active:scale-95
-            ${formData.pending ? 'ring-2 ring-amber-500/50' : ''}
-          `}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all
+            ${theme.card} ${theme.cardBorder}
+            ${formData.pending ? 'text-warn ring-1 ring-warn/30' : 'text-slate-400 hover:text-white'}`}
         >
-          <span className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg bg-amber-500" />
-          <Clock size={16} className={formData.pending ? 'text-amber-300' : 'text-amber-400'} />
-          <span>On trade hold</span>
+          <Clock size={15} className={formData.pending ? 'text-warn' : 'text-slate-500'} />
+          Trade hold
         </button>
 
         {formData.pending && (
           <div className="flex items-center gap-2">
-            <span className={`text-xs ${theme.subtext}`}>Expected delivery:</span>
+            <span className={`text-xs ${theme.subtext}`}>Delivery:</span>
             <input
               type="date"
               value={formData.expectedDelivery || defaultDeliveryISO}
               onChange={(e) => setFormData({ ...formData, expectedDelivery: e.target.value })}
-              className={`${theme.input} rounded-md px-2 py-1 text-white text-sm focus:outline-none border`}
+              className={`${theme.input} rounded-md px-2 py-1.5 text-white text-xs focus:outline-none border`}
             />
           </div>
         )}
