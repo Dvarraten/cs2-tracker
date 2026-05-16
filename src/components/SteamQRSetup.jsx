@@ -14,7 +14,6 @@ const BASE = process.env.REACT_APP_STEAM_SYNC_URL || '';
 export default function SteamQRSetup({ onComplete, theme = {} }) {
   const [phase, setPhase] = useState('idle'); // idle | starting | polling | done | error
   const [challengeUrl, setChallengeUrl] = useState(null);
-  const [pollData, setPollData] = useState(null); // { clientId, requestId, pollInterval }
   const [errorMsg, setErrorMsg] = useState(null);
   const pollTimerRef = useRef(null);
   const aliveRef = useRef(true);
@@ -39,7 +38,6 @@ export default function SteamQRSetup({ onComplete, theme = {} }) {
     stopPolling();
     setPhase('idle');
     setChallengeUrl(null);
-    setPollData(null);
     setErrorMsg(null);
   }, [stopPolling]);
 
@@ -91,7 +89,6 @@ export default function SteamQRSetup({ onComplete, theme = {} }) {
         requestId: data.requestId,
         pollInterval: data.pollInterval || 5,
       };
-      setPollData(pd);
       setPhase('polling');
 
       // Start polling immediately.
