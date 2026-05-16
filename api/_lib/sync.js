@@ -117,34 +117,34 @@ export async function runSync({ force = false } = {}) {
     const newTradeIds = [];
     let maxTime = state.lastTradeTime || 0;
 
-    const addAssets = (assets, type, timeInit) => {
-      for (const asset of assets || []) {
-        if (Number(asset.appid) !== 730) continue;
-        if (String(asset.contextid) !== '2') continue;
-        const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`)
-          || descIndex.get(`${asset.classid}_0`);
-        if (!desc || !desc.market_hash_name) continue;
-        // new_assetid is the assetid in the receiver's inventory; may be absent
-        // during InEscrow (status 10) — fall back to the pre-trade assetid.
-        const assetid = asset.new_assetid || asset.assetid;
-        const key = `${type}:${assetid}`;
-        if (seen.has(key)) continue;
-        append.push({
-          type,
-          assetid,
-          marketHashName: desc.market_hash_name || desc.name || '(unknown)',
-          iconUrl: desc.icon_url || '',
-          detectedAt: new Date((timeInit || 0) * 1000).toISOString(),
-        });
-        seen.add(key);
-      }
-    };
-
     for (const trade of trades) {
       maxTime = Math.max(maxTime, trade.time_init || 0);
       if (processedTrades.has(trade.tradeid)) continue;
-      addAssets(trade.assets_received, 'incoming', trade.time_init);
-      addAssets(trade.assets_given, 'outgoing', trade.time_init);
+
+      const addAssets = (assets, type) => {
+        for (const asset of assets || []) {
+          if (Number(asset.appid) !== 730) continue;
+          if (String(asset.contextid) !== '2') continue;
+          const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`)
+            || descIndex.get(`${asset.classid}_0`);
+          if (!desc || !desc.market_hash_name) continue;
+          const assetid = asset.new_assetid || asset.assetid;
+          const key = `${type}:${assetid}`;
+          if (seen.has(key)) continue;
+          append.push({
+            type,
+            assetid,
+            tradeid: trade.tradeid,
+            marketHashName: desc.market_hash_name || desc.name || '(unknown)',
+            iconUrl: desc.icon_url || '',
+            detectedAt: new Date((trade.time_init || 0) * 1000).toISOString(),
+          });
+          seen.add(key);
+        }
+      };
+
+      addAssets(trade.assets_received, 'incoming');
+      addAssets(trade.assets_given, 'outgoing');
       newTradeIds.push(trade.tradeid);
       processedTrades.add(trade.tradeid);
     }

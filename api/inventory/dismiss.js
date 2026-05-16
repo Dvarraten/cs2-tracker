@@ -28,13 +28,22 @@ export default async function handler(req, res) {
   try {
     const state = await loadState();
     const before = state.pending.length;
-    const next = {
-      ...state,
-      pending: state.pending.filter((p) =>
-        type ? !(p.assetid === assetid && p.type === type) : p.assetid !== assetid
-      ),
-    };
-    const removed = before - next.pending.length;
+    const newPending = state.pending.filter((p) =>
+      type ? !(p.assetid === assetid && p.type === type) : p.assetid !== assetid
+    );
+    const removed = before - newPending.length;
+
+    // Mark the dismissed item's trade as processed so sync never re-queues it.
+    const dismissedTradeIds = state.pending
+      .filter((p) => type ? (p.assetid === assetid && p.type === type) : p.assetid === assetid)
+      .map((p) => p.tradeid)
+      .filter(Boolean);
+    const existing = state.processedTradeIds || [];
+    const processedTradeIds = dismissedTradeIds.length
+      ? [...new Set([...existing, ...dismissedTradeIds])].slice(-500)
+      : existing;
+
+    const next = { ...state, pending: newPending, processedTradeIds };
     await saveState(next);
 
     return res.status(200).json({
