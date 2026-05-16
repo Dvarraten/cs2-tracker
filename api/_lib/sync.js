@@ -84,7 +84,7 @@ export async function runSync({ force = false } = {}) {
 
     // Run trade history check and inventory fetch in parallel.
     const [response, inventoryData] = await Promise.all([
-      fetchTradeHistory(apiKey, state.lastTradeTime || 0),
+      fetchTradeHistory(apiKey),
       steamId ? fetchInventory(steamId).catch(() => null) : Promise.resolve(null),
     ]);
 

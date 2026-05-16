@@ -30,7 +30,7 @@ export default async function handler(req, res) {
 
     const [data, tradeResp] = await Promise.all([
       fetchInventory(process.env.STEAM_ID),
-      apiKey ? fetchTradeHistory(apiKey, 0) : Promise.resolve(null),
+      apiKey ? fetchTradeHistory(apiKey) : Promise.resolve(null),
     ]);
 
     const snapshot = buildSnapshotFromInventory(data);

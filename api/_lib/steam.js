@@ -195,16 +195,13 @@ export async function fetchAssetClassInfo(apiKey, classInstances) {
   return map;
 }
 
-// Fetch trade history from IEconService/GetTradeHistory.
-// Always looks back at least 10 days so InEscrow trades (k_ETradeStatus_InEscrow = 10)
-// are always included regardless of the lastTradeTime cursor.
-// afterTime is the lastTradeTime cursor; the effective window is
-// min(afterTime, 10-days-ago) so recent InEscrow trades are never missed.
-export async function fetchTradeHistory(apiKey, afterTime = 0) {
+// Fetch the 100 most recent trades from IEconService/GetTradeHistory.
+// start_after_time is a backwards pagination cursor (gives trades OLDER than
+// the time), so we omit it to always get the most recent 100 trades.
+// processedTradeIds in sync state handles deduplication across syncs.
+export async function fetchTradeHistory(apiKey) {
   if (!apiKey) throw new Error('STEAM_API_KEY env var is not set');
   const accessToken = process.env.STEAM_ACCESS_TOKEN || '';
-  const tenDaysAgo = Math.floor(Date.now() / 1000) - 10 * 24 * 60 * 60;
-  const startAfterTime = afterTime > 0 ? Math.min(afterTime, tenDaysAgo) : tenDaysAgo;
 
   const params = new URLSearchParams({
     key: apiKey,
@@ -213,7 +210,6 @@ export async function fetchTradeHistory(apiKey, afterTime = 0) {
     language: 'english',
     include_failed: '0',
     navigating_back: '0',
-    start_after_time: String(startAfterTime),
   });
   if (accessToken) params.set('access_token', accessToken);
 
