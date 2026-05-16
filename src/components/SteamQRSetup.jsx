@@ -1,191 +1,115 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
-import { Loader2, CheckCircle, X } from 'lucide-react';
+import React, { useCallback, useRef, useState } from 'react';
+import { ExternalLink, CheckCircle, AlertTriangle } from 'lucide-react';
 
 const BASE = process.env.REACT_APP_STEAM_SYNC_URL || '';
+const TOKEN_URL = 'https://store.steampowered.com/pointssummary/ajaxgetasyncconfig';
 
-/**
- * SteamQRSetup — shown when the user is logged in but hasn't yet connected
- * their Steam JWT token. Walks them through the QR auth flow.
- *
- * Props:
- *   onComplete (function) — called when tokens are stored successfully
- *   theme      (object)   — same themeStyles object used throughout the app
- */
-export default function SteamQRSetup({ onComplete, theme = {} }) {
-  const [phase, setPhase] = useState('idle'); // idle | starting | polling | done | error
-  const [challengeUrl, setChallengeUrl] = useState(null);
+export default function SteamQRSetup({ onComplete, theme = {}, expired = false }) {
+  const [token, setToken] = useState('');
+  const [phase, setPhase] = useState('idle'); // idle | saving | done | error
   const [errorMsg, setErrorMsg] = useState(null);
-  const pollTimerRef = useRef(null);
-  const aliveRef = useRef(true);
+  const inputRef = useRef(null);
 
-  // Clean up polling on unmount.
-  useEffect(() => {
-    aliveRef.current = true;
-    return () => {
-      aliveRef.current = false;
-      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
-    };
-  }, []);
-
-  const stopPolling = useCallback(() => {
-    if (pollTimerRef.current) {
-      clearTimeout(pollTimerRef.current);
-      pollTimerRef.current = null;
-    }
-  }, []);
-
-  const cancel = useCallback(() => {
-    stopPolling();
-    setPhase('idle');
-    setChallengeUrl(null);
-    setErrorMsg(null);
-  }, [stopPolling]);
-
-  const poll = useCallback(async (data) => {
-    if (!aliveRef.current) return;
-    try {
-      const res = await fetch(`${BASE}/api/auth/qr`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'poll', clientId: data.clientId, requestId: data.requestId }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const result = await res.json();
-      if (!aliveRef.current) return;
-
-      if (result.done) {
-        setPhase('done');
-        stopPolling();
-        if (onComplete) onComplete();
-        return;
-      }
-    } catch (err) {
-      if (!aliveRef.current) return;
-      // Non-fatal — keep polling.
-    }
-
-    // Schedule next poll.
-    if (aliveRef.current) {
-      const intervalMs = (data.pollInterval || 5) * 1000;
-      pollTimerRef.current = setTimeout(() => poll(data), intervalMs);
-    }
-  }, [onComplete, stopPolling]);
-
-  const startQrFlow = useCallback(async () => {
-    setPhase('starting');
+  const save = useCallback(async () => {
+    const t = token.trim();
+    if (!t) return;
+    setPhase('saving');
     setErrorMsg(null);
     try {
       const res = await fetch(`${BASE}/api/auth/qr`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start' }),
+        body: JSON.stringify({ action: 'save', token: t }),
       });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `HTTP ${res.status}`);
-      }
       const data = await res.json();
-      if (!aliveRef.current) return;
-
-      setChallengeUrl(data.challengeUrl);
-      const pd = {
-        clientId: data.clientId,
-        requestId: data.requestId,
-        pollInterval: data.pollInterval || 5,
-      };
-      setPhase('polling');
-
-      // Start polling immediately.
-      const intervalMs = pd.pollInterval * 1000;
-      pollTimerRef.current = setTimeout(() => poll(pd), intervalMs);
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      setPhase('done');
+      if (onComplete) onComplete();
     } catch (err) {
-      if (!aliveRef.current) return;
       setPhase('error');
       setErrorMsg(err.message || String(err));
     }
-  }, [poll]);
+  }, [token, onComplete]);
 
-  const card = theme.card || 'bg-slate-800/60';
+  const card  = theme.card     || 'bg-slate-800/60';
   const border = theme.cardBorder || 'border-slate-700/50';
-  const subtext = theme.subtext || 'text-slate-400';
+  const sub   = theme.subtext  || 'text-slate-400';
   const accent = theme.accentBg || 'bg-indigo-600 hover:bg-indigo-500';
+  const input  = theme.input   || 'bg-slate-900 border-slate-700';
 
   if (phase === 'done') {
     return (
       <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${card} border ${border}`}>
         <CheckCircle size={18} className="text-emerald-400 shrink-0" />
-        <p className="text-sm text-emerald-300 font-medium">
-          Steam token connected. Syncing will use your account's trade history.
-        </p>
+        <p className="text-sm text-emerald-300 font-medium">Steam token saved. Trade sync is active.</p>
       </div>
     );
   }
 
   return (
     <div className={`flex flex-col gap-3 px-4 py-4 rounded-xl ${card} border ${border}`}>
-      <div className="flex items-start justify-between gap-2">
+      {expired ? (
+        <div className="flex items-start gap-2">
+          <AlertTriangle size={15} className="text-amber-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-300">Steam token expired</p>
+            <p className={`text-xs mt-0.5 ${sub}`}>Follow the steps below to get a fresh token.</p>
+          </div>
+        </div>
+      ) : (
         <div>
           <p className="text-sm font-semibold text-white">Connect Steam Account</p>
-          <p className={`text-xs mt-0.5 ${subtext}`}>
-            Authorise SkinROI to read your trade history via a one-time QR approval in the Steam mobile app.
-          </p>
+          <p className={`text-xs mt-0.5 ${sub}`}>Needed to sync your CS2 trade history.</p>
         </div>
-        {(phase === 'polling' || phase === 'starting') && (
-          <button
-            type="button"
-            onClick={cancel}
-            className={`${subtext} hover:text-white transition-colors shrink-0 p-1`}
-            title="Cancel"
-          >
-            <X size={14} />
-          </button>
-        )}
-      </div>
+      )}
 
-      {phase === 'idle' && (
+      <ol className={`text-xs ${sub} flex flex-col gap-1.5 list-none`}>
+        <li className="flex items-start gap-2">
+          <span className="text-indigo-400 font-bold shrink-0">1.</span>
+          <span>
+            Make sure you're logged into Steam in this browser, then{' '}
+            <a
+              href={TOKEN_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 inline-flex items-center gap-1"
+            >
+              open this page <ExternalLink size={10} />
+            </a>
+          </span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="text-indigo-400 font-bold shrink-0">2.</span>
+          <span>Find <code className="text-slate-300 bg-slate-700/60 px-1 rounded">webapi_token</code> in the JSON and copy its value.</span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="text-indigo-400 font-bold shrink-0">3.</span>
+          <span>Paste it below and click Save.</span>
+        </li>
+      </ol>
+
+      <div className="flex gap-2">
+        <input
+          ref={inputRef}
+          type="password"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+          placeholder="Paste webapi_token here…"
+          className={`flex-1 text-xs px-3 py-2 rounded-lg border ${input} text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500`}
+          onKeyDown={(e) => e.key === 'Enter' && save()}
+        />
         <button
           type="button"
-          onClick={startQrFlow}
-          className={`self-start ${accent} text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors`}
+          onClick={save}
+          disabled={!token.trim() || phase === 'saving'}
+          className={`${accent} text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-40`}
         >
-          Connect Handle Items
+          {phase === 'saving' ? 'Saving…' : 'Save'}
         </button>
-      )}
-
-      {phase === 'starting' && (
-        <div className="flex items-center gap-2 text-sm text-slate-400">
-          <Loader2 size={14} className="animate-spin" />
-          Starting session…
-        </div>
-      )}
-
-      {phase === 'polling' && challengeUrl && (
-        <div className="flex flex-col gap-3">
-          <p className="text-xs text-slate-300">
-            Scan this QR code with your phone camera — it will open in the Steam app for approval. This page updates automatically.
-          </p>
-          <div className="self-start rounded-lg overflow-hidden bg-white p-2">
-            <QRCodeSVG value={challengeUrl} size={180} />
-          </div>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <Loader2 size={12} className="animate-spin" />
-            Waiting for approval…
-          </div>
-        </div>
-      )}
+      </div>
 
       {phase === 'error' && (
-        <div className="flex flex-col gap-2">
-          <p className="text-xs text-red-400">{errorMsg || 'Something went wrong. Please try again.'}</p>
-          <button
-            type="button"
-            onClick={() => { setPhase('idle'); setErrorMsg(null); }}
-            className={`self-start ${accent} text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors`}
-          >
-            Try again
-          </button>
-        </div>
+        <p className="text-xs text-red-400">{errorMsg || 'Something went wrong. Please try again.'}</p>
       )}
     </div>
   );

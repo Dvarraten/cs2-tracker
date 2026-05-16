@@ -464,6 +464,7 @@ export default function HandleItemsModal({
   handleRmbChange,
   embedded = false,
   hasTokenSetup = null,
+  tokenExpired = false,
   refreshTokenStatus,
 }) {
   const [tab, setTab] = useState('incoming');
@@ -672,10 +673,10 @@ export default function HandleItemsModal({
           </div>
         )}
 
-        {/* QR token setup banner — shown when logged in but no Steam token yet */}
-        {hasTokenSetup === false && (
+        {/* Token setup/renewal banner */}
+        {(hasTokenSetup === false || tokenExpired) && (
           <div className="px-4 py-3">
-            <SteamQRSetup theme={theme} onComplete={refreshTokenStatus} />
+            <SteamQRSetup theme={theme} onComplete={refreshTokenStatus} expired={tokenExpired} />
           </div>
         )}
 

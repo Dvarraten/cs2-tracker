@@ -1,20 +1,39 @@
-// GET  /api/auth/qr          → { hasToken: bool }
-// POST /api/auth/qr  { action: 'start' }              → { clientId, requestId, challengeUrl, pollInterval }
-// POST /api/auth/qr  { action: 'poll', clientId, requestId } → { done: bool }
+// GET  /api/auth/qr               → { hasToken: bool, tokenExpired: bool }
+// POST /api/auth/qr { action: 'save', token: string } → { ok: bool }
 
 import { getSessionSteamId } from '../_lib/auth.js';
-import { hasRefreshToken, storeTokens } from '../_lib/steam-session.js';
+import { storeTokens } from '../_lib/steam-session.js';
+import { Redis } from '@upstash/redis';
+
+function getClient() {
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || process.env.STORAGE_KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || process.env.STORAGE_KV_REST_API_TOKEN;
+  if (!url || !token) throw new Error('Redis env vars missing');
+  return new Redis({ url, token });
+}
+
+const KEY_ACCESS = (id) => `skinroi:session:${id}:access_token`;
+const KEY_EXP    = (id) => `skinroi:session:${id}:access_exp`;
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
-  // GET — return whether the logged-in user has a stored refresh token.
+  const steamId = getSessionSteamId(req);
+
+  // GET — return token status for the logged-in user.
   if (req.method === 'GET' || req.method === 'HEAD') {
-    const steamId = getSessionSteamId(req);
-    if (!steamId) return res.status(200).json({ hasToken: false });
+    if (!steamId) return res.status(200).json({ hasToken: false, tokenExpired: false });
     try {
-      const hasToken = await hasRefreshToken(steamId);
-      return res.status(200).json({ hasToken });
+      const client = getClient();
+      const [token, exp] = await Promise.all([
+        client.get(KEY_ACCESS(steamId)),
+        client.get(KEY_EXP(steamId)),
+      ]);
+      const hasToken = !!token;
+      const tokenExpired = hasToken && exp
+        ? Number(exp) < Math.floor(Date.now() / 1000)
+        : false;
+      return res.status(200).json({ hasToken, tokenExpired });
     } catch (err) {
       return res.status(500).json({ error: err.message || String(err) });
     }
@@ -25,7 +44,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'method not allowed' });
   }
 
-  const steamId = getSessionSteamId(req);
   if (!steamId) return res.status(401).json({ error: 'not logged in' });
 
   const body =
@@ -33,68 +51,17 @@ export default async function handler(req, res) {
       ? req.body
       : (() => { try { return JSON.parse(req.body || '{}'); } catch { return {}; } })();
 
-  const { action } = body;
-
-  // POST action=start — begin a QR auth session.
-  if (action === 'start') {
+  // POST action=save — store a manually obtained webapi_token.
+  if (body.action === 'save') {
+    const token = typeof body.token === 'string' ? body.token.trim() : '';
+    if (!token) return res.status(400).json({ error: 'token is required' });
     try {
-      const params = new URLSearchParams({
-        input_json: JSON.stringify({
-          device_details: {
-            device_friendly_name: 'SkinROI',
-            platform_type: 2,
-            os_type: -500,
-          },
-          website_id: 'Unknown',
-        }),
-      });
-      const r = await fetch(
-        'https://api.steampowered.com/IAuthenticationService/BeginAuthSessionViaQR/v1/',
-        { method: 'POST', body: params }
-      );
-      if (!r.ok) throw new Error(`Steam API HTTP ${r.status}`);
-      const data = await r.json();
-      const { client_id, request_id, challenge_url, interval } = data.response || {};
-      if (!client_id || !request_id || !challenge_url) {
-        throw new Error('Unexpected Steam response: ' + JSON.stringify(data.response));
-      }
-      return res.status(200).json({
-        clientId: client_id,
-        requestId: request_id,
-        challengeUrl: challenge_url,
-        pollInterval: interval ?? 5,
-      });
+      await storeTokens(steamId, { accessToken: token });
+      return res.status(200).json({ ok: true });
     } catch (err) {
       return res.status(500).json({ error: err.message || String(err) });
     }
   }
 
-  // POST action=poll — check if the user approved the QR session.
-  if (action === 'poll') {
-    const { clientId, requestId } = body;
-    if (!clientId || !requestId) {
-      return res.status(400).json({ error: 'clientId and requestId are required' });
-    }
-    try {
-      const params = new URLSearchParams({
-        input_json: JSON.stringify({ client_id: clientId, request_id: requestId }),
-      });
-      const r = await fetch(
-        'https://api.steampowered.com/IAuthenticationService/PollAuthSessionStatus/v1/',
-        { method: 'POST', body: params }
-      );
-      if (!r.ok) throw new Error(`Steam API HTTP ${r.status}`);
-      const data = await r.json();
-      const { refresh_token, access_token } = data.response || {};
-      if (refresh_token) {
-        await storeTokens(steamId, { refreshToken: refresh_token, accessToken: access_token });
-        return res.status(200).json({ done: true });
-      }
-      return res.status(200).json({ done: false });
-    } catch (err) {
-      return res.status(500).json({ error: err.message || String(err) });
-    }
-  }
-
-  return res.status(400).json({ error: 'action must be start or poll' });
+  return res.status(400).json({ error: 'action must be save' });
 }
