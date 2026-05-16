@@ -199,12 +199,11 @@ export async function fetchAssetClassInfo(apiKey, classInstances) {
 // start_after_time is a backwards pagination cursor (gives trades OLDER than
 // the time), so we omit it to always get the most recent 100 trades.
 // processedTradeIds in sync state handles deduplication across syncs.
-export async function fetchTradeHistory(apiKey) {
-  if (!apiKey) throw new Error('STEAM_API_KEY env var is not set');
-  const accessToken = process.env.STEAM_ACCESS_TOKEN || '';
-
+//
+// accessToken — per-user JWT access token (preferred); may be empty string.
+// apiKey      — STEAM_API_KEY; used as fallback auth and for GetAssetClassInfo.
+export async function fetchTradeHistory(accessToken = '', apiKey = '') {
   const params = new URLSearchParams({
-    key: apiKey,
     max_trades: '100',
     get_descriptions: '1',
     language: 'english',
@@ -212,6 +211,7 @@ export async function fetchTradeHistory(apiKey) {
     navigating_back: '0',
   });
   if (accessToken) params.set('access_token', accessToken);
+  if (apiKey) params.set('key', apiKey);
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 15000);

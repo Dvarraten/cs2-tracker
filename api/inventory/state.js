@@ -7,6 +7,7 @@
 
 import { loadState, publicState } from '../_lib/state.js';
 import { runSync, isStateStale } from '../_lib/sync.js';
+import { getSessionSteamId } from '../_lib/auth.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -14,11 +15,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'method not allowed' });
   }
 
+  const steamId = getSessionSteamId(req) || null;
+
   try {
-    let state = await loadState();
+    let state = await loadState(steamId);
 
     if (isStateStale(state)) {
-      const result = await runSync();
+      const result = await runSync({ steamId });
       if (result.state) state = result.state;
     }
 

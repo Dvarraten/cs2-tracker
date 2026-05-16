@@ -5,6 +5,7 @@ import {
   buildSnapshotFromInventory,
   fetchAssetClassInfo,
 } from './steam.js';
+import { getAccessToken } from './steam-session.js';
 
 export const POLL_INTERVAL_MIN = 5;
 export const STALE_THRESHOLD_MS = POLL_INTERVAL_MIN * 60 * 1000;
@@ -21,21 +22,22 @@ function buildDescIndex(descriptions = []) {
   return index;
 }
 
-export async function runSync({ force = false } = {}) {
+export async function runSync({ force = false, steamId = null } = {}) {
   const startedAt = new Date().toISOString();
   const startedAtMs = Date.now();
-  const state = await loadState();
+  const effectiveSteamId = steamId || process.env.STEAM_ID;
+  const state = await loadState(steamId);
 
   if (!force && state.syncLockAt && startedAtMs - state.syncLockAt < LOCK_TTL_MS) {
     return { ok: true, skipped: 'locked', state };
   }
 
   state.syncLockAt = startedAtMs;
-  await saveState(state);
+  await saveState(state, steamId);
 
   try {
     const apiKey = process.env.STEAM_API_KEY;
-    const steamId = process.env.STEAM_ID;
+    const accessToken = await getAccessToken(effectiveSteamId);
 
     // First run (or after a reset): take inventory snapshot as baseline and
     // immediately surface any items that are on a trade/market hold — these
@@ -43,9 +45,9 @@ export async function runSync({ force = false } = {}) {
     if (!state.hasInitialSnapshot) {
       let snapshot = state.snapshot ?? null;
       const firstRunPending = [];
-      if (steamId) {
+      if (effectiveSteamId) {
         try {
-          const data = await fetchInventory(steamId);
+          const data = await fetchInventory(effectiveSteamId);
           snapshot = buildSnapshotFromInventory(data);
           const descIndex = new Map();
           for (const d of data.descriptions || []) {
@@ -78,14 +80,14 @@ export async function runSync({ force = false } = {}) {
         lastError: null,
         syncLockAt: 0,
       };
-      await saveState(next);
+      await saveState(next, steamId);
       return { ok: true, initial: true, added: firstRunPending.length, state: next };
     }
 
     // Run trade history check and inventory fetch in parallel.
     const [response, inventoryData] = await Promise.all([
-      fetchTradeHistory(apiKey),
-      steamId ? fetchInventory(steamId).catch(() => null) : Promise.resolve(null),
+      fetchTradeHistory(accessToken, apiKey),
+      effectiveSteamId ? fetchInventory(effectiveSteamId).catch(() => null) : Promise.resolve(null),
     ]);
 
     const descIndex = buildDescIndex(response.descriptions);
@@ -194,7 +196,7 @@ export async function runSync({ force = false } = {}) {
       lastError: null,
       syncLockAt: 0,
     };
-    await saveState(next);
+    await saveState(next, steamId);
     return { ok: true, added: append.length, state: next };
 
   } catch (err) {
@@ -205,7 +207,7 @@ export async function runSync({ force = false } = {}) {
       lastError: err.message || String(err),
       syncLockAt: 0,
     };
-    await saveState(failed);
+    await saveState(failed, steamId);
     return { ok: false, error: failed.lastError, state: failed };
   }
 }

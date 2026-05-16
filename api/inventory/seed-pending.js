@@ -10,6 +10,8 @@ import {
   fetchTradeHistory,
   fetchAssetClassInfo,
 } from '../_lib/steam.js';
+import { getSessionSteamId } from '../_lib/auth.js';
+import { getAccessToken } from '../_lib/steam-session.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -22,15 +24,19 @@ export default async function handler(req, res) {
     });
   }
 
+  const steamId = getSessionSteamId(req) || null;
+  const effectiveSteamId = steamId || process.env.STEAM_ID;
+
   try {
-    const state = await loadState();
+    const state = await loadState(steamId);
     const detectedAt = new Date().toISOString();
     const now = Math.floor(Date.now() / 1000);
     const apiKey = process.env.STEAM_API_KEY;
+    const accessToken = await getAccessToken(effectiveSteamId);
 
     const [data, tradeResp] = await Promise.all([
-      fetchInventory(process.env.STEAM_ID),
-      apiKey ? fetchTradeHistory(apiKey) : Promise.resolve(null),
+      fetchInventory(effectiveSteamId),
+      fetchTradeHistory(accessToken, apiKey).catch(() => null),
     ]);
 
     const snapshot = buildSnapshotFromInventory(data);
@@ -111,7 +117,7 @@ export default async function handler(req, res) {
       lastTradeTime: now,
       syncLockAt: Date.now(),
     };
-    await saveState(next);
+    await saveState(next, steamId);
 
     return res.status(200).json({
       ok: true,

@@ -28,7 +28,20 @@ export function useSteamSync() {
   const [state, setState] = useState(EMPTY_STATE);
   const [reachable, setReachable] = useState(null); // null = unknown, false = down, true = up
   const [busy, setBusy] = useState(false);
+  const [hasTokenSetup, setHasTokenSetup] = useState(null); // null = unknown
   const aliveRef = useRef(true);
+
+  const fetchQrStatus = useCallback(async () => {
+    try {
+      const res = await fetch(`${BASE}/api/auth/qr-status`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!aliveRef.current) return;
+      setHasTokenSetup(!!data.hasToken);
+    } catch {
+      // Best-effort — leave hasTokenSetup as-is on failure.
+    }
+  }, []);
 
   const fetchState = useCallback(async () => {
     try {
@@ -86,12 +99,13 @@ export function useSteamSync() {
   useEffect(() => {
     aliveRef.current = true;
     fetchState();
+    fetchQrStatus();
     const id = setInterval(fetchState, FRONTEND_POLL_MS);
     return () => {
       aliveRef.current = false;
       clearInterval(id);
     };
-  }, [fetchState]);
+  }, [fetchState, fetchQrStatus]);
 
   return {
     pending: state.pending,
@@ -107,5 +121,7 @@ export function useSteamSync() {
     busy,
     sync,
     dismiss,
+    hasTokenSetup,
+    refreshTokenStatus: fetchQrStatus,
   };
 }

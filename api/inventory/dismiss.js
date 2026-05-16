@@ -3,11 +3,17 @@
 // Removes a pending event so it no longer shows in the modal.
 
 import { loadState, saveState } from '../_lib/state.js';
+import { getSessionSteamId } from '../_lib/auth.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'method not allowed' });
+  }
+
+  const steamId = getSessionSteamId(req) || null;
+  if (!steamId) {
+    return res.status(401).json({ ok: false, error: 'not logged in' });
   }
 
   // Vercel Node functions auto-parse JSON, but be defensive.
@@ -26,7 +32,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const state = await loadState();
+    const state = await loadState(steamId);
     const before = state.pending.length;
     const newPending = state.pending.filter((p) =>
       type ? !(p.assetid === assetid && p.type === type) : p.assetid !== assetid
@@ -44,7 +50,7 @@ export default async function handler(req, res) {
       : existing;
 
     const next = { ...state, pending: newPending, processedTradeIds };
-    await saveState(next);
+    await saveState(next, steamId);
 
     return res.status(200).json({
       ok: true,

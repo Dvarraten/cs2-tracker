@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, ArrowDownCircle, ArrowUpCircle, RefreshCw, AlertTriangle } from 'lucide-react';
+import SteamQRSetup from './SteamQRSetup';
 
 const STEAM_IMG_BASE = 'https://community.akamai.steamstatic.com/economy/image/';
 
@@ -462,6 +463,8 @@ export default function HandleItemsModal({
   handleUsdChange,
   handleRmbChange,
   embedded = false,
+  hasTokenSetup = null,
+  refreshTokenStatus,
 }) {
   const [tab, setTab] = useState('incoming');
 
@@ -666,6 +669,13 @@ export default function HandleItemsModal({
                 Sync failed: {lastError}
               </span>
             )}
+          </div>
+        )}
+
+        {/* QR token setup banner — shown when logged in but no Steam token yet */}
+        {hasTokenSetup === false && (
+          <div className="px-4 py-3">
+            <SteamQRSetup theme={theme} onComplete={refreshTokenStatus} />
           </div>
         )}
 

@@ -15,7 +15,12 @@
 
 import { Redis } from '@upstash/redis';
 
-const STATE_KEY = 'skinroi:state';
+// Per-user state key. Falls back to the legacy shared key when no steamId is given.
+const STATE_KEY = (steamId) =>
+  steamId ? `skinroi:sync:${steamId}:state` : 'skinroi:state';
+
+// Legacy shared key (kept for migration only).
+const LEGACY_SHARED_KEY = 'skinroi:state';
 
 export const DEFAULT_STATE = {
   lastSync: null,
@@ -48,30 +53,60 @@ function getClient() {
   return _client;
 }
 
-const LEGACY_STATE_KEY = 'cs2-tracker:state';
+const LEGACY_CS2_KEY = 'cs2-tracker:state';
 
-export async function loadState() {
+export async function loadState(steamId = null) {
   const client = getClient();
-  const raw = await client.get(STATE_KEY);
+  const key = STATE_KEY(steamId);
+  const raw = await client.get(key);
   if (raw) {
     const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
     return { ...DEFAULT_STATE, ...parsed };
   }
-  // Migrate from old key if present.
-  const legacy = await client.get(LEGACY_STATE_KEY).catch(() => null);
-  if (legacy) {
-    const parsed = typeof legacy === 'string' ? JSON.parse(legacy) : legacy;
-    const migrated = { ...DEFAULT_STATE, ...parsed };
-    await client.set(STATE_KEY, migrated);
-    await client.del(LEGACY_STATE_KEY);
-    return migrated;
+
+  // Migration path: if we have a steamId and it matches the env owner,
+  // try to migrate from the shared skinroi:state key, then from cs2-tracker:state.
+  // We do NOT delete the old keys yet so that a rollback is safe.
+  if (steamId && steamId === process.env.STEAM_ID) {
+    const shared = await client.get(LEGACY_SHARED_KEY).catch(() => null);
+    if (shared) {
+      const parsed = typeof shared === 'string' ? JSON.parse(shared) : shared;
+      const migrated = { ...DEFAULT_STATE, ...parsed };
+      await client.set(key, migrated);
+      return migrated;
+    }
+    const legacy = await client.get(LEGACY_CS2_KEY).catch(() => null);
+    if (legacy) {
+      const parsed = typeof legacy === 'string' ? JSON.parse(legacy) : legacy;
+      const migrated = { ...DEFAULT_STATE, ...parsed };
+      await client.set(key, migrated);
+      return migrated;
+    }
   }
+
+  // Anonymous / no steamId: try the legacy shared key for backward compat.
+  if (!steamId) {
+    const shared = await client.get(LEGACY_SHARED_KEY).catch(() => null);
+    if (shared) {
+      const parsed = typeof shared === 'string' ? JSON.parse(shared) : shared;
+      return { ...DEFAULT_STATE, ...parsed };
+    }
+  }
+
   return { ...DEFAULT_STATE };
 }
 
-export async function saveState(state) {
+export async function saveState(state, steamId = null) {
   const client = getClient();
-  await client.set(STATE_KEY, state);
+  await client.set(STATE_KEY(steamId), state);
+}
+
+// isStateStale is the canonical copy in sync.js; re-exported here as well for
+// any callers that import it directly from state.js.
+export function isStateStale(state) {
+  const STALE_MS = 5 * 60 * 1000;
+  if (!state.lastSync) return true;
+  return Date.now() - new Date(state.lastSync).getTime() > STALE_MS;
 }
 
 // Public-facing slice — never leak the snapshot object (it's large) or the

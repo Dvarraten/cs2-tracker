@@ -3,6 +3,8 @@
 // InEscrow (status 10) trades and item descriptions are resolving.
 
 import { fetchTradeHistory, fetchAssetClassInfo } from '../_lib/steam.js';
+import { getSessionSteamId } from '../_lib/auth.js';
+import { getAccessToken } from '../_lib/steam-session.js';
 
 export default async function handler(req, res) {
   if ((req.query?.confirm || req.query?.CONFIRM) !== 'yes') {
@@ -10,12 +12,12 @@ export default async function handler(req, res) {
   }
 
   const apiKey = process.env.STEAM_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'STEAM_API_KEY not set' });
-  }
+  const sessionSteamId = getSessionSteamId(req) || null;
+  const effectiveSteamId = sessionSteamId || process.env.STEAM_ID;
+  const accessToken = await getAccessToken(effectiveSteamId);
 
   try {
-    const { trades, descriptions } = await fetchTradeHistory(apiKey, 0);
+    const { trades, descriptions } = await fetchTradeHistory(accessToken, apiKey);
 
     const descIndex = new Map();
     for (const d of descriptions) {
