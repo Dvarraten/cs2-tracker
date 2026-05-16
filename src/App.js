@@ -60,13 +60,17 @@ export default function CS2TradingTracker() {
   const [activeTab, setActiveTab] = useState('active');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
-  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [activeModal, setActiveModal] = useState(null); // null | 'analytics' | 'addItem' | 'handleItems' | 'about'
   const [chartPeriod, setChartPeriod] = useState('30d');
   const [theme, setTheme] = useState(() => { const t = localStorage.getItem('cs2-theme'); return t === 'v2' ? 'dark' : (t || 'default'); });
   const [showThemePicker, setShowThemePicker] = useState(false);
-  const [showAddItem, setShowAddItem] = useState(false);
-  const [showHandleItems, setShowHandleItems] = useState(false);
-  const [showAbout, setShowAbout] = useState(false);
+
+  const showAnalytics  = activeModal === 'analytics';
+  const showAddItem    = activeModal === 'addItem';
+  const showHandleItems = activeModal === 'handleItems';
+  const showAbout      = activeModal === 'about';
+  const openModal  = (name) => setActiveModal(prev => prev === name ? null : name);
+  const closeModal = () => setActiveModal(null);
 
   const themeStyles = themes[theme];
   const { profitChartData } = useChartData(items, chartPeriod);
@@ -86,7 +90,7 @@ export default function CS2TradingTracker() {
   useEffect(() => {
     document.body.style.overflow = showAnalytics ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
-  }, [showAnalytics]);
+  }, [showAnalytics]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-promote pending items whose trade hold has expired
   useEffect(() => {
@@ -172,18 +176,18 @@ export default function CS2TradingTracker() {
           profitChartData={profitChartData}
           chartPeriod={chartPeriod}
           setChartPeriod={setChartPeriod}
-theme={themeStyles}
+          theme={themeStyles}
           items={items}
-          onClose={() => setShowAnalytics(false)}
+          onClose={closeModal}
         />
       )}
 
       <Header
         theme={themeStyles}
-        onAnalyticsClick={() => setShowAnalytics(true)}
-        onAddItemClick={() => setShowAddItem(v => !v)}
-        onHandleItemsClick={() => setShowHandleItems(v => !v)}
-        onAboutClick={() => setShowAbout(true)}
+        onAnalyticsClick={() => openModal('analytics')}
+        onAddItemClick={() => openModal('addItem')}
+        onHandleItemsClick={() => openModal('handleItems')}
+        onAboutClick={() => openModal('about')}
         showAddItem={showAddItem}
         showHandleItems={showHandleItems}
         pendingCount={steamSync.pendingCount}
@@ -208,14 +212,14 @@ theme={themeStyles}
       <div className="flex gap-6 p-6 items-start">
 
         {/* Sidebar */}
-        <aside className="w-[360px] shrink-0 flex flex-col gap-4 sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto pb-4">
+        <aside className="w-[360px] shrink-0 flex flex-col gap-4 sticky top-[80px] max-h-[calc(100vh-5.5rem)] overflow-y-auto pb-4">
 
           {/* Overview */}
           <div className={`${themeStyles.panel} border ${themeStyles.panelBorder} rounded-2xl p-4`}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Overview</h3>
               <button
-                onClick={() => setShowAnalytics(true)}
+                onClick={() => openModal('analytics')}
                 className="p-1.5 rounded-lg text-slate-600 hover:text-slate-300 hover:bg-white/8 transition-colors"
                 title="View analytics"
               >
@@ -247,7 +251,7 @@ theme={themeStyles}
 
           {/* Utility buttons */}
           <button
-            onClick={() => setShowAnalytics(true)}
+            onClick={() => openModal('analytics')}
             className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border ${themeStyles.cardBorder} ${themeStyles.subtext} hover:text-white text-sm transition-colors`}
           >
             <BarChart3 size={14} />
@@ -265,18 +269,20 @@ theme={themeStyles}
         {/* Main Content */}
         <main className="flex-1 min-w-0 flex flex-col gap-4">
 
-          <TabsAndSearchbar
-            theme={themeStyles}
-            setActiveTab={setActiveTab} activeTab={activeTab}
-            stats={stats}
-            searchTerm={searchTerm} setSearchTerm={setSearchTerm}
-            sortBy={sortBy} setSortBy={setSortBy}
-            selectMode={selectMode}
-            selectedIds={selectedIds}
-            onEnterSelectMode={() => setSelectMode(true)}
-            onCancelSelectMode={exitSelectMode}
-            onConfirmBulkDelete={confirmBulkDelete}
-          />
+          <div className={`sticky top-[72px] z-30 ${themeStyles.bg} -mx-1 px-1 pb-2`}>
+            <TabsAndSearchbar
+              theme={themeStyles}
+              setActiveTab={setActiveTab} activeTab={activeTab}
+              stats={stats}
+              searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+              sortBy={sortBy} setSortBy={setSortBy}
+              selectMode={selectMode}
+              selectedIds={selectedIds}
+              onEnterSelectMode={() => setSelectMode(true)}
+              onCancelSelectMode={exitSelectMode}
+              onConfirmBulkDelete={confirmBulkDelete}
+            />
+          </div>
 
           <ItemGrid
             sellPlatform={sellPlatform} setSellData={setSellData}
@@ -295,14 +301,14 @@ theme={themeStyles}
 
       {/* Add Item modal */}
       {showAddItem && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowAddItem(false)}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={closeModal}>
           <div
             className={`relative w-full max-w-xl max-h-[85vh] flex flex-col ${themeStyles.panel} border ${themeStyles.panelBorder} rounded-2xl shadow-2xl overflow-hidden`}
             onClick={e => e.stopPropagation()}
           >
             <div className={`flex items-center justify-between px-5 py-4 border-b ${themeStyles.panelBorder} shrink-0`}>
               <h2 className="font-semibold text-slate-100">Add New Item</h2>
-              <button onClick={() => setShowAddItem(false)} className="text-slate-500 hover:text-slate-300 transition-colors">
+              <button onClick={closeModal} className="text-slate-500 hover:text-slate-300 transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -325,13 +331,13 @@ theme={themeStyles}
         </div>
       )}
 
-      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+      {showAbout && <AboutModal onClose={closeModal} />}
 
       {/* Handle Items modal */}
       {showHandleItems && (
         <HandleItemsModal
           open={showHandleItems}
-          onClose={() => setShowHandleItems(false)}
+          onClose={closeModal}
           theme={themeStyles}
           items={items}
           addItemDirect={addItemDirect}

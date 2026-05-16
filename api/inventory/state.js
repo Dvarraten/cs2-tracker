@@ -20,13 +20,13 @@ export default async function handler(req, res) {
   try {
     let state = await loadState(steamId);
 
-    if (isStateStale(state)) {
-      const result = await runSync({ steamId });
-      if (result.state) state = result.state;
-    }
-
     res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).json(publicState(state));
+    res.status(200).json(publicState(state));
+
+    // Fire sync in background after responding so the page loads immediately.
+    if (isStateStale(state)) {
+      runSync({ steamId }).catch(() => {});
+    }
   } catch (err) {
     return res.status(500).json({
       error: err.message || String(err),
