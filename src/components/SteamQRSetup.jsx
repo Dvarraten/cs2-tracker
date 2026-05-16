@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ExternalLink, Loader2, CheckCircle, X } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { Loader2, CheckCircle, X } from 'lucide-react';
 
 const BASE = process.env.REACT_APP_STEAM_SYNC_URL || '';
 
@@ -160,20 +161,14 @@ export default function SteamQRSetup({ onComplete, theme = {} }) {
       )}
 
       {phase === 'polling' && challengeUrl && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <p className="text-xs text-slate-300">
-            Open the link below on your phone and approve it in the Steam app. This page will update automatically.
+            Scan this QR code with your phone camera — it will open in the Steam app for approval. This page updates automatically.
           </p>
-          <a
-            href={challengeUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 self-start text-xs text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors"
-          >
-            <ExternalLink size={12} />
-            Open Steam QR Auth
-          </a>
-          <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+          <div className="self-start rounded-lg overflow-hidden bg-white p-2">
+            <QRCodeSVG value={challengeUrl} size={180} />
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-500">
             <Loader2 size={12} className="animate-spin" />
             Waiting for approval…
           </div>
