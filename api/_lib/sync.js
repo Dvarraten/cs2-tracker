@@ -38,19 +38,41 @@ export async function runSync({ force = false } = {}) {
     const apiKey = process.env.STEAM_API_KEY;
     const steamId = process.env.STEAM_ID;
 
-    // First run: record current time as baseline, generate no events.
+    // First run (or after a reset): take inventory snapshot as baseline and
+    // immediately surface any items that are on a trade/market hold — these
+    // are definitively new acquisitions that haven't been tracked yet.
     if (!state.hasInitialSnapshot) {
       let snapshot = state.snapshot ?? null;
-      if (steamId && snapshot === null) {
+      const firstRunPending = [];
+      if (steamId) {
         try {
           const data = await fetchInventory(steamId);
           snapshot = buildSnapshotFromInventory(data);
+          const descIndex = new Map();
+          for (const d of data.descriptions || []) {
+            descIndex.set(`${d.classid}_${d.instanceid}`, d);
+          }
+          const alreadyPending = new Set(state.pending.map(p => p.assetid));
+          for (const asset of data.assets || []) {
+            if (Number(asset.appid) !== 730 || String(asset.contextid) !== '2') continue;
+            const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
+            if (!desc || !(desc.market_tradable_restriction > 0)) continue;
+            if (alreadyPending.has(asset.assetid)) continue;
+            firstRunPending.push({
+              type: 'incoming',
+              assetid: asset.assetid,
+              marketHashName: desc.market_hash_name || desc.name || '(unknown)',
+              iconUrl: desc.icon_url || '',
+              detectedAt: startedAt,
+            });
+          }
         } catch { /* leave snapshot null */ }
       }
       const next = {
         ...state,
         hasInitialSnapshot: true,
         snapshot,
+        pending: state.pending.concat(firstRunPending),
         lastTradeTime: Math.floor(Date.now() / 1000) - 24 * 60 * 60,
         lastSync: startedAt,
         lastSyncOk: true,
@@ -58,7 +80,7 @@ export async function runSync({ force = false } = {}) {
         syncLockAt: 0,
       };
       await saveState(next);
-      return { ok: true, initial: true, state: next };
+      return { ok: true, initial: true, added: firstRunPending.length, state: next };
     }
 
     // Run trade offer check and inventory fetch in parallel.
