@@ -1,6 +1,6 @@
 // GET /api/inventory/debug-trades?confirm=yes
-// Diagnostic: shows what fetchEscrowOffers returns so we can see
-// why trade-hold items are missing from seed-pending.
+// Diagnostic: shows trade offers and specifically CS2 escrow holds.
+// CS2 P2P trades with a hold show as state 3 + escrow_end_date (not state 11).
 
 import { fetchEscrowOffers, fetchAssetClassInfo } from '../_lib/steam.js';
 
@@ -18,46 +18,51 @@ export default async function handler(req, res) {
     const resp = await fetchEscrowOffers(apiKey);
 
     const received = resp.trade_offers_received || [];
-    const descriptions = resp.descriptions || [];
-
-    const descIndex = new Map();
-    for (const d of descriptions) {
-      descIndex.set(`${d.classid}_${d.instanceid}`, d);
-    }
 
     const stateBreakdown = received.reduce((acc, o) => {
       acc[o.trade_offer_state] = (acc[o.trade_offer_state] || 0) + 1;
       return acc;
     }, {});
 
-    const escrowOffers = received.filter(o => o.trade_offer_state === 11);
-    const escrowItems = escrowOffers.flatMap(o =>
-      (o.items_to_receive || []).map(a => {
-        const desc = descIndex.get(`${a.classid}_${a.instanceid}`);
-        return {
-          assetid: a.assetid,
-          appid: a.appid,
-          classid: a.classid,
-          instanceid: a.instanceid,
-          hasDesc: !!desc,
-          marketHashName: desc?.market_hash_name || null,
-        };
-      })
+    // CS2 trade holds: state 3 with escrow_end_date set (not state 11)
+    const holdOffers = received.filter(
+      o => (o.trade_offer_state === 3 && o.escrow_end_date) || o.trade_offer_state === 11
     );
 
-    // Test GetAssetClassInfo with the first 3 CS2 classids we found.
-    const testAssets = escrowItems.slice(0, 3).length
-      ? escrowItems.slice(0, 3)
-      : received.filter(o => o.trade_offer_state === 3)
-          .flatMap(o => (o.items_to_receive || []).filter(a => Number(a.appid) === 730))
-          .slice(0, 3)
-          .map(a => ({ classid: a.classid, instanceid: a.instanceid }));
+    const holdItems = holdOffers.flatMap(o =>
+      (o.items_to_receive || [])
+        .filter(a => Number(a.appid) === 730)
+        .map(a => ({
+          assetid: a.assetid,
+          classid: a.classid,
+          instanceid: a.instanceid,
+          offerState: o.trade_offer_state,
+          escrowEndDate: o.escrow_end_date
+            ? new Date(o.escrow_end_date * 1000).toISOString()
+            : null,
+        }))
+    );
 
+    // Summary of all state-3 offers with their escrow_end_date
+    const state3Summary = received
+      .filter(o => o.trade_offer_state === 3)
+      .map(o => ({
+        tradeofferid: o.tradeofferid,
+        timeUpdated: o.time_updated
+          ? new Date(o.time_updated * 1000).toISOString()
+          : null,
+        escrowEndDate: o.escrow_end_date
+          ? new Date(o.escrow_end_date * 1000).toISOString()
+          : null,
+        itemCount: (o.items_to_receive || []).filter(a => Number(a.appid) === 730).length,
+      }));
+
+    // Test GetAssetClassInfo on the first 3 hold items
+    const testAssets = holdItems.slice(0, 3);
     let classInfoTest = null;
-    let classInfoRaw = null;
-    if (testAssets.length && process.env.STEAM_API_KEY) {
+    if (testAssets.length && apiKey) {
       const params = new URLSearchParams({
-        key: process.env.STEAM_API_KEY,
+        key: apiKey,
         appid: '730',
         class_count: String(testAssets.length),
         language: 'english',
@@ -69,8 +74,11 @@ export default async function handler(req, res) {
       try {
         const r = await fetch(`https://api.steampowered.com/ISteamEconomy/GetAssetClassInfo/v0001/?${params}`);
         const raw = await r.json();
-        classInfoRaw = raw;
-        classInfoTest = { httpStatus: r.status, resultKeys: Object.keys(raw.result || {}) };
+        classInfoTest = {
+          httpStatus: r.status,
+          resultKeys: Object.keys(raw.result || {}),
+          firstItem: Object.values(raw.result || {})[0]?.market_hash_name || null,
+        };
       } catch (e) {
         classInfoTest = { error: e.message };
       }
@@ -78,12 +86,11 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       totalReceived: received.length,
-      descriptionCount: descriptions.length,
       stateBreakdown,
-      escrowOfferCount: escrowOffers.length,
-      escrowItems,
+      holdOfferCount: holdOffers.length,
+      holdItems,
+      state3Summary,
       classInfoTest,
-      classInfoRaw,
     });
   } catch (err) {
     return res.status(500).json({ error: err.message || String(err) });
