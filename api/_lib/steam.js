@@ -146,45 +146,6 @@ export function buildSnapshotFromInventory(data) {
   return snapshot;
 }
 
-// Fetches received trade offers for seeding pending items.
-// active_only=1 + time_historical_cutoff returns both:
-//   - currently active offers (state 11 InEscrow = trade holds)
-//   - offers that changed state since the cutoff (state 3 = recently accepted)
-export async function fetchRecentReceivedOffers(apiKey) {
-  if (!apiKey) throw new Error('STEAM_API_KEY env var is not set');
-  const accessToken = process.env.STEAM_ACCESS_TOKEN || '';
-  const cutoff = String(Math.floor(Date.now() / 1000) - 16 * 24 * 60 * 60);
-
-  const params = new URLSearchParams({
-    key: apiKey,
-    get_received_offers: '1',
-    get_sent_offers: '0',
-    get_descriptions: '0',
-    language: 'english',
-    active_only: '1',
-    time_historical_cutoff: cutoff,
-  });
-  if (accessToken) params.set('access_token', accessToken);
-
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 15000);
-  try {
-    const res = await fetch(
-      `https://api.steampowered.com/IEconService/GetTradeOffers/v1/?${params}`
-    );
-    if (!res.ok) throw new Error(`Steam API HTTP ${res.status}`);
-    const data = await res.json();
-    if (!data.response) throw new Error('Steam API returned no response object');
-    return { trade_offers_received: data.response.trade_offers_received || [], descriptions: [] };
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-// Kept for the debug-trades endpoint.
-export async function fetchEscrowOffers(apiKey) {
-  return fetchRecentReceivedOffers(apiKey);
-}
 
 // Fetch item descriptions from Steam when GetTradeOffers doesn't return them.
 // classInstances is an array of { classid, instanceid } objects.
@@ -234,38 +195,40 @@ export async function fetchAssetClassInfo(apiKey, classInstances) {
   return map;
 }
 
-// Fetch trade offers from the Steam Web API.
-// active_only=1 + time_historical_cutoff=afterTime returns:
-//   - active offers (state 11 InEscrow = trade holds currently pending)
-//   - offers that changed state since afterTime (state 3 = newly accepted)
-export async function fetchTradeOffers(apiKey, afterTime = 0) {
+// Fetch trade history from IEconService/GetTradeHistory.
+// Always looks back at least 10 days so InEscrow trades (k_ETradeStatus_InEscrow = 10)
+// are always included regardless of the lastTradeTime cursor.
+// afterTime is the lastTradeTime cursor; the effective window is
+// min(afterTime, 10-days-ago) so recent InEscrow trades are never missed.
+export async function fetchTradeHistory(apiKey, afterTime = 0) {
   if (!apiKey) throw new Error('STEAM_API_KEY env var is not set');
   const accessToken = process.env.STEAM_ACCESS_TOKEN || '';
+  const tenDaysAgo = Math.floor(Date.now() / 1000) - 10 * 24 * 60 * 60;
+  const startAfterTime = afterTime > 0 ? Math.min(afterTime, tenDaysAgo) : tenDaysAgo;
 
   const params = new URLSearchParams({
     key: apiKey,
-    get_received_offers: '1',
-    get_sent_offers: '1',
+    max_trades: '100',
     get_descriptions: '1',
     language: 'english',
-    active_only: '1',
+    include_failed: '0',
+    navigating_back: '0',
+    start_after_time: String(startAfterTime),
   });
   if (accessToken) params.set('access_token', accessToken);
-  if (afterTime > 0) params.set('time_historical_cutoff', String(afterTime));
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 15000);
   try {
     const res = await fetch(
-      `https://api.steampowered.com/IEconService/GetTradeOffers/v1/?${params}`
+      `https://api.steampowered.com/IEconService/GetTradeHistory/v1/?${params}`
     );
     if (!res.ok) throw new Error(`Steam API HTTP ${res.status}`);
     const data = await res.json();
     if (!data.response) throw new Error('Steam API returned no response object');
     const resp = data.response;
     return {
-      trade_offers_received: resp.trade_offers_received || [],
-      trade_offers_sent: resp.trade_offers_sent || [],
+      trades: resp.trades || [],
       descriptions: resp.descriptions || [],
     };
   } finally {

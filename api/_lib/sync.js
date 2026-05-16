@@ -1,6 +1,6 @@
 import { loadState, saveState, DEFAULT_STATE } from './state.js';
 import {
-  fetchTradeOffers,
+  fetchTradeHistory,
   fetchInventory,
   buildSnapshotFromInventory,
   fetchAssetClassInfo,
@@ -82,24 +82,23 @@ export async function runSync({ force = false } = {}) {
       return { ok: true, initial: true, added: firstRunPending.length, state: next };
     }
 
-    // Run trade offer check and inventory fetch in parallel.
+    // Run trade history check and inventory fetch in parallel.
     const [response, inventoryData] = await Promise.all([
-      fetchTradeOffers(apiKey, state.lastTradeTime || 0),
+      fetchTradeHistory(apiKey, state.lastTradeTime || 0),
       steamId ? fetchInventory(steamId).catch(() => null) : Promise.resolve(null),
     ]);
 
     const descIndex = buildDescIndex(response.descriptions);
 
-    // Steam often omits descriptions for historical offers — resolve any gaps
-    // via GetAssetClassInfo so items without names aren't silently dropped.
-    const VALID_STATES = new Set([3, 11]);
-    const received = (response.trade_offers_received || []).filter(o => VALID_STATES.has(o.trade_offer_state));
-    const sent = (response.trade_offers_sent || []).filter(o => VALID_STATES.has(o.trade_offer_state));
+    // k_ETradeStatus: 2=Committed, 3=Complete, 10=InEscrow
+    const RELEVANT_STATUSES = new Set([2, 3, 10]);
+    const trades = (response.trades || []).filter(t => RELEVANT_STATUSES.has(t.status));
 
-    const allAssets = [
-      ...received.flatMap(o => o.items_to_receive || []),
-      ...sent.flatMap(o => o.items_to_give || []),
-    ].filter(a => Number(a.appid) === 730 && String(a.contextid) === '2');
+    // Resolve missing descriptions via GetAssetClassInfo.
+    const allAssets = trades.flatMap(t => [
+      ...(t.assets_received || []),
+      ...(t.assets_given || []),
+    ]).filter(a => Number(a.appid) === 730 && String(a.contextid) === '2');
 
     const missingDescs = allAssets.filter(
       a => !descIndex.has(`${a.classid}_${a.instanceid}`)
@@ -113,21 +112,21 @@ export async function runSync({ force = false } = {}) {
     }
 
     const seen = new Set(state.pending.map(p => `${p.type}:${p.assetid}`));
-    // Offer IDs we've already processed — prevents active hold offers from
-    // being re-queued on every sync (active_only=1 returns them each time).
-    const processedOffers = new Set(state.processedOfferIds || []);
+    const processedTrades = new Set(state.processedTradeIds || []);
     const append = [];
-    const newOfferIds = [];
+    const newTradeIds = [];
     let maxTime = state.lastTradeTime || 0;
 
-    const addAssets = (assets, type, timeUpdated) => {
+    const addAssets = (assets, type, timeInit) => {
       for (const asset of assets || []) {
         if (Number(asset.appid) !== 730) continue;
         if (String(asset.contextid) !== '2') continue;
         const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`)
           || descIndex.get(`${asset.classid}_0`);
         if (!desc || !desc.market_hash_name) continue;
-        const assetid = asset.assetid;
+        // new_assetid is the assetid in the receiver's inventory; may be absent
+        // during InEscrow (status 10) — fall back to the pre-trade assetid.
+        const assetid = asset.new_assetid || asset.assetid;
         const key = `${type}:${assetid}`;
         if (seen.has(key)) continue;
         append.push({
@@ -135,23 +134,19 @@ export async function runSync({ force = false } = {}) {
           assetid,
           marketHashName: desc.market_hash_name || desc.name || '(unknown)',
           iconUrl: desc.icon_url || '',
-          detectedAt: new Date((timeUpdated || 0) * 1000).toISOString(),
+          detectedAt: new Date((timeInit || 0) * 1000).toISOString(),
         });
         seen.add(key);
       }
     };
 
-    for (const offer of received) {
-      maxTime = Math.max(maxTime, offer.time_updated || offer.time_created || 0);
-      if (processedOffers.has(offer.tradeofferid)) continue;
-      addAssets(offer.items_to_receive, 'incoming', offer.time_updated || offer.time_created);
-      newOfferIds.push(offer.tradeofferid);
-    }
-    for (const offer of sent) {
-      maxTime = Math.max(maxTime, offer.time_updated || offer.time_created || 0);
-      if (processedOffers.has(offer.tradeofferid)) continue;
-      addAssets(offer.items_to_give, 'outgoing', offer.time_updated || offer.time_created);
-      newOfferIds.push(offer.tradeofferid);
+    for (const trade of trades) {
+      maxTime = Math.max(maxTime, trade.time_init || 0);
+      if (processedTrades.has(trade.tradeid)) continue;
+      addAssets(trade.assets_received, 'incoming', trade.time_init);
+      addAssets(trade.assets_given, 'outgoing', trade.time_init);
+      newTradeIds.push(trade.tradeid);
+      processedTrades.add(trade.tradeid);
     }
 
     // Inventory snapshot diff — catches items from marketplace trades or Steam
@@ -188,12 +183,11 @@ export async function runSync({ force = false } = {}) {
       }
     }
 
-    const allOfferIds = [...processedOffers, ...newOfferIds];
     const next = {
       ...state,
       pending: state.pending.concat(append),
       snapshot: newSnapshot !== null ? newSnapshot : state.snapshot,
-      processedOfferIds: allOfferIds.slice(-500),
+      processedTradeIds: [...processedTrades].slice(-500),
       lastTradeTime: maxTime,
       lastSync: startedAt,
       lastSyncOk: true,
