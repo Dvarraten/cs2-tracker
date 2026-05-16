@@ -3,7 +3,6 @@ import {
   fetchTradeOffers,
   fetchInventory,
   buildSnapshotFromInventory,
-  diffSnapshots,
   fetchAssetClassInfo,
 } from './steam.js';
 
@@ -147,22 +146,33 @@ export async function runSync({ force = false } = {}) {
       addAssets(offer.items_to_give, 'outgoing', offer.time_updated || offer.time_created);
     }
 
-    // Inventory snapshot diff — catches items from Steam Market purchases
-    // that don't create trade offers (they land directly in inventory with
-    // a market_tradable_restriction hold).
+    // Inventory snapshot diff — catches items from marketplace trades or Steam
+    // Market purchases where GetTradeOffers is delayed or returns no state 11.
+    // Only items with an active hold (market_tradable_restriction > 0) are
+    // surfaced: those are definitively recent acquisitions. Fully tradable
+    // items are skipped to avoid flagging pre-existing stock that predates
+    // the snapshot baseline.
     let newSnapshot = state.snapshot ?? null;
     if (inventoryData) {
       newSnapshot = buildSnapshotFromInventory(inventoryData);
       if (state.snapshot != null) {
-        const { incoming: newItems } = diffSnapshots(state.snapshot, newSnapshot);
-        for (const item of newItems) {
-          const key = `incoming:${item.assetid}`;
+        const prevAssetids = new Set(Object.keys(state.snapshot));
+        const invDescIndex = new Map();
+        for (const d of inventoryData.descriptions || []) {
+          invDescIndex.set(`${d.classid}_${d.instanceid}`, d);
+        }
+        for (const asset of inventoryData.assets || []) {
+          if (Number(asset.appid) !== 730 || String(asset.contextid) !== '2') continue;
+          if (prevAssetids.has(asset.assetid)) continue;
+          const desc = invDescIndex.get(`${asset.classid}_${asset.instanceid}`);
+          if (!desc || !(desc.market_tradable_restriction > 0)) continue;
+          const key = `incoming:${asset.assetid}`;
           if (seen.has(key)) continue;
           append.push({
             type: 'incoming',
-            assetid: item.assetid,
-            marketHashName: item.marketHashName,
-            iconUrl: item.iconUrl,
+            assetid: asset.assetid,
+            marketHashName: desc.market_hash_name || desc.name || '(unknown)',
+            iconUrl: desc.icon_url || '',
             detectedAt: startedAt,
           });
           seen.add(key);
