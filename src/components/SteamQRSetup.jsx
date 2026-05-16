@@ -44,10 +44,10 @@ export default function SteamQRSetup({ onComplete, theme = {} }) {
   const poll = useCallback(async (data) => {
     if (!aliveRef.current) return;
     try {
-      const res = await fetch(`${BASE}/api/auth/qr-poll`, {
+      const res = await fetch(`${BASE}/api/auth/qr`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId: data.clientId, requestId: data.requestId }),
+        body: JSON.stringify({ action: 'poll', clientId: data.clientId, requestId: data.requestId }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
@@ -75,7 +75,11 @@ export default function SteamQRSetup({ onComplete, theme = {} }) {
     setPhase('starting');
     setErrorMsg(null);
     try {
-      const res = await fetch(`${BASE}/api/auth/qr-start`, { method: 'POST' });
+      const res = await fetch(`${BASE}/api/auth/qr`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start' }),
+      });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${res.status}`);
