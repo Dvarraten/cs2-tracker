@@ -39,7 +39,14 @@ export default async function handler(req, res) {
   if (action === 'start') {
     try {
       const params = new URLSearchParams({
-        device_details: JSON.stringify({ device_friendly_name: 'SkinROI', platform_type: 2 }),
+        input_json: JSON.stringify({
+          device_details: {
+            device_friendly_name: 'SkinROI',
+            platform_type: 2,
+            os_type: -500,
+          },
+          website_id: 'Unknown',
+        }),
       });
       const r = await fetch(
         'https://api.steampowered.com/IAuthenticationService/BeginAuthSessionViaQR/v1/',
@@ -69,7 +76,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'clientId and requestId are required' });
     }
     try {
-      const params = new URLSearchParams({ client_id: clientId, request_id: requestId });
+      const params = new URLSearchParams({
+        input_json: JSON.stringify({ client_id: clientId, request_id: requestId }),
+      });
       const r = await fetch(
         'https://api.steampowered.com/IAuthenticationService/PollAuthSessionStatus/v1/',
         { method: 'POST', body: params }
