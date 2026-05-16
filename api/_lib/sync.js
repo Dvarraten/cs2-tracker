@@ -113,7 +113,11 @@ export async function runSync({ force = false } = {}) {
     }
 
     const seen = new Set(state.pending.map(p => `${p.type}:${p.assetid}`));
+    // Offer IDs we've already processed — prevents active hold offers from
+    // being re-queued on every sync (active_only=1 returns them each time).
+    const processedOffers = new Set(state.processedOfferIds || []);
     const append = [];
+    const newOfferIds = [];
     let maxTime = state.lastTradeTime || 0;
 
     const addAssets = (assets, type, timeUpdated) => {
@@ -139,11 +143,15 @@ export async function runSync({ force = false } = {}) {
 
     for (const offer of received) {
       maxTime = Math.max(maxTime, offer.time_updated || offer.time_created || 0);
+      if (processedOffers.has(offer.tradeofferid)) continue;
       addAssets(offer.items_to_receive, 'incoming', offer.time_updated || offer.time_created);
+      newOfferIds.push(offer.tradeofferid);
     }
     for (const offer of sent) {
       maxTime = Math.max(maxTime, offer.time_updated || offer.time_created || 0);
+      if (processedOffers.has(offer.tradeofferid)) continue;
       addAssets(offer.items_to_give, 'outgoing', offer.time_updated || offer.time_created);
+      newOfferIds.push(offer.tradeofferid);
     }
 
     // Inventory snapshot diff — catches items from marketplace trades or Steam
@@ -180,10 +188,12 @@ export async function runSync({ force = false } = {}) {
       }
     }
 
+    const allOfferIds = [...processedOffers, ...newOfferIds];
     const next = {
       ...state,
       pending: state.pending.concat(append),
       snapshot: newSnapshot !== null ? newSnapshot : state.snapshot,
+      processedOfferIds: allOfferIds.slice(-500),
       lastTradeTime: maxTime,
       lastSync: startedAt,
       lastSyncOk: true,
