@@ -69,11 +69,13 @@ export async function runSync({ force = false, steamId = null } = {}) {
           }
         } catch { /* leave snapshot null */ }
       }
+      // Reload fresh state so concurrent dismissals aren't clobbered.
+      const freshForInit = await loadState(steamId);
       const next = {
-        ...state,
+        ...freshForInit,
         hasInitialSnapshot: true,
         snapshot,
-        pending: state.pending.concat(firstRunPending),
+        pending: freshForInit.pending.concat(firstRunPending),
         lastTradeTime: Math.floor(Date.now() / 1000) - 24 * 60 * 60,
         lastSync: startedAt,
         lastSyncOk: true,
@@ -185,12 +187,19 @@ export async function runSync({ force = false, steamId = null } = {}) {
       }
     }
 
+    // Reload fresh state before saving so concurrent dismissals aren't clobbered.
+    // `append` only contains genuinely new items (not in `seen`), so merging
+    // with fresh.pending is safe — dismissed items won't be re-added.
+    const fresh = await loadState(steamId);
     const next = {
-      ...state,
-      pending: state.pending.concat(append),
-      snapshot: newSnapshot !== null ? newSnapshot : state.snapshot,
-      processedTradeIds: [...processedTrades].slice(-500),
-      lastTradeTime: maxTime,
+      ...fresh,
+      pending: fresh.pending.concat(append),
+      snapshot: newSnapshot !== null ? newSnapshot : (fresh.snapshot ?? state.snapshot),
+      processedTradeIds: [...new Set([
+        ...(fresh.processedTradeIds || []),
+        ...processedTrades,
+      ])].slice(-500),
+      lastTradeTime: Math.max(maxTime, fresh.lastTradeTime || 0),
       lastSync: startedAt,
       lastSyncOk: true,
       lastError: null,
@@ -200,8 +209,11 @@ export async function runSync({ force = false, steamId = null } = {}) {
     return { ok: true, added: append.length, state: next };
 
   } catch (err) {
+    // Use fresh state here too so a dismiss that raced with a failing sync
+    // is not overwritten.
+    const fresh = await loadState(steamId).catch(() => state);
     const failed = {
-      ...state,
+      ...fresh,
       lastSync: startedAt,
       lastSyncOk: false,
       lastError: err.message || String(err),

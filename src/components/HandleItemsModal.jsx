@@ -358,7 +358,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
 
       {isFuzzyOnly && (
         <div className="text-[11px] text-warn bg-warn/10 rounded-md px-2 py-1">
-          No exact name match — showing fuzzy suggestions. Use "Browse all" if none of these are right.
+          No exact match — these are near-matches only. Use "Browse all" to confirm the right item before marking sold.
         </div>
       )}
 
@@ -414,9 +414,10 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
           </select>
           <button
             type="button"
-            disabled={confirming || !parseFloat(usdSalePrice) || !selectedId}
+            disabled={confirming || !parseFloat(usdSalePrice) || !selectedId || isFuzzyOnly}
             onClick={submit}
             className={`${theme.accentBg} text-white text-sm font-medium px-3 py-1.5 rounded-md disabled:opacity-40 disabled:cursor-not-allowed`}
+            title={isFuzzyOnly ? 'No confident match — use "Browse all" to pick the item manually' : undefined}
           >
             {confirming ? 'Marking…' : 'Mark sold'}
           </button>
@@ -583,7 +584,7 @@ export default function HandleItemsModal({
     const scored = [];
     for (const it of activeItems) {
       const score = nameMatchScore(entry.marketHashName, it.itemName);
-      if (score >= 0.5) scored.push({ ...it, matchType: 'fuzzy', matchScore: score });
+      if (score >= 0.9) scored.push({ ...it, matchType: 'fuzzy', matchScore: score });
     }
     scored.sort((a, b) => b.matchScore - a.matchScore);
     return scored.slice(0, 10);

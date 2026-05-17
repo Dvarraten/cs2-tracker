@@ -171,7 +171,8 @@ export async function fetchAssetClassInfo(apiKey, classInstances) {
     const timer = setTimeout(() => ctrl.abort(), 15000);
     try {
       const res = await fetch(
-        `https://api.steampowered.com/ISteamEconomy/GetAssetClassInfo/v0001/?${params}`
+        `https://api.steampowered.com/ISteamEconomy/GetAssetClassInfo/v0001/?${params}`,
+        { signal: ctrl.signal }
       );
       if (!res.ok) continue;
       const data = await res.json();
@@ -217,7 +218,8 @@ export async function fetchTradeHistory(accessToken = '', apiKey = '') {
   const timer = setTimeout(() => ctrl.abort(), 15000);
   try {
     const res = await fetch(
-      `https://api.steampowered.com/IEconService/GetTradeHistory/v1/?${params}`
+      `https://api.steampowered.com/IEconService/GetTradeHistory/v1/?${params}`,
+      { signal: ctrl.signal }
     );
     if (!res.ok) throw new Error(`Steam API HTTP ${res.status}`);
     const data = await res.json();
