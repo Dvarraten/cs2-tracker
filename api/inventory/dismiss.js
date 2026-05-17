@@ -34,10 +34,6 @@ export default async function handler(req, res) {
   try {
     const state = await loadState(steamId);
     const before = state.pending.length;
-    const newPending = state.pending.filter((p) =>
-      type ? !(p.assetid === assetid && p.type === type) : p.assetid !== assetid
-    );
-    const removed = before - newPending.length;
 
     // Mark the dismissed item's trade as processed so sync never re-queues it.
     const dismissedTradeIds = state.pending
@@ -49,12 +45,30 @@ export default async function handler(req, res) {
       ? [...new Set([...existing, ...dismissedTradeIds])].slice(-500)
       : existing;
 
-    const next = { ...state, pending: newPending, processedTradeIds };
+    // Tombstone the assetid so the sync's fresh-reload path can't race it back
+    // into pending. Capped at 2000 entries; old ones expire naturally.
+    const dismissedAssetIds = [
+      ...new Set([...(state.dismissedAssetIds || []), assetid]),
+    ].slice(-2000);
+
+    // Fresh reload before saving so a concurrent sync write doesn't clobber us.
+    const fresh = await loadState(steamId);
+    const newPending = fresh.pending.filter((p) =>
+      type ? !(p.assetid === assetid && p.type === type) : p.assetid !== assetid
+    );
+    const removed = before - (fresh.pending.length - newPending.length === 0 ? 0 : 1);
+
+    const next = {
+      ...fresh,
+      pending: newPending,
+      processedTradeIds: [...new Set([...(fresh.processedTradeIds || []), ...processedTradeIds])].slice(-500),
+      dismissedAssetIds,
+    };
     await saveState(next, steamId);
 
     return res.status(200).json({
       ok: true,
-      removed,
+      removed: before - newPending.length,
       pending: next.pending,
     });
   } catch (err) {

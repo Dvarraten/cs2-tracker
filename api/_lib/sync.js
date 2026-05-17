@@ -71,11 +71,14 @@ export async function runSync({ force = false, steamId = null } = {}) {
       }
       // Reload fresh state so concurrent dismissals aren't clobbered.
       const freshForInit = await loadState(steamId);
+      const dismissedForInit = new Set(freshForInit.dismissedAssetIds || []);
       const next = {
         ...freshForInit,
         hasInitialSnapshot: true,
         snapshot,
-        pending: freshForInit.pending.concat(firstRunPending),
+        pending: freshForInit.pending
+          .filter(p => !dismissedForInit.has(p.assetid))
+          .concat(firstRunPending.filter(p => !dismissedForInit.has(p.assetid))),
         lastTradeTime: Math.floor(Date.now() / 1000) - 24 * 60 * 60,
         lastSync: startedAt,
         lastSyncOk: true,
@@ -188,17 +191,35 @@ export async function runSync({ force = false, steamId = null } = {}) {
     }
 
     // Reload fresh state before saving so concurrent dismissals aren't clobbered.
-    // `append` only contains genuinely new items (not in `seen`), so merging
-    // with fresh.pending is safe — dismissed items won't be re-added.
     const fresh = await loadState(steamId);
+
+    // Filter fresh.pending against the dismissed tombstone set. This handles
+    // the race where dismiss saves AFTER sync's fresh reload: the tombstone
+    // ensures a dismissed item is never written back into pending even if it
+    // was still in fresh.pending at reload time.
+    const dismissed = new Set(fresh.dismissedAssetIds || []);
+    const filteredPending = fresh.pending.filter(p => !dismissed.has(p.assetid));
+
+    // Also filter append itself against the tombstone (belt-and-suspenders).
+    const cleanAppend = append.filter(p => !dismissed.has(p.assetid));
+
+    // Trim the tombstone: drop assetids that are no longer in the resulting
+    // pending list (they've been fully handled and won't race again).
+    const finalPending = filteredPending.concat(cleanAppend);
+    const finalAssetIds = new Set(finalPending.map(p => p.assetid));
+    const trimmedDismissed = (fresh.dismissedAssetIds || []).filter(
+      id => !finalAssetIds.has(id)
+    );
+
     const next = {
       ...fresh,
-      pending: fresh.pending.concat(append),
+      pending: finalPending,
       snapshot: newSnapshot !== null ? newSnapshot : (fresh.snapshot ?? state.snapshot),
       processedTradeIds: [...new Set([
         ...(fresh.processedTradeIds || []),
         ...processedTrades,
       ])].slice(-500),
+      dismissedAssetIds: trimmedDismissed,
       lastTradeTime: Math.max(maxTime, fresh.lastTradeTime || 0),
       lastSync: startedAt,
       lastSyncOk: true,
@@ -206,7 +227,7 @@ export async function runSync({ force = false, steamId = null } = {}) {
       syncLockAt: 0,
     };
     await saveState(next, steamId);
-    return { ok: true, added: append.length, state: next };
+    return { ok: true, added: cleanAppend.length, state: next };
 
   } catch (err) {
     // Use fresh state here too so a dismiss that raced with a failing sync

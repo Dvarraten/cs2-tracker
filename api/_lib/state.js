@@ -29,6 +29,7 @@ export const DEFAULT_STATE = {
   hasInitialSnapshot: false,
   lastTradeTime: 0,
   pending: [],
+  dismissedAssetIds: [],
   syncLockAt: 0,
 };
 
