@@ -30,6 +30,8 @@ export function useSteamSync() {
   const [busy, setBusy] = useState(false);
   const [hasTokenSetup, setHasTokenSetup] = useState(null); // null = unknown
   const [tokenExpired, setTokenExpired] = useState(false);
+  const [hasRefreshToken, setHasRefreshToken] = useState(false);
+  const [refreshTokenExp, setRefreshTokenExp] = useState(null);
   const aliveRef = useRef(true);
 
   const fetchQrStatus = useCallback(async () => {
@@ -40,6 +42,8 @@ export function useSteamSync() {
       if (!aliveRef.current) return;
       setHasTokenSetup(!!data.hasToken);
       setTokenExpired(!!data.tokenExpired);
+      setHasRefreshToken(!!data.hasRefreshToken);
+      setRefreshTokenExp(data.refreshTokenExp || null);
     } catch {
       // Best-effort — leave hasTokenSetup as-is on failure.
     }
@@ -125,6 +129,8 @@ export function useSteamSync() {
     dismiss,
     hasTokenSetup,
     tokenExpired,
+    hasRefreshToken,
+    refreshTokenExp,
     refreshTokenStatus: fetchQrStatus,
   };
 }

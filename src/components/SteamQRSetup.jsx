@@ -1,13 +1,27 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { ExternalLink, CheckCircle, AlertTriangle } from 'lucide-react';
+import { ExternalLink, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 
 const BASE = process.env.REACT_APP_STEAM_SYNC_URL || '';
 const TOKEN_URL = 'https://store.steampowered.com/pointssummary/ajaxgetasyncconfig';
 
-export default function SteamQRSetup({ onComplete, theme = {}, expired = false }) {
+function formatDate(unixSec) {
+  if (!unixSec) return '';
+  return new Date(unixSec * 1000).toLocaleDateString(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric',
+  });
+}
+
+export default function SteamQRSetup({
+  onComplete,
+  theme = {},
+  expired = false,
+  hasRefreshToken = false,
+  refreshTokenExp = null,
+}) {
   const [token, setToken] = useState('');
   const [phase, setPhase] = useState('idle'); // idle | saving | done | error
   const [errorMsg, setErrorMsg] = useState(null);
+  const [showRenew, setShowRenew] = useState(false);
   const inputRef = useRef(null);
 
   const save = useCallback(async () => {
@@ -31,11 +45,11 @@ export default function SteamQRSetup({ onComplete, theme = {}, expired = false }
     }
   }, [token, onComplete]);
 
-  const card  = theme.card     || 'bg-slate-800/60';
+  const card   = theme.card       || 'bg-slate-800/60';
   const border = theme.cardBorder || 'border-slate-700/50';
-  const sub   = theme.subtext  || 'text-slate-400';
-  const accent = theme.accentBg || 'bg-indigo-600 hover:bg-indigo-500';
-  const input  = theme.input   || 'bg-slate-900 border-slate-700';
+  const sub    = theme.subtext    || 'text-slate-400';
+  const accent = theme.accentBg   || 'bg-indigo-600 hover:bg-indigo-500';
+  const input  = theme.input      || 'bg-slate-900 border-slate-700';
 
   if (phase === 'done') {
     return (
@@ -46,47 +60,94 @@ export default function SteamQRSetup({ onComplete, theme = {}, expired = false }
     );
   }
 
+  // Refresh token is valid — auto-refresh is active, no action needed.
+  if (hasRefreshToken && !showRenew) {
+    return (
+      <div className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl ${card} border ${border}`}>
+        <div className="flex items-center gap-3">
+          <RefreshCw size={16} className="text-emerald-400 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-emerald-300">Auto-refresh active</p>
+            {refreshTokenExp && (
+              <p className={`text-xs mt-0.5 ${sub}`}>Refresh token valid until {formatDate(refreshTokenExp)}</p>
+            )}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowRenew(true)}
+          className={`text-xs ${sub} hover:text-white transition-colors shrink-0`}
+        >
+          Renew
+        </button>
+      </div>
+    );
+  }
+
+  // Paste form — shown when no refresh token, token expired, or user clicked Renew.
+  const isExpired = expired && !hasRefreshToken;
+  const isRenewing = showRenew && hasRefreshToken;
+
   return (
     <div className={`flex flex-col gap-3 px-4 py-4 rounded-xl ${card} border ${border}`}>
-      {expired ? (
+      {isExpired ? (
         <div className="flex items-start gap-2">
           <AlertTriangle size={15} className="text-amber-400 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-amber-300">Steam token expired</p>
-            <p className={`text-xs mt-0.5 ${sub}`}>Follow the steps below to get a fresh token.</p>
+            <p className={`text-xs mt-0.5 ${sub}`}>Paste a new token below.</p>
           </div>
+        </div>
+      ) : isRenewing ? (
+        <div>
+          <p className="text-sm font-semibold text-white">Renew Steam token</p>
+          <p className={`text-xs mt-0.5 ${sub}`}>Paste a new refresh token to extend auto-refresh.</p>
         </div>
       ) : (
         <div>
-          <p className="text-sm font-semibold text-white">Connect Steam Account</p>
+          <p className="text-sm font-semibold text-white">Connect Steam account</p>
           <p className={`text-xs mt-0.5 ${sub}`}>Needed to sync your CS2 trade history.</p>
         </div>
       )}
 
-      <ol className={`text-xs ${sub} flex flex-col gap-1.5 list-none`}>
-        <li className="flex items-start gap-2">
-          <span className="text-indigo-400 font-bold shrink-0">1.</span>
-          <span>
-            Make sure you're logged into Steam in this browser, then{' '}
-            <a
-              href={TOKEN_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 inline-flex items-center gap-1"
-            >
-              open this page <ExternalLink size={10} />
-            </a>
-          </span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="text-indigo-400 font-bold shrink-0">2.</span>
-          <span>Find <code className="text-slate-300 bg-slate-700/60 px-1 rounded">webapi_token</code> in the JSON and copy its value.</span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="text-indigo-400 font-bold shrink-0">3.</span>
-          <span>Paste it below and click Save.</span>
-        </li>
-      </ol>
+      {/* Option 1: long-lived refresh token via script */}
+      <div className={`rounded-lg border ${border} px-3 py-2.5 flex flex-col gap-1`}>
+        <p className="text-xs font-semibold text-emerald-400">Recommended — lasts ~6 months</p>
+        <p className={`text-xs ${sub}`}>
+          Run{' '}
+          <code className="text-slate-300 bg-slate-700/60 px-1 rounded">node scripts/get-refresh-token.mjs</code>
+          {' '}in the project folder, then paste the token it outputs below.
+        </p>
+      </div>
+
+      {/* Option 2: webapi_token quick fix */}
+      <details className="group">
+        <summary className={`text-xs ${sub} cursor-pointer hover:text-white transition-colors list-none flex items-center gap-1`}>
+          <span className="group-open:hidden">▸</span>
+          <span className="hidden group-open:inline">▾</span>
+          Quick fix — expires daily
+        </summary>
+        <ol className={`text-xs ${sub} flex flex-col gap-1.5 mt-2 list-none`}>
+          <li className="flex items-start gap-2">
+            <span className="text-indigo-400 font-bold shrink-0">1.</span>
+            <span>
+              Make sure you're logged into Steam in this browser, then{' '}
+              <a
+                href={TOKEN_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 inline-flex items-center gap-1"
+              >
+                open this page <ExternalLink size={10} />
+              </a>
+            </span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-indigo-400 font-bold shrink-0">2.</span>
+            <span>Find <code className="text-slate-300 bg-slate-700/60 px-1 rounded">webapi_token</code> in the JSON and copy its value.</span>
+          </li>
+        </ol>
+      </details>
 
       <div className="flex gap-2">
         <input
@@ -94,7 +155,7 @@ export default function SteamQRSetup({ onComplete, theme = {}, expired = false }
           type="password"
           value={token}
           onChange={(e) => setToken(e.target.value)}
-          placeholder="Paste webapi_token here…"
+          placeholder="Paste token here…"
           className={`flex-1 text-xs px-3 py-2 rounded-lg border ${input} text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500`}
           onKeyDown={(e) => e.key === 'Enter' && save()}
         />
@@ -107,6 +168,16 @@ export default function SteamQRSetup({ onComplete, theme = {}, expired = false }
           {phase === 'saving' ? 'Saving…' : 'Save'}
         </button>
       </div>
+
+      {isRenewing && (
+        <button
+          type="button"
+          onClick={() => { setShowRenew(false); setToken(''); setPhase('idle'); }}
+          className={`text-xs ${sub} hover:text-white transition-colors text-left`}
+        >
+          Cancel
+        </button>
+      )}
 
       {phase === 'error' && (
         <p className="text-xs text-red-400">{errorMsg || 'Something went wrong. Please try again.'}</p>

@@ -41,6 +41,13 @@ export async function hasRefreshToken(steamId) {
   return !!val;
 }
 
+export async function getRefreshTokenExp(steamId) {
+  const client = getClient();
+  const token = await client.get(KEY_REFRESH(steamId)).catch(() => null);
+  if (!token) return null;
+  return parseJwtExp(token);
+}
+
 export async function storeTokens(steamId, { refreshToken, accessToken }) {
   const client = getClient();
   const exp = accessToken ? parseJwtExp(accessToken) : null;

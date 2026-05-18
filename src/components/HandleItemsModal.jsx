@@ -466,6 +466,8 @@ export default function HandleItemsModal({
   embedded = false,
   hasTokenSetup = null,
   tokenExpired = false,
+  hasRefreshToken = false,
+  refreshTokenExp = null,
   refreshTokenStatus,
 }) {
   const [tab, setTab] = useState('incoming');
@@ -677,7 +679,7 @@ export default function HandleItemsModal({
         {/* Token setup/renewal banner */}
         {(hasTokenSetup === false || tokenExpired) && (
           <div className="px-4 py-3">
-            <SteamQRSetup theme={theme} onComplete={refreshTokenStatus} expired={tokenExpired} />
+            <SteamQRSetup theme={theme} onComplete={refreshTokenStatus} expired={tokenExpired} hasRefreshToken={hasRefreshToken} refreshTokenExp={refreshTokenExp} />
           </div>
         )}
 

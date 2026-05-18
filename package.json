@@ -47,6 +47,7 @@
     "@tailwindcss/postcss": "^4.1.18",
     "autoprefixer": "^10.4.27",
     "postcss": "^8.5.9",
+    "steam-session": "*",
     "tailwindcss": "^3.4.19"
   }
 }
