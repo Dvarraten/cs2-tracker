@@ -1,3 +1,5 @@
+// Icon button that reads the clipboard and forwards the trimmed text to the
+// parent via onPaste. Shows a brief checkmark animation on success.
 import React, { useState } from "react";
 import { CheckCircle, ClipboardPaste } from "lucide-react";
 

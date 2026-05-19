@@ -1,3 +1,5 @@
+// Summary statistics row — total invested, realised profit, ROI %, and
+// active item count. Values animate via requestAnimationFrame on change.
 import React, { useEffect, useRef, useState } from "react";
 import { Package, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 

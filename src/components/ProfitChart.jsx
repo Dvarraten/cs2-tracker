@@ -1,3 +1,5 @@
+// Analytics overlay — cumulative P&L line chart (7d / 30d / all-time),
+// weekly and monthly profit summaries, and a 90-day sale heatmap.
 import React, { useMemo } from "react";
 import { X } from "lucide-react";
 import {

@@ -1,3 +1,6 @@
+// Central portfolio state — loads items from the API (logged in) or
+// localStorage (guest), auto-saves on change with a debounce, and exposes
+// add / sell / delete / promote-pending mutations plus the add-item form state.
 import { useState, useEffect, useRef } from 'react';
 import { getPlatformFee } from '../utils/platformFees';
 

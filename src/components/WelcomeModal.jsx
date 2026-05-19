@@ -1,3 +1,5 @@
+// First-visit modal shown to unauthenticated users — offers Steam login or
+// guest mode (data stored in localStorage only).
 import React from "react";
 import steamLogo from "../assets/platforms/steam.png";
 import logoSrc from "../utils/skinroi-logo.svg";

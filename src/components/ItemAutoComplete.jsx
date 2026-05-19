@@ -1,3 +1,6 @@
+// Skin name autocomplete input backed by /public/items.json (fetched once,
+// cached at module scope). Supports abbreviated queries like "but dop fn"
+// matching "★ Butterfly Knife | Doppler (Factory New)".
 import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import PasteButton from "./PasteButton";

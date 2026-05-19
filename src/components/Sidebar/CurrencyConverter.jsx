@@ -1,3 +1,5 @@
+// Linked USD ↔ CNY input pair with copy-to-clipboard buttons. Receives the
+// live exchange rate and conversion handlers from useExchangeRate via App.
 import React, { useState } from "react";
 import { Copy, Check } from "lucide-react";
 

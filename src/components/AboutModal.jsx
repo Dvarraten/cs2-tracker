@@ -1,3 +1,5 @@
+// Read-only feature overview modal — describes what SkinROI does and lists
+// the key capabilities available to the user.
 import React from 'react';
 import { X, TrendingUp, RefreshCw, BarChart3, Globe, Tag, Layers } from 'lucide-react';
 import logoSrc from '../utils/skinroi-logo.svg';

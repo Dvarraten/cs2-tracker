@@ -1,3 +1,6 @@
+// The main item list — renders cards for Active, Pending, and Sold tabs.
+// Handles inline sell flow (platform + price), bulk-delete select mode,
+// and delivery countdown for pending items.
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Trash2, CheckCircle, ChevronDown, PackageCheck } from "lucide-react";

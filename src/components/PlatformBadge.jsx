@@ -1,3 +1,6 @@
+// PlatformBadge  — colored pill (icon + label) for a buy/sell platform.
+// PlatformConfig — shared color + icon map used by PlatformBadge and callers
+//                  that need raw config (e.g. building dropdown options).
 import React from "react";
 
 import csfloatIcon  from "../assets/platforms/csfloat.webp";

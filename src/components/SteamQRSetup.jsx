@@ -30,7 +30,7 @@ export default function SteamQRSetup({
     setPhase('saving');
     setErrorMsg(null);
     try {
-      const res = await fetch(`${BASE}/api/auth/qr`, {
+      const res = await fetch(`${BASE}/api/auth/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'save', token: t }),

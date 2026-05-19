@@ -1,3 +1,5 @@
+// Fetches a Steam user's display name and avatar URL from the public profile
+// XML endpoint and caches the result in Redis for 24 hours.
 import { Redis } from '@upstash/redis';
 
 const PROFILE_TTL = 86400; // 24 hours

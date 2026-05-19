@@ -37,7 +37,7 @@ export function useSteamSync() {
 
   const fetchQrStatus = useCallback(async () => {
     try {
-      const res = await fetch(`${BASE}/api/auth/qr`);
+      const res = await fetch(`${BASE}/api/auth/token`);
       if (!res.ok) return;
       const data = await res.json();
       if (!aliveRef.current) return;

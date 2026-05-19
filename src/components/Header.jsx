@@ -1,3 +1,5 @@
+// Sticky app header — logo, nav buttons, pending-item badge, user account
+// dropdown (login/logout, import/export CSV).
 import React, { useRef, useState, useEffect } from "react";
 import {
   BarChart3,

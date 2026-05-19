@@ -1,3 +1,5 @@
+// Fetches the current Steam session from /api/auth/me on mount. Provides
+// login (redirects to Steam OpenID) and logout actions.
 import { useState, useEffect } from 'react';
 
 export function useAuth() {

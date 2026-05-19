@@ -1,3 +1,5 @@
+// Palette button + dropdown for switching between visual themes. Receives
+// the theme list and current selection from App via props.
 import React from "react";
 import { Palette } from "lucide-react";
 

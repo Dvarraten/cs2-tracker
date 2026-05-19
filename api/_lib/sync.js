@@ -1,3 +1,11 @@
+// Core sync logic — compares the latest Steam trade history and inventory
+// snapshot against saved state to detect incoming and outgoing CS2 items.
+//
+// runSync() is called by POST /api/inventory/sync (user-triggered).
+// It serialises concurrent calls via a soft Redis lock (syncLockAt) and
+// reloads fresh state immediately before every saveState call to avoid
+// clobbering concurrent dismiss writes. dismissedAssetIds tombstones prevent
+// a dismissed item from being written back by a sync that started earlier.
 import { loadState, saveState, DEFAULT_STATE } from './state.js';
 import {
   fetchTradeHistory,

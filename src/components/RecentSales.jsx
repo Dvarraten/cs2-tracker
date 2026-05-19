@@ -1,3 +1,5 @@
+// Sidebar panel listing the most-recently sold items with purchase→sale
+// price and profit/loss indicator.
 import React from "react";
 import { useItemImage } from "../utils/itemImages";
 

@@ -1,3 +1,5 @@
+// Returns the decimal fee fraction for a given platform (e.g. 0.02 = 2%).
+// Used when computing net profit after the platform takes its cut.
 export const getPlatformFee = (platform) => {
   switch (platform) {
     case 'csfloat':

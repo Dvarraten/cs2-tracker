@@ -1,3 +1,6 @@
+// Fetches the live USD/CNY rate from exchangerate-api.com on mount and
+// provides linked handleUsdChange / handleRmbChange handlers that keep
+// both fields in sync. Falls back to 7.15 on network error.
 import { useState, useEffect } from 'react';
 
 export const useExchangeRate = () => {

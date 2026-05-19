@@ -1,3 +1,6 @@
+// Derives chart-ready data from the sold-items list: cumulative P&L series
+// for the selected period, weekly/monthly profit totals, and a 90-day
+// sale-frequency heatmap. Pure computation — no side effects.
 export const useChartData = (items, chartPeriod) => {
   const now = new Date();
   const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

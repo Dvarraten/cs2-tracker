@@ -1,3 +1,6 @@
+// Slide-in panel for adding a new tracked item. Manages its own form state
+// (name autocomplete, price, platform, quantity, pending toggle, delivery
+// date) and calls back into useItems on submit.
 import React, { useState, useEffect } from "react";
 import { CheckCircle, Clock, PackagePlus } from "lucide-react";
 import ItemAutoComplete from "./ItemAutoComplete";

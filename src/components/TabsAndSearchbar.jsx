@@ -1,3 +1,5 @@
+// Tab bar (Active / Pending / Sold) with item counts, free-text search,
+// and per-tab sort controls. Also owns the bulk-delete select mode UI.
 import React from "react";
 import { Search } from "lucide-react";
 

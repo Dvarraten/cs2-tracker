@@ -1,3 +1,6 @@
+// HMAC-signed session cookie that ties a Steam ID to the browser for 30 days.
+// The cookie is HttpOnly and Secure (on HTTPS), so it is not accessible to JS.
+// Exports: setSessionCookie, clearSessionCookie, getSessionSteamId.
 import { createHmac } from 'crypto';
 
 const COOKIE_NAME = 'cs2-session';
