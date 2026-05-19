@@ -6,7 +6,6 @@
 // The lazy path holds a soft lock so concurrent requests don't double-sync.
 
 import { loadState, publicState } from '../_lib/state.js';
-import { runSync, isStateStale } from '../_lib/sync.js';
 import { getSessionSteamId } from '../_lib/auth.js';
 
 export default async function handler(req, res) {
@@ -22,11 +21,6 @@ export default async function handler(req, res) {
 
     res.setHeader('Cache-Control', 'no-store');
     res.status(200).json(publicState(state));
-
-    // Fire sync in background after responding so the page loads immediately.
-    if (isStateStale(state)) {
-      runSync({ steamId }).catch(() => {});
-    }
   } catch (err) {
     return res.status(500).json({
       error: err.message || String(err),

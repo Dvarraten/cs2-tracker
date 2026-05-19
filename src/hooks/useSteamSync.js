@@ -13,7 +13,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // server-side env store.
 const BASE = process.env.REACT_APP_STEAM_SYNC_URL || '';
 
-const FRONTEND_POLL_MS = 30 * 1000; // how often we re-pull state for the badge
+const FRONTEND_POLL_MS = 30 * 1000;
+const STALE_MS = 5 * 60 * 1000;
 
 const EMPTY_STATE = {
   lastSync: null,
@@ -54,12 +55,14 @@ export function useSteamSync() {
       const res = await fetch(`${BASE}/api/inventory/state`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (!aliveRef.current) return;
+      if (!aliveRef.current) return null;
       setState((prev) => ({ ...prev, ...data }));
       setReachable(true);
+      return data;
     } catch (err) {
-      if (!aliveRef.current) return;
+      if (!aliveRef.current) return null;
       setReachable(false);
+      return null;
     }
   }, []);
 
@@ -67,8 +70,10 @@ export function useSteamSync() {
     setBusy(true);
     try {
       const res = await fetch(`${BASE}/api/inventory/sync`, { method: 'POST' });
+      if (res.status === 401) return; // not logged in — auto-sync on mount, ignore silently
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      if (!aliveRef.current) return;
       if (data.state) {
         setState((prev) => ({ ...prev, ...data.state }));
       } else {
@@ -76,9 +81,9 @@ export function useSteamSync() {
       }
       setReachable(true);
     } catch (err) {
-      setReachable(false);
+      if (aliveRef.current) setReachable(false);
     } finally {
-      setBusy(false);
+      if (aliveRef.current) setBusy(false);
     }
   }, [fetchState]);
 
@@ -104,14 +109,19 @@ export function useSteamSync() {
 
   useEffect(() => {
     aliveRef.current = true;
-    fetchState();
     fetchQrStatus();
+    (async () => {
+      const data = await fetchState();
+      if (!aliveRef.current || !data) return;
+      const stale = !data.lastSync || Date.now() - new Date(data.lastSync).getTime() > STALE_MS;
+      if (stale) sync();
+    })();
     const id = setInterval(fetchState, FRONTEND_POLL_MS);
     return () => {
       aliveRef.current = false;
       clearInterval(id);
     };
-  }, [fetchState, fetchQrStatus]);
+  }, [fetchState, fetchQrStatus, sync]);
 
   return {
     pending: state.pending,
