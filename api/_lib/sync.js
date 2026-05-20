@@ -66,6 +66,7 @@ export async function runSync({ force = false, steamId = null } = {}) {
             if (Number(asset.appid) !== 730 || String(asset.contextid) !== '2') continue;
             const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
             if (!desc || !(desc.market_tradable_restriction > 0)) continue;
+            if (!desc.marketable && !desc.tradable) continue; // skip coins, medals, etc.
             if (alreadyPending.has(asset.assetid)) continue;
             firstRunPending.push({
               type: 'incoming',
@@ -184,6 +185,7 @@ export async function runSync({ force = false, steamId = null } = {}) {
           if (prevAssetids.has(asset.assetid)) continue;
           const desc = invDescIndex.get(`${asset.classid}_${asset.instanceid}`);
           if (!desc || !(desc.market_tradable_restriction > 0)) continue;
+          if (!desc.marketable && !desc.tradable) continue; // skip coins, medals, etc.
           const key = `incoming:${asset.assetid}`;
           if (seen.has(key)) continue;
           append.push({

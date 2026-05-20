@@ -107,48 +107,45 @@ export default function SteamQRSetup({
         </div>
       ) : (
         <div>
-          <p className={`text-sm font-semibold ${text}`}>Connect Steam account</p>
-          <p className={`text-xs mt-0.5 ${sub}`}>Needed to sync your CS2 trade history.</p>
+          <p className={`text-sm font-semibold ${text}`}>Enable trade hold detection</p>
+          <p className={`text-xs mt-0.5 ${sub}`}>Required to detect items on a 7-day trade hold. Already tradeable items sync without this.</p>
         </div>
       )}
 
-      {/* Option 1: long-lived refresh token via script */}
-      <div className={`rounded-lg border ${border} px-3 py-2.5 flex flex-col gap-1`}>
-        <p className="text-xs font-semibold text-emerald-400">Recommended — lasts ~6 months</p>
-        <p className={`text-xs ${sub}`}>
-          Run{' '}
-          <code className="text-slate-300 bg-black/20 px-1 rounded">node scripts/get-refresh-token.mjs</code>
-          {' '}in the project folder, then paste the token it outputs below.
-        </p>
-      </div>
+      {/* Primary: webapi_token */}
+      <ol className={`text-xs ${sub} flex flex-col gap-1.5 list-none`}>
+        <li className="flex items-start gap-2">
+          <span className="font-bold shrink-0">1.</span>
+          <span>
+            Make sure you're logged into Steam in this browser, then{' '}
+            <a
+              href={TOKEN_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 inline-flex items-center gap-1"
+            >
+              open this page <ExternalLink size={10} />
+            </a>
+          </span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="font-bold shrink-0">2.</span>
+          <span>Find <code className="bg-black/20 px-1 rounded">webapi_token</code> and paste its value below.</span>
+        </li>
+      </ol>
 
-      {/* Option 2: webapi_token quick fix */}
+      {/* Developer option: long-lived script token */}
       <details className="group">
         <summary className={`text-xs ${sub} cursor-pointer ${textHover} transition-colors list-none flex items-center gap-1`}>
           <span className="group-open:hidden">▸</span>
           <span className="hidden group-open:inline">▾</span>
-          Quick fix — expires daily
+          Developer option — token lasts ~6 months
         </summary>
-        <ol className={`text-xs ${sub} flex flex-col gap-1.5 mt-2 list-none`}>
-          <li className="flex items-start gap-2">
-            <span className="text-indigo-400 font-bold shrink-0">1.</span>
-            <span>
-              Make sure you're logged into Steam in this browser, then{' '}
-              <a
-                href={TOKEN_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 inline-flex items-center gap-1"
-              >
-                open this page <ExternalLink size={10} />
-              </a>
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-indigo-400 font-bold shrink-0">2.</span>
-            <span>Find <code className="text-slate-300 bg-black/20 px-1 rounded">webapi_token</code> in the JSON and copy its value.</span>
-          </li>
-        </ol>
+        <p className={`text-xs ${sub} mt-2`}>
+          Run{' '}
+          <code className="bg-black/20 px-1 rounded">node scripts/get-refresh-token.mjs</code>
+          {' '}in the project folder and paste the output below.
+        </p>
       </details>
 
       <div className="flex gap-2">
