@@ -2,6 +2,7 @@
 // selector. The right field's currency also drives the display currency
 // used in all price pair inputs across the app.
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Copy, Check, ChevronDown } from "lucide-react";
 import { CURRENCIES } from "../../hooks/useExchangeRate";
 
@@ -32,18 +33,25 @@ function CopyButton({ value }) {
 
 function CurrencySelect({ value, onChange, theme }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+    const handler = (e) => {
+      if (!btnRef.current?.contains(e.target) && !menuRef.current?.contains(e.target)) setOpen(false);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative">
       <button
+        ref={btnRef}
         type="button"
         onClick={() => setOpen(o => !o)}
         className={`flex items-center gap-1 px-1.5 h-7 rounded border text-[10px] font-mono font-medium transition-colors ${theme.input} ${theme.text}`}
@@ -51,8 +59,12 @@ function CurrencySelect({ value, onChange, theme }) {
         {value}
         <ChevronDown size={9} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
-      {open && (
-        <div className={`absolute right-0 top-8 z-50 w-20 max-h-52 overflow-y-auto rounded-lg border ${theme.panelBorder} ${theme.panel} shadow-xl`}>
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          style={{ position: 'fixed', top: pos.top, right: pos.right, zIndex: 9999 }}
+          className={`w-20 max-h-52 overflow-y-auto rounded-lg border ${theme.panelBorder} ${theme.panel} shadow-xl`}
+        >
           {CURRENCIES.map(c => (
             <button
               key={c.code}
@@ -65,7 +77,8 @@ function CurrencySelect({ value, onChange, theme }) {
               {c.code}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

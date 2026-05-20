@@ -10,14 +10,11 @@ export default function SteamLoginModal({ onClose, onSuccess, theme }) {
   const [step, setStep] = useState('credentials'); // credentials | approval | guard | done
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [slots, setSlots] = useState(['', '', '', '', '']);
   const [sessionKey, setSessionKey] = useState(null);
-  const [guardType, setGuardType] = useState(null);
+  const [, setGuardType] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const slotRefs = [useRef(), useRef(), useRef(), useRef(), useRef()];
   const pollRef = useRef(null);
-  const code = slots.join('');
 
   const panel       = theme?.panel       || 'bg-[#111827]';
   const panelBorder = theme?.panelBorder || 'border-white/10';
@@ -72,12 +69,7 @@ export default function SteamLoginModal({ onClose, onSuccess, theme }) {
       } else {
         setSessionKey(data.sessionKey);
         setGuardType(data.guardType);
-        if (data.guardType === 4) {
-          setStep('approval');
-        } else {
-          setStep('guard');
-          setTimeout(() => slotRefs[0].current?.focus(), 100);
-        }
+        setStep('approval');
       }
     } catch (err) {
       setError(err.message);
@@ -86,27 +78,6 @@ export default function SteamLoginModal({ onClose, onSuccess, theme }) {
     }
   };
 
-  const submitCode = async () => {
-    if (code.length < 5) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${BASE}/api/auth/steam-login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'confirm', sessionKey, code }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
-      handleSuccess();
-    } catch (err) {
-      setError(err.message);
-      setSlots(['', '', '', '', '']);
-      setTimeout(() => slotRefs[0].current?.focus(), 50);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const btnClass = (active) =>
     `relative group flex-1 flex items-center justify-center h-9 rounded-lg text-sm font-medium border transition-all
@@ -163,68 +134,6 @@ export default function SteamLoginModal({ onClose, onSuccess, theme }) {
                 Cancel
                 <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 w-0 group-hover:w-full ${theme?.dot}`} />
               </button>
-            </>
-          )}
-
-          {/* ── TOTP / Email code ── */}
-          {step === 'guard' && (
-            <>
-              <div className={`text-xs ${sub} space-y-1`}>
-                {guardType === 2 ? (
-                  <p>Enter the Steam Guard code sent to your email.</p>
-                ) : (
-                  <>
-                    <p className="font-medium">Open the Steam app on your phone:</p>
-                    <ol className="space-y-0.5 list-none">
-                      <li className="flex items-center gap-2"><span className="text-amber-400 font-bold shrink-0">1.</span> Tap the settings wheel (bottom right)</li>
-                      <li className="flex items-center gap-2"><span className="text-amber-400 font-bold shrink-0">2.</span> Steam Guard</li>
-                      <li className="flex items-center gap-2"><span className="text-amber-400 font-bold shrink-0">3.</span> Show Steam Guard Code</li>
-                    </ol>
-                  </>
-                )}
-              </div>
-              <div className="flex justify-center gap-2">
-                {slots.map((val, i) => (
-                  <input
-                    key={i}
-                    ref={slotRefs[i]}
-                    type="text"
-                    inputMode="text"
-                    maxLength={1}
-                    value={val}
-                    onChange={e => {
-                      const char = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                      if (!char) return;
-                      const next = [...slots];
-                      next[i] = char;
-                      setSlots(next);
-                      if (i < 4) slotRefs[i + 1].current?.focus();
-                      else if (next.every(s => s)) setTimeout(submitCode, 80);
-                    }}
-                    onKeyDown={e => {
-                      if (e.key === 'Backspace') {
-                        e.preventDefault();
-                        const next = [...slots];
-                        if (next[i]) { next[i] = ''; setSlots(next); }
-                        else if (i > 0) { next[i - 1] = ''; setSlots(next); slotRefs[i - 1].current?.focus(); }
-                      } else if (e.key === 'Enter' && code.length === 5) submitCode();
-                    }}
-                    onFocus={e => e.target.select()}
-                    className={`w-11 h-12 ${theme?.input || 'bg-slate-800 border-slate-600'} rounded-lg border-2 text-center text-lg font-mono font-bold ${theme?.text || 'text-white'} focus:outline-none transition-colors ${val ? 'border-amber-400/60' : ''}`}
-                  />
-                ))}
-              </div>
-              {error && <div className="flex items-center gap-2 text-xs text-red-400"><AlertTriangle size={12} /> {error}</div>}
-              <div className="flex gap-2">
-                <button onClick={() => { setStep('credentials'); setError(null); setSlots(['','','','','']); }} className={btnClass(false)}>
-                  Back
-                  <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 w-0 group-hover:w-full ${theme?.dot}`} />
-                </button>
-                <button onClick={submitCode} disabled={loading || code.length < 5} className={btnClass(true)}>
-                  {loading ? 'Verifying…' : 'Confirm'}
-                  <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${loading ? 'w-full bg-profit' : `w-0 group-hover:w-full ${theme?.dot}`}`} />
-                </button>
-              </div>
             </>
           )}
 
