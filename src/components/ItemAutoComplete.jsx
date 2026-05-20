@@ -325,7 +325,7 @@ export default function ItemAutoComplete({ value, onChange, placeholder, theme }
         {tags.map((tag) => (
           <span
             key={tag.category}
-            className="inline-flex items-center gap-1 pl-1.5 pr-1 py-0.5 rounded-md bg-white/10 text-white text-sm border border-white/5"
+            className={`inline-flex items-center gap-1 pl-1.5 pr-1 py-0.5 rounded-md bg-white/10 ${theme?.text || 'text-white'} text-sm border border-white/5`}
             title={CATEGORY_LABEL[tag.category]}
           >
             <span className="text-[9px] uppercase tracking-wider opacity-60">
@@ -340,7 +340,7 @@ export default function ItemAutoComplete({ value, onChange, placeholder, theme }
                 e.stopPropagation();
                 removeTag(tag.category);
               }}
-              className="ml-0.5 text-slate-300 hover:text-white p-0.5 rounded hover:bg-white/10"
+              className={`ml-0.5 ${theme?.textSecondary || 'text-slate-300'} ${theme?.textHover || 'hover:text-white'} p-0.5 rounded hover:bg-white/10`}
               aria-label={`Remove ${CATEGORY_LABEL[tag.category]} tag`}
             >
               <X size={12} />
@@ -361,7 +361,7 @@ export default function ItemAutoComplete({ value, onChange, placeholder, theme }
               : "Add tag…"
           }
           autoComplete="off"
-          className="flex-1 min-w-[100px] bg-transparent border-none outline-none text-white placeholder-slate-500 px-1 py-1 text-sm"
+          className={`flex-1 min-w-[100px] bg-transparent border-none outline-none ${theme?.text || 'text-white'} placeholder-slate-500 px-1 py-1 text-sm`}
         />
       </div>
       <PasteButton onPaste={handlePaste} />
@@ -384,8 +384,8 @@ export default function ItemAutoComplete({ value, onChange, placeholder, theme }
               onMouseEnter={() => setSelectedIndex(i)}
               className={`flex items-center justify-between gap-3 px-3 py-2 cursor-pointer transition-colors ${
                 i === selectedIndex
-                  ? "bg-white/10 text-white"
-                  : "text-slate-200 hover:bg-white/5"
+                  ? `bg-white/10 ${theme?.text || 'text-white'}`
+                  : `${theme?.textSecondary || 'text-slate-200'} hover:bg-white/5`
               }`}
             >
               <div className="text-sm font-medium truncate">{s.name}</div>

@@ -205,7 +205,7 @@ function SellPlatformPicker({ value, onChange, theme }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={`w-full h-9 flex items-center justify-between gap-2 px-3 rounded-lg border text-xs font-medium transition-colors
-          ${theme.inputSell} text-white`}
+          ${theme.inputSell} ${theme.text}`}
       >
         <span className="flex items-center gap-2 min-w-0">
           <PlatformIcon platform={selected} size={14} />
@@ -246,7 +246,7 @@ function SellPlatformPicker({ value, onChange, theme }) {
                     setOpen(false);
                   }}
                   className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 text-xs transition-colors
-                    ${isSelected ? "bg-white/10 text-white" : "text-slate-200 hover:bg-white/10"}`}
+                    ${isSelected ? `bg-white/10 ${theme.text}` : `${theme.textSecondary} hover:bg-white/10`}`}
                 >
                   <span className="flex items-center gap-2 min-w-0">
                     <PlatformIcon platform={p} size={14} />
@@ -387,14 +387,14 @@ function ItemCard({
         </div>
 
         {/* Name */}
-        <h3 className="text-xs font-medium text-slate-200 leading-snug mb-1.5 line-clamp-2">
+        <h3 className={`text-xs font-medium ${theme.textSecondary} leading-snug mb-1.5 line-clamp-2`}>
           {item.itemName}
         </h3>
 
         {/* Meta row — price · date · platform (active/pending only) */}
         {!item.sold && (
           <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] mb-3">
-            <span className="font-mono text-white font-semibold">${item.purchasePrice.toFixed(2)}</span>
+            <span className={`font-mono ${theme.text} font-semibold`}>${item.purchasePrice.toFixed(2)}</span>
             <span className="text-slate-600">·</span>
             <span className="text-slate-500">
               {item.datePurchased
@@ -421,7 +421,7 @@ function ItemCard({
               <button
                 type="button"
                 onClick={() => promotePendingItem && promotePendingItem(item.id)}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg text-xs font-medium ${theme.card} border ${theme.cardBorder} text-slate-300 hover:text-white hover:border-white/20 transition-colors`}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg text-xs font-medium ${theme.card} border ${theme.cardBorder} ${theme.textSecondary} ${theme.textHover} hover:border-white/20 transition-colors`}
               >
                 <PackageCheck size={13} />
                 Mark received
@@ -453,7 +453,7 @@ function ItemCard({
                     type="number" step="0.01"
                     value={sellData[item.id] || ''}
                     onChange={(e) => setSellData(prev => ({ ...prev, [item.id]: e.target.value }))}
-                    className={`w-full h-9 ${theme.inputSell} rounded-lg pl-5 pr-2 text-white text-sm font-mono focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                    className={`w-full h-9 ${theme.inputSell} rounded-lg pl-5 pr-2 ${theme.text} text-sm font-mono focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                     placeholder="0.00"
                   />
                 </div>
@@ -479,7 +479,7 @@ function ItemCard({
               <div className="flex items-center gap-1 text-[11px] font-mono">
                 <span className="text-slate-400">${item.purchasePrice.toFixed(2)}</span>
                 <span className="text-slate-600">→</span>
-                <span className="text-white font-semibold">${(item.purchasePrice + item.profit).toFixed(2)}</span>
+                <span className={`${theme.text} font-semibold`}>${(item.purchasePrice + item.profit).toFixed(2)}</span>
               </div>
               {/* Date flow */}
               <div className="flex items-center gap-1 text-[11px]">

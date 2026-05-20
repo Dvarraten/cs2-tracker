@@ -100,7 +100,7 @@ export default function AddItemForm({
               onChange={(e) =>
                 setFormData({ ...formData, purchasePrice: e.target.value })
               }
-              className={`w-full ${inputH} ${theme.input} rounded-lg px-3 pr-9 text-sm font-mono text-white placeholder-slate-600 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+              className={`w-full ${inputH} ${theme.input} rounded-lg px-3 pr-9 text-sm font-mono ${theme.text} placeholder-slate-600 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
               placeholder="0.00"
             />
             <PasteButton
@@ -146,7 +146,7 @@ export default function AddItemForm({
                   quantity: Math.max(1, (parseInt(formData.quantity) || 1) - 1),
                 })
               }
-              className={`${theme.card} hover:bg-white/10 text-white ${inputH} w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors shrink-0 border ${theme.cardBorder}`}
+              className={`${theme.card} hover:bg-white/10 ${theme.text} ${inputH} w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors shrink-0 border ${theme.cardBorder}`}
             >
               −
             </button>
@@ -161,7 +161,7 @@ export default function AddItemForm({
                   quantity: Math.max(1, parseInt(e.target.value) || 1),
                 })
               }
-              className={`w-full ${inputH} ${theme.input} rounded-lg px-3 text-sm font-mono text-white text-center focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+              className={`w-full ${inputH} ${theme.input} rounded-lg px-3 text-sm font-mono ${theme.text} text-center focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
             />
             <button
               onClick={() =>
@@ -170,7 +170,7 @@ export default function AddItemForm({
                   quantity: (parseInt(formData.quantity) || 1) + 1,
                 })
               }
-              className={`${theme.card} hover:bg-white/10 text-white ${inputH} w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors shrink-0 border ${theme.cardBorder}`}
+              className={`${theme.card} hover:bg-white/10 ${theme.text} ${inputH} w-9 rounded-lg flex items-center justify-center text-base font-bold transition-colors shrink-0 border ${theme.cardBorder}`}
             >
               +
             </button>
@@ -186,7 +186,7 @@ export default function AddItemForm({
             onChange={(e) =>
               setFormData({ ...formData, notes: e.target.value })
             }
-            className={`w-full ${inputH} ${theme.input} rounded-lg px-3 text-sm text-white placeholder-slate-600 focus:outline-none transition-colors border`}
+            className={`w-full ${inputH} ${theme.input} rounded-lg px-3 text-sm ${theme.text} placeholder-slate-600 focus:outline-none transition-colors border`}
             placeholder="Float, pattern, stickers"
           />
         </div>
@@ -236,7 +236,7 @@ export default function AddItemForm({
           title="Item is on trade hold (not yet received)"
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all
             ${theme.card} ${theme.cardBorder}
-            ${formData.pending ? "text-warn ring-1 ring-warn/30" : "text-slate-400 hover:text-white"}`}
+            ${formData.pending ? "text-warn ring-1 ring-warn/30" : `text-slate-400 ${theme.textHover}`}`}
         >
           <Clock
             size={15}
@@ -254,7 +254,7 @@ export default function AddItemForm({
               onChange={(e) =>
                 setFormData({ ...formData, expectedDelivery: e.target.value })
               }
-              className={`${theme.input} rounded-md px-2 py-1.5 text-white text-xs focus:outline-none border`}
+              className={`${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-xs focus:outline-none border`}
             />
           </div>
         )}

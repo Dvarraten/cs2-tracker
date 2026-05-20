@@ -43,7 +43,7 @@ export default function CurrencyConverter({
           value={usdAmount}
           onChange={(e) => handleUsdChange(e.target.value)}
           placeholder="USD"
-          className={`w-full ${theme.input} pl-7 pr-8 py-2 rounded-lg text-sm font-mono text-slate-200 placeholder-slate-600 focus:outline-none transition-colors border`}
+          className={`w-full ${theme.input} pl-7 pr-8 py-2 rounded-lg text-sm font-mono ${theme.textSecondary} placeholder-slate-600 focus:outline-none transition-colors border`}
         />
         <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
           <CopyButton value={usdAmount} />
@@ -57,7 +57,7 @@ export default function CurrencyConverter({
           value={rmbAmount}
           onChange={(e) => handleRmbChange(e.target.value)}
           placeholder="RMB"
-          className={`w-full ${theme.input} pl-7 pr-8 py-2 rounded-lg text-sm font-mono text-slate-200 placeholder-slate-600 focus:outline-none transition-colors border`}
+          className={`w-full ${theme.input} pl-7 pr-8 py-2 rounded-lg text-sm font-mono ${theme.textSecondary} placeholder-slate-600 focus:outline-none transition-colors border`}
         />
         <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
           <CopyButton value={rmbAmount} />

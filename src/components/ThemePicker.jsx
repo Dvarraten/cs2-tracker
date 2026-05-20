@@ -39,15 +39,15 @@ export default function ThemePicker({
               }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm transition-all ${
                 theme === key
-                  ? "text-white bg-white/10"
-                  : "text-white/70 hover:text-white hover:bg-white/5"
+                  ? `${themeStyles.text} bg-white/10`
+                  : `${themeStyles.subtext} ${themeStyles.textHover} hover:bg-white/5`
               }`}
             >
               <span className={`w-3 h-3 rounded-full flex-shrink-0 ${th.dot}`} />
               <span>{th.name}</span>
               {theme === key && (
                 <svg
-                  className="w-4 h-4 ml-auto text-white/60"
+                  className={`w-4 h-4 ml-auto ${themeStyles.subtext}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

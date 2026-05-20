@@ -103,7 +103,7 @@ export default function ProfitChart({
         <div
           className={`flex items-center justify-between px-6 py-4 border-b ${theme.panelBorder} shrink-0`}
         >
-          <h2 className="font-semibold text-slate-100">Profit Analytics</h2>
+          <h2 className={`font-semibold ${theme.text}`}>Profit Analytics</h2>
           <button
             onClick={onClose}
             className="text-slate-500 hover:text-slate-300 transition-colors"
@@ -201,7 +201,7 @@ export default function ProfitChart({
                       ? (card.val ?? 0) >= 0
                         ? "text-profit"
                         : "text-loss"
-                      : "text-slate-200"
+                      : theme.textSecondary
                   }`}
                 >
                   {card.value}

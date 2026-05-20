@@ -252,14 +252,14 @@ export default function CS2TradingTracker() {
           {/* Utility buttons */}
           <button
             onClick={() => openModal('analytics')}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border ${themeStyles.cardBorder} ${themeStyles.subtext} hover:text-white text-sm transition-colors`}
+            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border ${themeStyles.cardBorder} ${themeStyles.subtext} ${themeStyles.textHover} text-sm transition-colors`}
           >
             <BarChart3 size={14} />
             Analytics
           </button>
           <button
             onClick={() => exportToCSV(items)}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border ${themeStyles.cardBorder} ${themeStyles.subtext} hover:text-white text-sm transition-colors`}
+            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border ${themeStyles.cardBorder} ${themeStyles.subtext} ${themeStyles.textHover} text-sm transition-colors`}
           >
             <Download size={14} />
             Export CSV
@@ -307,7 +307,7 @@ export default function CS2TradingTracker() {
             onClick={e => e.stopPropagation()}
           >
             <div className={`flex items-center justify-between px-5 py-4 border-b ${themeStyles.panelBorder} shrink-0`}>
-              <h2 className="font-semibold text-slate-100">Add New Item</h2>
+              <h2 className={`font-semibold ${themeStyles.text}`}>Add New Item</h2>
               <button onClick={closeModal} className="text-slate-500 hover:text-slate-300 transition-colors">
                 <X size={18} />
               </button>

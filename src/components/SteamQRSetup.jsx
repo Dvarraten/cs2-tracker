@@ -45,11 +45,13 @@ export default function SteamQRSetup({
     }
   }, [token, onComplete]);
 
-  const card   = theme.card       || 'bg-slate-800/60';
-  const border = theme.cardBorder || 'border-slate-700/50';
-  const sub    = theme.subtext    || 'text-slate-400';
-  const accent = theme.accentBg   || 'bg-indigo-600 hover:bg-indigo-500';
-  const input  = theme.input      || 'bg-slate-900 border-slate-700';
+  const card      = theme.card       || 'bg-slate-800/60';
+  const border    = theme.cardBorder || 'border-slate-700/50';
+  const sub       = theme.subtext    || 'text-slate-400';
+  const accent    = theme.accentBg   || 'bg-indigo-600 hover:bg-indigo-500';
+  const input     = theme.input      || 'bg-slate-900 border-slate-700';
+  const text      = theme.text       || 'text-white';
+  const textHover = theme.textHover  || 'hover:text-white';
 
   if (phase === 'done') {
     return (
@@ -76,7 +78,7 @@ export default function SteamQRSetup({
         <button
           type="button"
           onClick={() => setShowRenew(true)}
-          className={`text-xs ${sub} hover:text-white transition-colors shrink-0`}
+          className={`text-xs ${sub} ${textHover} transition-colors shrink-0`}
         >
           Renew
         </button>
@@ -100,12 +102,12 @@ export default function SteamQRSetup({
         </div>
       ) : isRenewing ? (
         <div>
-          <p className="text-sm font-semibold text-white">Renew Steam token</p>
+          <p className={`text-sm font-semibold ${text}`}>Renew Steam token</p>
           <p className={`text-xs mt-0.5 ${sub}`}>Paste a new refresh token to extend auto-refresh.</p>
         </div>
       ) : (
         <div>
-          <p className="text-sm font-semibold text-white">Connect Steam account</p>
+          <p className={`text-sm font-semibold ${text}`}>Connect Steam account</p>
           <p className={`text-xs mt-0.5 ${sub}`}>Needed to sync your CS2 trade history.</p>
         </div>
       )}
@@ -122,7 +124,7 @@ export default function SteamQRSetup({
 
       {/* Option 2: webapi_token quick fix */}
       <details className="group">
-        <summary className={`text-xs ${sub} cursor-pointer hover:text-white transition-colors list-none flex items-center gap-1`}>
+        <summary className={`text-xs ${sub} cursor-pointer ${textHover} transition-colors list-none flex items-center gap-1`}>
           <span className="group-open:hidden">▸</span>
           <span className="hidden group-open:inline">▾</span>
           Quick fix — expires daily
@@ -156,7 +158,7 @@ export default function SteamQRSetup({
           value={token}
           onChange={(e) => setToken(e.target.value)}
           placeholder="Paste token here…"
-          className={`flex-1 text-xs px-3 py-2 rounded-lg border ${input} text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500`}
+          className={`flex-1 text-xs px-3 py-2 rounded-lg border ${input} ${text} placeholder-slate-500 focus:outline-none focus:border-indigo-500`}
           onKeyDown={(e) => e.key === 'Enter' && save()}
         />
         <button
@@ -173,7 +175,7 @@ export default function SteamQRSetup({
         <button
           type="button"
           onClick={() => { setShowRenew(false); setToken(''); setPhase('idle'); }}
-          className={`text-xs ${sub} hover:text-white transition-colors text-left`}
+          className={`text-xs ${sub} ${textHover} transition-colors text-left`}
         >
           Cancel
         </button>

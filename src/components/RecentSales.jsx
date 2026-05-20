@@ -15,7 +15,7 @@ function SaleRow({ item, theme }) {
         : <div className="w-8 h-8 rounded shrink-0 bg-white/5" />
       }
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-slate-300 truncate font-medium">{item.itemName}</p>
+        <p className={`text-xs ${theme.textSecondary} truncate font-medium`}>{item.itemName}</p>
         <p className="text-xs text-slate-600 mt-0.5 font-mono">
           ${item.purchasePrice.toFixed(2)} → ${(item.salePrice ?? 0).toFixed(2)}
         </p>

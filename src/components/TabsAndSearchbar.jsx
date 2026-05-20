@@ -28,8 +28,8 @@ function TabButton({ label, count, isActive, onClick, theme, accentClass, badgeC
       onClick={onClick}
       className={`relative pl-5 pr-4 py-2 rounded-lg text-sm font-medium transition-all border flex items-center gap-2 overflow-hidden ${
         isActive
-          ? `${theme.card} ${theme.cardBorder} text-white`
-          : `bg-transparent ${theme.cardBorder} ${theme.subtext} hover:text-white hover:bg-white/5`
+          ? `${theme.card} ${theme.cardBorder} ${theme.text}`
+          : `bg-transparent ${theme.cardBorder} ${theme.subtext} ${theme.textHover} hover:bg-white/5`
       }`}
     >
       {isActive && <span className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${accentClass}`} />}
@@ -74,7 +74,7 @@ export default function TabsAndSearchbar({
           label="Active" count={stats.totalActive}
           isActive={activeTab === 'active'} onClick={() => switchTab('active')}
           theme={theme} accentClass="bg-blue-500"
-          badgeClass={activeTab === 'active' ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-500'}
+          badgeClass={activeTab === 'active' ? `bg-white/15 ${theme.text}` : 'bg-white/5 text-slate-500'}
         />
         <TabButton
           label="Pending" count={stats.totalPending}
@@ -83,14 +83,14 @@ export default function TabsAndSearchbar({
           badgeClass={
             stats.totalPending > 0
               ? 'bg-warn/20 text-warn'
-              : activeTab === 'pending' ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-500'
+              : activeTab === 'pending' ? `bg-white/15 ${theme.text}` : 'bg-white/5 text-slate-500'
           }
         />
         <TabButton
           label="Sold" count={stats.totalSold}
           isActive={activeTab === 'sold'} onClick={() => switchTab('sold')}
           theme={theme} accentClass="bg-profit"
-          badgeClass={activeTab === 'sold' ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-500'}
+          badgeClass={activeTab === 'sold' ? `bg-white/15 ${theme.text}` : 'bg-white/5 text-slate-500'}
         />
       </div>
 
@@ -105,7 +105,7 @@ export default function TabsAndSearchbar({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search items…"
-            className={`w-full pl-8 pr-3 py-2 ${theme.input} rounded-lg text-sm text-white placeholder-slate-600 focus:outline-none transition-colors border`}
+            className={`w-full pl-8 pr-3 py-2 ${theme.input} rounded-lg text-sm ${theme.text} placeholder-slate-600 focus:outline-none transition-colors border`}
           />
         </div>
 
@@ -117,7 +117,7 @@ export default function TabsAndSearchbar({
               onClick={() => handleSortClick(sort)}
               className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                 isSortActive(sort)
-                  ? `${theme.card} border ${theme.cardBorder} text-slate-200`
+                  ? `${theme.card} border ${theme.cardBorder} ${theme.textSecondary}`
                   : `text-slate-600 hover:text-slate-300 hover:bg-white/5`
               }`}
             >
@@ -130,7 +130,7 @@ export default function TabsAndSearchbar({
         {!selectMode ? (
           <button
             onClick={onEnterSelectMode}
-            className={`text-xs px-3 py-2 rounded-lg border ${theme.cardBorder} ${theme.subtext} hover:text-white transition-colors`}
+            className={`text-xs px-3 py-2 rounded-lg border ${theme.cardBorder} ${theme.subtext} ${theme.textHover} transition-colors`}
           >
             Select
           </button>
@@ -146,7 +146,7 @@ export default function TabsAndSearchbar({
             </button>
             <button
               onClick={onCancelSelectMode}
-              className={`text-xs px-3 py-2 rounded-lg border ${theme.cardBorder} ${theme.subtext} hover:text-white transition-colors`}
+              className={`text-xs px-3 py-2 rounded-lg border ${theme.cardBorder} ${theme.subtext} ${theme.textHover} transition-colors`}
             >
               Cancel
             </button>

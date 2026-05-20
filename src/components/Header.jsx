@@ -49,7 +49,7 @@ export default function Header({
 
   const navBtn = (active) =>
     `relative px-1 py-1.5 text-sm font-medium transition-colors group ${
-      active ? "text-white" : "text-slate-400 hover:text-white"
+      active ? (theme?.text || "text-white") : `text-slate-400 ${theme?.textHover || "hover:text-white"}`
     }`;
 
   return (

@@ -48,7 +48,7 @@ export default function StatsCards({ stats, theme }) {
       icon: Package,
       iconColor: "text-slate-400",
       iconBg: "bg-slate-500/10",
-      valueColor: "text-white",
+      valueColor: theme.text,
     },
     {
       label: "Sold",
@@ -56,7 +56,7 @@ export default function StatsCards({ stats, theme }) {
       icon: isGain ? TrendingUp : TrendingDown,
       iconColor: isGain ? "text-profit" : "text-loss",
       iconBg: isGain ? "bg-profit/10" : "bg-loss/10",
-      valueColor: "text-white",
+      valueColor: theme.text,
     },
     {
       label: "Invested",
@@ -64,7 +64,7 @@ export default function StatsCards({ stats, theme }) {
       icon: DollarSign,
       iconColor: "text-blue-400",
       iconBg: "bg-blue-500/10",
-      valueColor: "text-white",
+      valueColor: theme.text,
     },
     {
       label: "Profit",

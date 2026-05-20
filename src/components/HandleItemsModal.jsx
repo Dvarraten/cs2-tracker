@@ -87,7 +87,7 @@ function PricePair({ usdValue, cnyValue, onChange, exchangeRate, theme, label })
       isNaN(num) || !exchangeRate ? '' : (num / exchangeRate).toFixed(2);
     onChange({ usd, cny: raw });
   };
-  const inputClass = `w-full ${theme.input} rounded-md pl-6 pr-2 py-1.5 text-white text-sm placeholder-slate-500 focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`;
+  const inputClass = `w-full ${theme.input} rounded-md pl-6 pr-2 py-1.5 ${theme.text} text-sm placeholder-slate-500 focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`;
   return (
     <div className="flex items-center gap-1.5 min-w-[220px] flex-1">
       <div className="relative flex-1 min-w-[100px]">
@@ -177,7 +177,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, pendingMatc
       <div className="flex items-start gap-3">
         <ItemImage iconUrl={entry.iconUrl} alt={entry.marketHashName} />
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-white truncate">
+          <div className={`text-sm font-semibold ${theme.text} truncate`}>
             {entry.marketHashName}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">
@@ -224,7 +224,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, pendingMatc
             <button
               type="button"
               onClick={() => onDismiss(entry.assetid, 'incoming')}
-              className={`text-xs px-2 py-1 rounded ${theme.subtext} hover:text-white`}
+              className={`text-xs px-2 py-1 rounded ${theme.subtext} ${theme.textHover}`}
             >
               Not this one
             </button>
@@ -243,7 +243,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, pendingMatc
           <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
-            className={`${theme.input} rounded-md px-2 py-1.5 text-white text-sm focus:outline-none border`}
+            className={`${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-sm focus:outline-none border`}
           >
             <option value="csfloat">CSFloat</option>
             <option value="csmoney">CS.MONEY</option>
@@ -339,7 +339,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
       <div className="flex items-start gap-3">
         <ItemImage iconUrl={entry.iconUrl} alt={entry.marketHashName} />
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-white truncate">
+          <div className={`text-sm font-semibold ${theme.text} truncate`}>
             {entry.marketHashName}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">
@@ -368,7 +368,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
           value={browseQuery}
           onChange={(e) => setBrowseQuery(e.target.value)}
           placeholder={`Search active items (${(allActiveItems || []).length} total)…`}
-          className={`w-full ${theme.input} rounded-md px-3 py-1.5 text-white text-sm placeholder-slate-500 focus:outline-none border`}
+          className={`w-full ${theme.input} rounded-md px-3 py-1.5 ${theme.text} text-sm placeholder-slate-500 focus:outline-none border`}
         />
       )}
 
@@ -383,7 +383,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
           <select
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
-            className={`flex-1 min-w-[200px] ${theme.input} rounded-md px-2 py-1.5 text-white text-sm focus:outline-none border`}
+            className={`flex-1 min-w-[200px] ${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-sm focus:outline-none border`}
           >
             {visibleCandidates.map((c) => (
               <option key={c.id} value={c.id}>
@@ -402,7 +402,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
           <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
-            className={`${theme.input} rounded-md px-2 py-1.5 text-white text-sm focus:outline-none border`}
+            className={`${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-sm focus:outline-none border`}
           >
             <option value="csfloat">CSFloat</option>
             <option value="csmoney">CS.MONEY</option>
@@ -430,7 +430,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
           setBrowseAll((prev) => !prev);
           setBrowseQuery('');
         }}
-        className={`self-start text-[11px] underline-offset-2 hover:underline ${theme.subtext} hover:text-white`}
+        className={`self-start text-[11px] underline-offset-2 hover:underline ${theme.subtext} ${theme.textHover}`}
       >
         {browseAll ? '← Back to suggestions' : 'Browse all tracked items →'}
       </button>
@@ -603,7 +603,7 @@ export default function HandleItemsModal({
     <>
       {/* Header */}
         <div className={`flex items-center justify-between px-5 py-4 border-b ${theme.panelBorder || theme.cardBorder} shrink-0`}>
-          <h3 className="font-semibold text-slate-100">Handle Items</h3>
+          <h3 className={`font-semibold ${theme.text}`}>Handle Items</h3>
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-slate-600">
               {hasInitialSnapshot && lastSync
@@ -614,7 +614,7 @@ export default function HandleItemsModal({
               type="button"
               onClick={onSync}
               disabled={busy}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs ${theme.card} border ${theme.cardBorder} ${theme.subtext} hover:text-white disabled:opacity-50 transition-colors`}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs ${theme.card} border ${theme.cardBorder} ${theme.subtext} ${theme.textHover} disabled:opacity-50 transition-colors`}
               title="Sync with Steam now"
             >
               <RefreshCw size={12} className={busy ? 'animate-spin' : ''} />
@@ -638,7 +638,7 @@ export default function HandleItemsModal({
                 value={usdAmount || ''}
                 onChange={e => handleUsdChange(e.target.value)}
                 placeholder="USD"
-                className={`w-24 ${theme.input} pl-5 pr-2 py-1.5 rounded-md text-xs font-mono text-slate-200 placeholder-slate-700 focus:outline-none border`}
+                className={`w-24 ${theme.input} pl-5 pr-2 py-1.5 rounded-md text-xs font-mono ${theme.textSecondary} placeholder-slate-700 focus:outline-none border`}
               />
             </div>
             <span className="text-slate-700 text-xs">≈</span>
@@ -649,7 +649,7 @@ export default function HandleItemsModal({
                 value={rmbAmount || ''}
                 onChange={e => handleRmbChange(e.target.value)}
                 placeholder="CNY"
-                className={`w-24 ${theme.input} pl-5 pr-2 py-1.5 rounded-md text-xs font-mono text-slate-200 placeholder-slate-700 focus:outline-none border`}
+                className={`w-24 ${theme.input} pl-5 pr-2 py-1.5 rounded-md text-xs font-mono ${theme.textSecondary} placeholder-slate-700 focus:outline-none border`}
               />
             </div>
             {exchangeRate && (
@@ -690,8 +690,8 @@ export default function HandleItemsModal({
             onClick={() => setTab('incoming')}
             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors ${
               tab === 'incoming'
-                ? 'text-white bg-white/5 border-b-2 border-profit'
-                : 'text-slate-400 hover:text-white'
+                ? `${theme.text} bg-white/5 border-b-2 border-profit`
+                : `text-slate-400 ${theme.textHover}`
             }`}
           >
             <ArrowDownCircle size={14} className="text-profit" />
@@ -707,8 +707,8 @@ export default function HandleItemsModal({
             onClick={() => setTab('outgoing')}
             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors ${
               tab === 'outgoing'
-                ? 'text-white bg-white/5 border-b-2 border-loss'
-                : 'text-slate-400 hover:text-white'
+                ? `${theme.text} bg-white/5 border-b-2 border-loss`
+                : `text-slate-400 ${theme.textHover}`
             }`}
           >
             <ArrowUpCircle size={14} className="text-loss" />
@@ -731,7 +731,7 @@ export default function HandleItemsModal({
                 >
                   <span>
                     Hiding{' '}
-                    <span className="text-white font-semibold">
+                    <span className={`${theme.text} font-semibold`}>
                       {hiddenIncoming.length}
                     </span>{' '}
                     item{hiddenIncoming.length === 1 ? '' : 's'} that match an
