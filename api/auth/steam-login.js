@@ -1,11 +1,11 @@
 // Steam username/password login flow for obtaining a mobile refresh token.
-// Uses a module-level session cache so the LoginSession survives between the
-// credentials POST and the guard-code confirm POST within the same container.
+// Supports DeviceConfirmation (approve via app) and DeviceCode (TOTP entry).
+// Uses a module-level session cache so LoginSession survives between requests.
 import { LoginSession, EAuthTokenPlatformType } from 'steam-session';
 import { getSessionSteamId } from '../_lib/auth.js';
 import { storeTokens } from '../_lib/steam-session.js';
 
-// Module-level cache — survives warm Vercel container reuse (up to ~5 min TTL).
+// Module-level cache — survives warm Vercel container reuse.
 const pendingSessions = new Map();
 
 function pruneExpired() {
@@ -35,62 +35,77 @@ export default async function handler(req, res) {
       const result = await session.startWithCredentials({ accountName: username, password });
 
       if (!result.actionRequired) {
-        // No guard needed — wait for token
         const token = await new Promise((resolve, reject) => {
           session.on('authenticated', () => resolve(session.refreshToken));
           session.on('error', reject);
-          setTimeout(() => reject(new Error('Timed out waiting for authentication')), 15000);
+          setTimeout(() => reject(new Error('Timed out')), 15000);
         });
         await storeTokens(steamId, { refreshToken: token });
         return res.status(200).json({ ok: true, needsGuard: false });
       }
 
-      // Guard required — cache session object
-      const key = `${steamId}_${Date.now()}`;
-      pendingSessions.set(key, { session, expires: Date.now() + 5 * 60 * 1000 });
+      // Prefer DeviceConfirmation (4) over DeviceCode (3) if both available.
+      const actionTypes = result.allowedConfirmations?.map(c => c.confirmation_type) || [result.actionType];
+      const guardType = actionTypes.includes(4) ? 4 : (actionTypes[0] ?? result.actionType);
 
-      return res.status(200).json({
-        ok: true,
-        needsGuard: true,
-        guardType: result.actionType, // 2=email, 3=device authenticator
-        sessionKey: key,
+      const key = `${steamId}_${Date.now()}`;
+      const entry = { session, expires: Date.now() + 5 * 60 * 1000, authenticated: false, token: null };
+
+      // For app-approval flow, pre-register the event so it fires whenever
+      // the user approves — the poll action will pick it up.
+      session.on('authenticated', async () => {
+        entry.authenticated = true;
+        entry.token = session.refreshToken;
+        try { await storeTokens(steamId, { refreshToken: session.refreshToken }); } catch {}
       });
+      session.on('error', () => {});
+
+      pendingSessions.set(key, entry);
+      return res.status(200).json({ ok: true, needsGuard: true, guardType, sessionKey: key });
     } catch (err) {
       return res.status(400).json({ error: err.message || 'Login failed' });
     }
   }
 
-  // ── Step 2: submit guard code ─────────────────────────────────────────────
+  // ── Poll: check if app-approval completed ────────────────────────────────
+  if (action === 'poll') {
+    if (!sessionKey) return res.status(400).json({ error: 'Session key required' });
+    const entry = pendingSessions.get(sessionKey);
+    if (!entry) return res.status(400).json({ error: 'Session expired. Please start over.' });
+    if (entry.authenticated) {
+      pendingSessions.delete(sessionKey);
+      return res.status(200).json({ ok: true, authenticated: true });
+    }
+    return res.status(200).json({ ok: true, authenticated: false });
+  }
+
+  // ── Step 2: submit guard code (DeviceCode / EmailCode only) ──────────────
   if (action === 'confirm') {
     if (!sessionKey || !code) return res.status(400).json({ error: 'Session key and code required' });
 
-    const cached = pendingSessions.get(sessionKey);
-    if (!cached) return res.status(400).json({ error: 'Session expired. Please start over.' });
+    const entry = pendingSessions.get(sessionKey);
+    if (!entry) return res.status(400).json({ error: 'Session expired. Please start over.' });
 
     try {
-      // If the session was already authenticated via mobile approval, refreshToken
-      // is already set and submitSteamGuardCode throws "DuplicateRequest".
-      if (cached.session.refreshToken) {
-        await storeTokens(steamId, { refreshToken: cached.session.refreshToken });
+      // Already authenticated via app approval
+      if (entry.authenticated && entry.token) {
         pendingSessions.delete(sessionKey);
         return res.status(200).json({ ok: true });
       }
 
-      await cached.session.submitSteamGuardCode(code);
+      await entry.session.submitSteamGuardCode(code);
 
       const token = await new Promise((resolve, reject) => {
-        cached.session.on('authenticated', () => resolve(cached.session.refreshToken));
-        cached.session.on('error', reject);
-        setTimeout(() => reject(new Error('Timed out waiting for authentication')), 15000);
+        entry.session.on('authenticated', () => resolve(entry.session.refreshToken));
+        entry.session.on('error', reject);
+        setTimeout(() => reject(new Error('Timed out')), 15000);
       });
 
       await storeTokens(steamId, { refreshToken: token });
       pendingSessions.delete(sessionKey);
       return res.status(200).json({ ok: true });
     } catch (err) {
-      // DuplicateRequest means Steam already authenticated (e.g. mobile approval)
-      if (err.message?.includes('DuplicateRequest') && cached?.session?.refreshToken) {
-        await storeTokens(steamId, { refreshToken: cached.session.refreshToken });
+      if ((err.message?.includes('DuplicateRequest') || entry.authenticated) && entry.token) {
         pendingSessions.delete(sessionKey);
         return res.status(200).json({ ok: true });
       }
