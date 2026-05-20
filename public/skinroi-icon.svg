@@ -4,18 +4,18 @@
       <polygon points="64,8 120,64 64,120 8,64"/>
     </clipPath>
     <linearGradient id="gold-sm" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FBBF24"/>
-      <stop offset="100%" stop-color="#FDE68A"/>
+      <stop offset="0%" stop-color="#F3BA2F"/>
+      <stop offset="100%" stop-color="#F3BA2F"/>
     </linearGradient>
   </defs>
   <polygon points="64,8 120,64 64,120 8,64" fill="none" stroke="url(#gold-sm)" stroke-width="2"/>
-  <path d="M 12,90 L 30,78 L 48,86 L 64,68 L 82,74 L 100,52 L 116,40 L 200,0 L 200,200 L 12,200 Z" fill="#FBBF24" clip-path="url(#diamond-clip-sm)" fill-opacity="0.38"/>
+  <path d="M 12,90 L 30,78 L 48,86 L 64,68 L 82,74 L 100,52 L 116,40 L 200,0 L 200,200 L 12,200 Z" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)" fill-opacity="0.38"/>
   <polyline points="12,90 30,78 48,86 64,68 82,74 100,52 116,40" fill="none" stroke="url(#gold-sm)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="12" cy="90" r="2.5" fill="#FCD34D" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="30" cy="78" r="2.5" fill="#FCD34D" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="48" cy="86" r="2.5" fill="#FCD34D" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="64" cy="68" r="2.5" fill="#FCD34D" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="82" cy="74" r="2.5" fill="#FCD34D" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="100" cy="52" r="2.5" fill="#FCD34D" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="116" cy="40" r="2.5" fill="#FCD34D" clip-path="url(#diamond-clip-sm)"/>
+  <circle cx="12" cy="90" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
+  <circle cx="30" cy="78" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
+  <circle cx="48" cy="86" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
+  <circle cx="64" cy="68" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
+  <circle cx="82" cy="74" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
+  <circle cx="100" cy="52" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
+  <circle cx="116" cy="40" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
 </svg>
