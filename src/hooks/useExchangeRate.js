@@ -28,7 +28,7 @@ export const useExchangeRate = () => {
     () => localStorage.getItem('skinroi-currency1') || 'USD'
   );
   const [displayCurrency, setDisplayCurrencyState] = useState(
-    () => localStorage.getItem('skinroi-currency') || 'CNY'
+    () => localStorage.getItem('skinroi-currency') || 'EUR'
   );
   const [usdAmount, setUsdAmount] = useState('');
   const [localAmount, setLocalAmount] = useState('');

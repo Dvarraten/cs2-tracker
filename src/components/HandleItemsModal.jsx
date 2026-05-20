@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, ArrowDownCircle, ArrowUpCircle, RefreshCw, AlertTriangle } from 'lucide-react';
+import { X, ArrowDownCircle, ArrowUpCircle, RefreshCw, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
 import SteamQRSetup from './SteamQRSetup';
 import PricePair from './PricePair';
+import PlatformPicker from './PlatformPicker';
+import { PLATFORMS } from '../utils/platforms';
 
 const STEAM_IMG_BASE = 'https://community.akamai.steamstatic.com/economy/image/';
 
@@ -186,7 +188,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
           </div>
         </div>
       ) : (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-2">
           <PricePair
             usdValue={usdPrice}
             cnyValue={cnyPrice}
@@ -196,19 +198,12 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
             currencySymbol={currencySymbol}
             displayCurrency={displayCurrency}
           />
-          <select
+          <PlatformPicker
             value={platform}
-            onChange={(e) => { setPlatform(e.target.value); setCustomFee(''); }}
-            className={`${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-sm focus:outline-none border`}
-          >
-            <option value="buff163">Buff163</option>
-            <option value="csfloat">CSFloat</option>
-            <option value="csmoney">CS.MONEY</option>
-            <option value="skinswap">SkinSwap</option>
-            <option value="dmarket">DMarket</option>
-            <option value="youpin">Youpin</option>
-            <option value="other">Other</option>
-          </select>
+            onChange={(val) => { setPlatform(val); setCustomFee(val === 'other' ? '0' : ''); }}
+            theme={theme}
+            platforms={PLATFORMS}
+          />
           {platform === 'other' && (
             <div className="flex items-center gap-1.5">
               <input
@@ -216,28 +211,35 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
                 value={customFee}
                 onChange={(e) => setCustomFee(e.target.value)}
                 placeholder="Fee %"
-                className={`w-20 ${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-sm focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                className={`w-24 h-9 ${theme.input} rounded-lg px-3 ${theme.text} text-sm focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
               />
               <span className={`text-sm ${theme.subtext}`}>%</span>
             </div>
           )}
-          <label className="flex items-center gap-1.5 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={onHold}
-              onChange={(e) => setOnHold(e.target.checked)}
-              className={`rounded ${theme.cardBorder} ${theme.card} text-indigo-500 focus:ring-0 focus:ring-offset-0`}
-            />
-            <span className="text-xs text-slate-300">Trade hold</span>
-          </label>
-          <button
-            type="button"
-            disabled={confirming || !parseFloat(usdPrice)}
-            onClick={submit}
-            className={`${theme.accentBg} text-white text-sm font-medium px-3 py-1.5 rounded-md disabled:opacity-40 disabled:cursor-not-allowed`}
-          >
-            {confirming ? 'Adding…' : onHold ? 'Add as pending' : 'Add to tracker'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setOnHold(h => !h)}
+              className={`relative group flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-medium border transition-all
+                ${theme.card} ${theme.cardBorder}
+                ${onHold ? 'text-warn' : `${theme.subtext} ${theme.textHover}`}`}
+            >
+              <Clock size={15} />
+              Trade hold
+              <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 bg-warn ${onHold ? 'w-full' : 'w-0 group-hover:w-full'}`} />
+            </button>
+            <button
+              type="button"
+              disabled={confirming || !parseFloat(usdPrice)}
+              onClick={submit}
+              className={`relative group flex items-center gap-2 px-5 h-9 rounded-lg text-sm font-medium border transition-all duration-200
+                ${theme.card} ${theme.cardBorder} ${confirming ? 'text-profit' : theme.text}
+                disabled:opacity-40 disabled:cursor-not-allowed`}
+            >
+              {confirming ? <><CheckCircle size={15} /> Added!</> : onHold ? 'Add as pending' : 'Add to tracker'}
+              <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${confirming ? 'w-full bg-profit' : `w-0 group-hover:w-full ${theme.dot}`}`} />
+            </button>
+          </div>
         </div>
       )}
     </div>

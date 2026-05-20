@@ -2,7 +2,6 @@ import React, { useCallback, useRef, useState } from 'react';
 import { CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 
 const BASE = process.env.REACT_APP_STEAM_SYNC_URL || '';
-const TOKEN_URL = 'https://store.steampowered.com/pointssummary/ajaxgetasyncconfig';
 
 function formatDate(unixSec) {
   if (!unixSec) return '';

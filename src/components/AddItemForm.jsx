@@ -8,23 +8,7 @@ import PlatformPicker from "./PlatformPicker";
 import PricePair from "./PricePair";
 import { useItemImage } from "../utils/itemImages";
 
-import buff163Icon  from "../assets/platforms/buff163.webp";
-import csfloatIcon  from "../assets/platforms/csfloat.webp";
-import csmoneyIcon from "../assets/platforms/csmoney.webp";
-
-import skinswapIcon from "../assets/platforms/skinswap.webp";
-import youpinIcon from "../assets/platforms/youpin.webp";
-import dmarketIcon from "../assets/platforms/dmarket.webp";
-
-const PLATFORMS = [
-  { value: "buff163", label: "Buff163",  icon: buff163Icon,  fee: "1.5%" },
-  { value: "csfloat", label: "CSFloat",  icon: csfloatIcon,  fee: "2%" },
-  { value: "csmoney", label: "CS.MONEY", icon: csmoneyIcon, fee: "5%" },
-  { value: "skinswap", label: "SkinSwap", icon: skinswapIcon, fee: "5%" },
-  { value: "dmarket", label: "DMarket", icon: dmarketIcon, fee: "5%" },
-  { value: "youpin", label: "Youpin", icon: youpinIcon, fee: "0.5%" },
-  { value: "other", label: "Other", icon: null, fee: "0%", emoji: "🔧" },
-];
+import { PLATFORMS } from "../utils/platforms";
 
 const label =
   "block text-xs text-slate-500 font-medium uppercase tracking-wide mb-2";
