@@ -30,6 +30,15 @@ function buildDescIndex(descriptions = []) {
   return index;
 }
 
+// Returns true for medals, coins, and other collectibles that have no
+// trade/investment value. Checks the Steam tags array on the description.
+function isCollectible(desc) {
+  return (desc.tags || []).some(t =>
+    t.internal_name === 'CSGO_Type_Collectible' ||
+    (t.category === 'Type' && (t.localized_tag_name || '').toLowerCase().includes('collectible'))
+  );
+}
+
 export async function runSync({ force = false, steamId = null } = {}) {
   const startedAt = new Date().toISOString();
   const startedAtMs = Date.now();
@@ -66,8 +75,7 @@ export async function runSync({ force = false, steamId = null } = {}) {
             if (Number(asset.appid) !== 730 || String(asset.contextid) !== '2') continue;
             const desc = descIndex.get(`${asset.classid}_${asset.instanceid}`);
             if (!desc || !(desc.market_tradable_restriction > 0)) continue;
-            // Don't filter by marketable/tradable here — trade-protected skins
-            // also have both set to 0 during the hold window.
+            if (isCollectible(desc)) continue;
             if (alreadyPending.has(asset.assetid)) continue;
             firstRunPending.push({
               type: 'incoming',
@@ -195,6 +203,7 @@ export async function runSync({ force = false, steamId = null } = {}) {
           if (prevAssetids.has(asset.assetid)) continue;
           const desc = invDescIndex.get(`${asset.classid}_${asset.instanceid}`);
           if (!desc || !(desc.market_tradable_restriction > 0)) continue;
+          if (isCollectible(desc)) continue;
           const key = `incoming:${asset.assetid}`;
           if (seen.has(key)) continue;
           append.push({
