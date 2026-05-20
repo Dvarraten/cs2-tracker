@@ -4,16 +4,14 @@
       <polygon points="64,6 122,64 64,122 6,64"/>
     </clipPath>
   </defs>
-  <!-- Solid gold diamond background -->
-  <polygon points="64,6 122,64 64,122 6,64" fill="#F3BA2F"/>
-  <!-- Bold dark chart line clipped to diamond -->
+  <!-- Black diamond background -->
+  <polygon points="64,6 122,64 64,122 6,64" fill="#0a0a0a" stroke="#F3BA2F" stroke-width="6"/>
+  <!-- Yellow filled area under chart line -->
+  <path d="M 14,92 L 32,76 L 50,84 L 64,66 L 80,72 L 100,50 L 114,38 L 122,38 L 122,122 L 6,122 Z"
+    fill="#F3BA2F" clip-path="url(#clip)"/>
+  <!-- Chart line on top -->
   <polyline points="14,92 32,76 50,84 64,66 80,72 100,50 114,38"
-    fill="none" stroke="#1a1200" stroke-width="10"
+    fill="none" stroke="#F3BA2F" stroke-width="7"
     stroke-linecap="round" stroke-linejoin="round"
     clip-path="url(#clip)"/>
-  <!-- Dots -->
-  <circle cx="50" cy="84" r="6" fill="#1a1200" clip-path="url(#clip)"/>
-  <circle cx="64" cy="66" r="6" fill="#1a1200" clip-path="url(#clip)"/>
-  <circle cx="80" cy="72" r="6" fill="#1a1200" clip-path="url(#clip)"/>
-  <circle cx="100" cy="50" r="6" fill="#1a1200" clip-path="url(#clip)"/>
 </svg>
