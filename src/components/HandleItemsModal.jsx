@@ -593,7 +593,7 @@ export default function HandleItemsModal({
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-slate-600">
               {hasInitialSnapshot && lastSync
-                ? `Synced ${new Date(lastSync).toLocaleTimeString()}`
+                ? `Last Sync: ${new Date(lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
                 : !hasInitialSnapshot ? 'No snapshot yet' : ''}
             </span>
             <button
@@ -601,10 +601,9 @@ export default function HandleItemsModal({
               onClick={onSync}
               disabled={busy}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs ${theme.card} border ${theme.cardBorder} ${theme.subtext} ${theme.textHover} disabled:opacity-50 transition-colors`}
-              title="Sync with Steam now"
             >
               <RefreshCw size={12} className={busy ? 'animate-spin' : ''} />
-              {busy ? 'Syncing…' : 'Sync now'}
+              {busy ? 'Syncing…' : 'Sync Inventory'}
             </button>
             {!embedded && (
               <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-300 transition-colors p-1">
