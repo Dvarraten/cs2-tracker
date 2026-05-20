@@ -343,7 +343,7 @@ function ItemCard({
       {/* Colored bottom bar */}
       <div
         className="absolute bottom-0 left-0 right-0 h-[2px] rounded-b-xl z-10"
-        style={{ backgroundColor: currentBarColor, opacity: 0.45, transition: 'background-color 0.1s' }}
+        style={{ backgroundColor: currentBarColor, opacity: 0.6, transition: 'background-color 0.1s' }}
       />
 
       {/* Card content */}
