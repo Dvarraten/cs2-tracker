@@ -2,7 +2,7 @@
 // fields stay in sync via the live exchange rate passed in as a prop.
 import React from 'react';
 
-export default function PricePair({ usdValue, cnyValue, onChange, exchangeRate, theme }) {
+export default function PricePair({ usdValue, cnyValue, onChange, exchangeRate, theme, currencySymbol = '¥' }) {
   const handleUsd = (raw) => {
     const num = parseFloat(raw);
     const cny = isNaN(num) || !exchangeRate ? '' : (num * exchangeRate).toFixed(2);
@@ -28,7 +28,7 @@ export default function PricePair({ usdValue, cnyValue, onChange, exchangeRate, 
         />
       </div>
       <div className="relative flex-1">
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none">¥</span>
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none">{currencySymbol}</span>
         <input
           type="number"
           step="0.01"

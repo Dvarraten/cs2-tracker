@@ -1,7 +1,9 @@
-// Linked USD ↔ CNY input pair with copy-to-clipboard buttons. Receives the
-// live exchange rate and conversion handlers from useExchangeRate via App.
+// Linked USD ↔ [display currency] input pair with currency picker and
+// copy buttons. Display currency is persisted and shared across all
+// price pair inputs in the app.
 import React, { useState } from "react";
 import { Copy, Check } from "lucide-react";
+import { CURRENCIES } from "../../hooks/useExchangeRate";
 
 function CopyButton({ value }) {
   const [copied, setCopied] = useState(false);
@@ -32,9 +34,28 @@ export default function CurrencyConverter({
   usdAmount, rmbAmount,
   exchangeRate, lastUpdated,
   handleUsdChange, handleRmbChange, theme,
+  displayCurrency, setDisplayCurrency, currencySymbol,
 }) {
   return (
     <div className="space-y-2">
+      {/* Currency picker */}
+      <div className="flex flex-wrap gap-1">
+        {CURRENCIES.map(c => (
+          <button
+            key={c.code}
+            onClick={() => setDisplayCurrency(c.code)}
+            className={`text-[9px] font-mono px-1.5 py-0.5 rounded border transition-colors ${
+              displayCurrency === c.code
+                ? `${theme.accentBg} text-white border-transparent`
+                : `${theme.subtext} border ${theme.cardBorder} ${theme.itemHoverBg}`
+            }`}
+          >
+            {c.code}
+          </button>
+        ))}
+      </div>
+
+      {/* USD input */}
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-mono pointer-events-none">$</span>
         <input
@@ -49,22 +70,28 @@ export default function CurrencyConverter({
           <CopyButton value={usdAmount} />
         </div>
       </div>
+
+      {/* Display currency input */}
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-mono pointer-events-none">¥</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-mono pointer-events-none">{currencySymbol}</span>
         <input
           type="text"
           inputMode="decimal"
           value={rmbAmount}
           onChange={(e) => handleRmbChange(e.target.value)}
-          placeholder="RMB"
-          className={`w-full ${theme.input} pl-7 pr-8 py-2 rounded-lg text-sm font-mono ${theme.textSecondary} placeholder-slate-600 focus:outline-none transition-colors border`}
+          placeholder={displayCurrency}
+          disabled={!exchangeRate}
+          className={`w-full ${theme.input} pl-7 pr-8 py-2 rounded-lg text-sm font-mono ${theme.textSecondary} placeholder-slate-600 focus:outline-none transition-colors border ${!exchangeRate ? 'opacity-50' : ''}`}
         />
         <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
           <CopyButton value={rmbAmount} />
         </div>
       </div>
+
       {exchangeRate && (
-        <p className="text-xs text-slate-700 text-center">1 USD ≈ {exchangeRate.toFixed(2)} CNY</p>
+        <p className="text-xs text-slate-500 text-center">
+          1 USD ≈ {exchangeRate.toFixed(2)} {displayCurrency}
+        </p>
       )}
     </div>
   );

@@ -54,7 +54,8 @@ export default function CS2TradingTracker() {
 
   const {
     usdAmount, rmbAmount,
-    exchangeRate, lastUpdated, handleUsdChange, handleRmbChange
+    exchangeRate, lastUpdated, handleUsdChange, handleRmbChange,
+    displayCurrency, setDisplayCurrency, currencySymbol,
   } = useExchangeRate();
 
   const [activeTab, setActiveTab] = useState('active');
@@ -249,6 +250,9 @@ export default function CS2TradingTracker() {
               handleUsdChange={handleUsdChange}
               handleRmbChange={handleRmbChange}
               theme={themeStyles}
+              displayCurrency={displayCurrency}
+              setDisplayCurrency={setDisplayCurrency}
+              currencySymbol={currencySymbol}
             />
           </div>
 
@@ -284,6 +288,8 @@ export default function CS2TradingTracker() {
               selectedIds={selectedIds}
               onToggleSelect={toggleSelect}
               TrendingUp={TrendingUp} Trash2={Trash2}
+              exchangeRate={exchangeRate}
+              currencySymbol={currencySymbol}
             />
           </div>
         </main>
@@ -306,7 +312,7 @@ export default function CS2TradingTracker() {
               <AddItemForm
                 formData={formData} setFormData={setFormData}
                 handleAddItem={handleAddItem} theme={themeStyles}
-                exchangeRate={exchangeRate} bare
+                exchangeRate={exchangeRate} currencySymbol={currencySymbol} bare
               />
             </div>
           </div>
@@ -326,6 +332,7 @@ export default function CS2TradingTracker() {
           sellItemDirect={sellItemDirect}
           promotePendingItem={promotePendingItem}
           exchangeRate={exchangeRate}
+          currencySymbol={currencySymbol}
           usdAmount={usdAmount}
           rmbAmount={rmbAmount}
           handleUsdChange={handleUsdChange}

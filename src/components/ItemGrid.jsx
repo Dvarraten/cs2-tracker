@@ -267,8 +267,10 @@ function ItemCard({
   sellData, setSellData, sellPlatform, setSellPlatform,
   handleSellItem, handleDeleteItem, promotePendingItem,
   selectMode, isSelected, onToggleSelect,
+  exchangeRate, currencySymbol,
 }) {
   const [barColor, setBarColor] = useState(accentHex);
+  const [localSellAmount, setLocalSellAmount] = useState('');
   const [exiting, setExiting] = useState(false);
   const [soldFeedback, setSoldFeedback] = useState(false);
   const sellAnimRef = useRef(null);
@@ -299,6 +301,19 @@ function ItemCard({
   const onDelete = () => {
     setExiting(true);
     setTimeout(() => handleDeleteItem(item.id), 400);
+  };
+
+  const handleSellUsd = (val) => {
+    setSellData(prev => ({ ...prev, [item.id]: val }));
+    setLocalSellAmount(exchangeRate && val && !isNaN(val)
+      ? (parseFloat(val) * exchangeRate).toFixed(2) : '');
+  };
+
+  const handleSellLocal = (val) => {
+    setLocalSellAmount(val);
+    const usd = exchangeRate && val && !isNaN(val)
+      ? (parseFloat(val) / exchangeRate).toFixed(2) : '';
+    setSellData(prev => ({ ...prev, [item.id]: usd }));
   };
 
   const countdown = item.pending ? formatDeliveryCountdown(item.expectedDelivery) : null;
@@ -437,21 +452,33 @@ function ItemCard({
             </div>
           ) : !item.sold ? (
             <div className="space-y-1.5">
-              {/* Platform · Price · Sell — picker and price 50/50, sell fixed */}
-              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'auto 1fr auto' }}>
-                <SellPlatformPicker
-                  value={sellPlatform[item.id] || 'csfloat'}
-                  onChange={(val) => setSellPlatform(prev => ({ ...prev, [item.id]: val }))}
-                  theme={theme}
-                />
+              {/* Platform row */}
+              <SellPlatformPicker
+                value={sellPlatform[item.id] || 'csfloat'}
+                onChange={(val) => setSellPlatform(prev => ({ ...prev, [item.id]: val }))}
+                theme={theme}
+              />
+              {/* USD | local | Sell */}
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr) auto' }}>
                 <div className="relative">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-mono pointer-events-none">$</span>
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-mono pointer-events-none">$</span>
                   <input
                     type="number" step="0.01"
                     value={sellData[item.id] || ''}
-                    onChange={(e) => setSellData(prev => ({ ...prev, [item.id]: e.target.value }))}
+                    onChange={(e) => handleSellUsd(e.target.value)}
                     className={`w-full h-8 ${theme.inputSell} rounded-lg pl-5 pr-2 ${theme.text} text-xs font-mono focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                    placeholder="0.00"
+                    placeholder="USD"
+                  />
+                </div>
+                <div className="relative">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-mono pointer-events-none">{currencySymbol}</span>
+                  <input
+                    type="number" step="0.01"
+                    value={localSellAmount}
+                    onChange={(e) => handleSellLocal(e.target.value)}
+                    disabled={!exchangeRate}
+                    className={`w-full h-8 ${theme.inputSell} rounded-lg pl-5 pr-2 ${theme.text} text-xs font-mono focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${!exchangeRate ? 'opacity-50' : ''}`}
+                    placeholder={currencySymbol}
                   />
                 </div>
                 <button
@@ -526,6 +553,7 @@ export default function ItemGrid({
   handleSellItem, handleDeleteItem, promotePendingItem,
   theme, sortedItems, searchTerm, activeTab,
   selectMode, selectedIds, onToggleSelect,
+  exchangeRate, currencySymbol,
 }) {
   const accentHex = getThemeAccentHex(theme.accentBg + ' ' + theme.dot);
 
@@ -593,6 +621,8 @@ export default function ItemGrid({
             selectMode={selectMode}
             isSelected={selectedIds && selectedIds.has(item.id)}
             onToggleSelect={onToggleSelect}
+            exchangeRate={exchangeRate}
+            currencySymbol={currencySymbol}
           />
         ))}
 
