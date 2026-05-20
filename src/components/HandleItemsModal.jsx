@@ -637,35 +637,6 @@ export default function HandleItemsModal({
           </div>
         </div>
 
-        {/* Compact currency converter */}
-        {handleUsdChange && (
-          <div className={`flex items-center gap-2 px-5 py-2.5 border-b ${theme.panelBorder || theme.cardBorder}`}>
-            <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs font-mono pointer-events-none">$</span>
-              <input
-                type="text" inputMode="decimal"
-                value={usdAmount || ''}
-                onChange={e => handleUsdChange(e.target.value)}
-                placeholder="USD"
-                className={`w-24 ${theme.input} pl-5 pr-2 py-1.5 rounded-md text-xs font-mono ${theme.textSecondary} placeholder-slate-700 focus:outline-none border`}
-              />
-            </div>
-            <span className="text-slate-700 text-xs">≈</span>
-            <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs font-mono pointer-events-none">¥</span>
-              <input
-                type="text" inputMode="decimal"
-                value={rmbAmount || ''}
-                onChange={e => handleRmbChange(e.target.value)}
-                placeholder="CNY"
-                className={`w-24 ${theme.input} pl-5 pr-2 py-1.5 rounded-md text-xs font-mono ${theme.textSecondary} placeholder-slate-700 focus:outline-none border`}
-              />
-            </div>
-            {exchangeRate && (
-              <span className="text-slate-700 text-[10px] ml-1">1 USD ≈ {exchangeRate.toFixed(2)} CNY</span>
-            )}
-          </div>
-        )}
 
         {/* Error / unreachable banner — only shown when something's off. */}
         {(reachable === false || lastSyncOk === false) && (

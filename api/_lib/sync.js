@@ -127,6 +127,15 @@ export async function runSync({ force = false, steamId = null } = {}) {
       for (const [k, v] of fallback) descIndex.set(k, v);
     }
 
+    // Build current inventory assetId set so we only surface incoming items
+    // that are actually in the inventory right now. This filters out old
+    // trades (e.g. items received and then sold years ago).
+    const currentAssetIds = new Set(
+      (inventoryData?.assets || [])
+        .filter(a => Number(a.appid) === 730 && String(a.contextid) === '2')
+        .map(a => a.assetid)
+    );
+
     const seen = new Set(state.pending.map(p => `${p.type}:${p.assetid}`));
     const processedTrades = new Set(state.processedTradeIds || []);
     const append = [];
@@ -145,6 +154,8 @@ export async function runSync({ force = false, steamId = null } = {}) {
             || descIndex.get(`${asset.classid}_0`);
           if (!desc || !desc.market_hash_name) continue;
           const assetid = asset.new_assetid || asset.assetid;
+          // Only surface incoming items currently in inventory (filters old sold items)
+          if (type === 'incoming' && currentAssetIds.size > 0 && !currentAssetIds.has(assetid)) continue;
           const key = `${type}:${assetid}`;
           if (seen.has(key)) continue;
           append.push({
