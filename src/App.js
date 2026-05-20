@@ -214,10 +214,10 @@ export default function CS2TradingTracker() {
         </div>
       </Header>
 
-      <div className="flex gap-6 p-6 items-start">
+      <div className="flex gap-6 px-6 overflow-hidden" style={{ height: 'calc(100vh - 72px)' }}>
 
-        {/* Sidebar */}
-        <aside className="w-[360px] shrink-0 flex flex-col gap-4 sticky top-[80px] max-h-[calc(100vh-5.5rem)] overflow-y-auto pb-4">
+        {/* Sidebar — full height, internal scroll, no scrollbar */}
+        <aside className="w-[360px] shrink-0 flex flex-col gap-4 overflow-y-auto py-6 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
           {/* Overview */}
           <div className={`${themeStyles.panel} border ${themeStyles.panelBorder} rounded-2xl p-4`}>
@@ -262,10 +262,10 @@ export default function CS2TradingTracker() {
 
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 min-w-0 flex flex-col gap-4">
+        {/* Main Content — tab bar is static, only item grid scrolls */}
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden pt-6">
 
-          <div className={`sticky top-[72px] z-40 ${themeStyles.bg} -mx-1 px-1 pb-2`}>
+          <div className="shrink-0 pb-2">
             <TabsAndSearchbar
               theme={themeStyles}
               setActiveTab={setActiveTab} activeTab={activeTab}
@@ -280,7 +280,7 @@ export default function CS2TradingTracker() {
             />
           </div>
 
-          <div className="isolate">
+          <div className="flex-1 overflow-y-auto pb-6">
             <ItemGrid
               sellPlatform={sellPlatform} setSellData={setSellData}
               sellData={sellData} setSellPlatform={setSellPlatform}

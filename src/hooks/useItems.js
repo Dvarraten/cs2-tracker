@@ -13,6 +13,7 @@ export const useItems = (steamId) => {
     purchasePrice: '',
     notes: '',
     platform: 'csfloat',
+    customFee: '',
     quantity: 1,
     pending: false,
     expectedDelivery: '',
@@ -105,15 +106,15 @@ export const useItems = (steamId) => {
     setItems([...newItems, ...items]);
     setFormData({
       itemName: '', purchasePrice: '', notes: '', platform: 'csfloat',
-      quantity: 1, pending: false, expectedDelivery: '', iconUrl: null,
+      quantity: 1, pending: false, expectedDelivery: '', iconUrl: null, customFee: '',
     });
   };
 
-  const handleSellItem = (id, platform) => {
+  const handleSellItem = (id, platform, customFee) => {
     const salePrice = parseFloat(sellData[id]);
     if (!salePrice || salePrice <= 0) return;
 
-    const fee = getPlatformFee(platform);
+    const fee = getPlatformFee(platform, customFee);
     const now = Date.now();
 
     setItems(items.map(item => {
@@ -197,10 +198,10 @@ export const useItems = (steamId) => {
     setItems(prev => prev.filter(item => !toRemove.has(item.id)));
   };
 
-  const sellItemDirect = (id, salePrice, platform = 'csfloat') => {
+  const sellItemDirect = (id, salePrice, platform = 'csfloat', customFee) => {
     const price = parseFloat(salePrice);
     if (!price || price <= 0) return false;
-    const fee = getPlatformFee(platform);
+    const fee = getPlatformFee(platform, customFee);
     const now = Date.now();
     setItems(prev => prev.map(item => {
       if (item.id !== id) return item;

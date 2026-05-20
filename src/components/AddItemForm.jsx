@@ -8,21 +8,22 @@ import PlatformPicker from "./PlatformPicker";
 import PricePair from "./PricePair";
 import { useItemImage } from "../utils/itemImages";
 
-import csfloatIcon from "../assets/platforms/csfloat.webp";
+import buff163Icon  from "../assets/platforms/buff163.webp";
+import csfloatIcon  from "../assets/platforms/csfloat.webp";
 import csmoneyIcon from "../assets/platforms/csmoney.webp";
-import gamerpayIcon from "../assets/platforms/gamerpay.webp";
+
 import skinswapIcon from "../assets/platforms/skinswap.webp";
 import youpinIcon from "../assets/platforms/youpin.webp";
 import dmarketIcon from "../assets/platforms/dmarket.webp";
 
 const PLATFORMS = [
-  { value: "csfloat", label: "CSFloat", icon: csfloatIcon, fee: "2%" },
+  { value: "buff163", label: "Buff163",  icon: buff163Icon,  fee: "1.5%" },
+  { value: "csfloat", label: "CSFloat",  icon: csfloatIcon,  fee: "2%" },
   { value: "csmoney", label: "CS.MONEY", icon: csmoneyIcon, fee: "5%" },
-  { value: "gamerpay", label: "GamerPay", icon: gamerpayIcon, fee: "3%" },
   { value: "skinswap", label: "SkinSwap", icon: skinswapIcon, fee: "5%" },
   { value: "dmarket", label: "DMarket", icon: dmarketIcon, fee: "5%" },
   { value: "youpin", label: "Youpin", icon: youpinIcon, fee: "0.5%" },
-  { value: "other", label: "Other", icon: null, fee: "?" },
+  { value: "other", label: "Other", icon: null, fee: "0%", emoji: "🔧" },
 ];
 
 const label =
@@ -116,10 +117,22 @@ export default function AddItemForm({
           <label className={label}>Platform</label>
           <PlatformPicker
             value={formData.platform}
-            onChange={(val) => setFormData({ ...formData, platform: val })}
+            onChange={(val) => setFormData({ ...formData, platform: val, customFee: val === 'other' ? '0' : '' })}
             theme={theme}
             platforms={PLATFORMS}
           />
+          {formData.platform === 'other' && (
+            <div className="flex items-center gap-2 mt-1.5">
+              <input
+                type="number" min="0" max="100" step="0.1"
+                value={formData.customFee || ''}
+                onChange={(e) => setFormData({ ...formData, customFee: e.target.value })}
+                placeholder="Fee %"
+                className={`w-full ${inputH} ${theme.input} rounded-lg px-3 text-sm font-mono ${theme.text} focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+              />
+              <span className={`text-sm ${theme.subtext} shrink-0`}>%</span>
+            </div>
+          )}
         </div>
 
         {/* Quantity */}

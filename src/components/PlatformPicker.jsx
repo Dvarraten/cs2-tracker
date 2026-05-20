@@ -22,10 +22,10 @@ function PlatformIcon({ platform, size = 14 }) {
   }
   return (
     <span
-      className="rounded-sm bg-white/10 flex items-center justify-center font-bold flex-shrink-0"
-      style={{ width: size, height: size, fontSize: Math.max(8, size / 2) }}
+      className="flex items-center justify-center flex-shrink-0"
+      style={{ width: size, height: size, fontSize: size * 0.9 }}
     >
-      {platform.label[0]}
+      {platform.emoji || platform.label[0]}
     </span>
   );
 }

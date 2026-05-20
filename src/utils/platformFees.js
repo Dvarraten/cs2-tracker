@@ -1,11 +1,15 @@
 // Returns the decimal fee fraction for a given platform (e.g. 0.02 = 2%).
-// Used when computing net profit after the platform takes its cut.
-export const getPlatformFee = (platform) => {
+// Pass customFee (0–100 percentage) to override for the "other" platform.
+export const getPlatformFee = (platform, customFee) => {
+  if (platform === 'other' && customFee != null) {
+    return parseFloat(customFee) / 100 || 0;
+  }
   switch (platform) {
+    case 'buff163':
+      return 0.015;
     case 'csfloat':
       return 0.02;
     case 'csmoney':
-    case 'gamerpay':
     case 'skinswap':
     case 'dmarket':
     case 'tradeit':
@@ -15,6 +19,6 @@ export const getPlatformFee = (platform) => {
     case 'youpin':
       return 0.005;
     default:
-      return 0.005;
+      return 0;
   }
 };

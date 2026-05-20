@@ -3,9 +3,10 @@
 //                  that need raw config (e.g. building dropdown options).
 import React from "react";
 
+import buff163Icon  from "../assets/platforms/buff163.webp";
 import csfloatIcon  from "../assets/platforms/csfloat.webp";
 import csmoneyIcon  from "../assets/platforms/csmoney.webp";
-import gamerpayIcon from "../assets/platforms/gamerpay.webp";
+
 import skinswapIcon from "../assets/platforms/skinswap.webp";
 import youpinIcon   from "../assets/platforms/youpin.webp";
 import dmarketIcon  from "../assets/platforms/dmarket.webp";
@@ -13,8 +14,9 @@ import dmarketIcon  from "../assets/platforms/dmarket.webp";
 // Colors sourced from SAP Fiori Morning Horizon chart palette
 // sapChart_OrderedColor_* from SAP/theming-base-content
 const PLATFORM_CONFIG = {
+  buff163:  { label: "Buff163",  icon: buff163Icon  },
   csfloat:  { label: "CSFloat",  icon: csfloatIcon  },
-  gamerpay: { label: "GamerPay", icon: gamerpayIcon },
+
   csmoney:  { label: "CS.MONEY", icon: csmoneyIcon  },
   skinswap: { label: "SkinSwap", icon: skinswapIcon },
   dmarket:  { label: "DMarket",  icon: dmarketIcon  },

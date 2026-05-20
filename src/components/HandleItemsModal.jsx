@@ -93,6 +93,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
   const [usdPrice, setUsdPrice] = useState('');
   const [cnyPrice, setCnyPrice] = useState('');
   const [platform, setPlatform] = useState('csfloat');
+  const [customFee, setCustomFee] = useState('');
   const [onHold, setOnHold] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
@@ -197,17 +198,29 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
           />
           <select
             value={platform}
-            onChange={(e) => setPlatform(e.target.value)}
+            onChange={(e) => { setPlatform(e.target.value); setCustomFee(''); }}
             className={`${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-sm focus:outline-none border`}
           >
+            <option value="buff163">Buff163</option>
             <option value="csfloat">CSFloat</option>
             <option value="csmoney">CS.MONEY</option>
-            <option value="gamerpay">GamerPay</option>
             <option value="skinswap">SkinSwap</option>
             <option value="dmarket">DMarket</option>
             <option value="youpin">Youpin</option>
             <option value="other">Other</option>
           </select>
+          {platform === 'other' && (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number" min="0" max="100" step="0.1"
+                value={customFee}
+                onChange={(e) => setCustomFee(e.target.value)}
+                placeholder="Fee %"
+                className={`w-20 ${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-sm focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+              />
+              <span className={`text-sm ${theme.subtext}`}>%</span>
+            </div>
+          )}
           <label className="flex items-center gap-1.5 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -249,6 +262,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
   const [usdSalePrice, setUsdSalePrice] = useState('');
   const [cnySalePrice, setCnySalePrice] = useState('');
   const [platform, setPlatform] = useState('csfloat');
+  const [customFee, setCustomFee] = useState('');
   const [confirming, setConfirming] = useState(false);
 
   // Items the user can pick from. Default = the smart candidates list, but
@@ -280,7 +294,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
     const v = parseFloat(usdSalePrice);
     if (!id || !v || v <= 0) return;
     setConfirming(true);
-    onMatch({ trackedId: id, salePrice: v, platform, assetid: entry.assetid });
+    onMatch({ trackedId: id, salePrice: v, platform, customFee: customFee || undefined, assetid: entry.assetid });
   };
 
   // Are we showing only fuzzy matches (no exacts found)?
@@ -357,17 +371,29 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
           />
           <select
             value={platform}
-            onChange={(e) => setPlatform(e.target.value)}
+            onChange={(e) => { setPlatform(e.target.value); setCustomFee(''); }}
             className={`${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-sm focus:outline-none border`}
           >
+            <option value="buff163">Buff163</option>
             <option value="csfloat">CSFloat</option>
             <option value="csmoney">CS.MONEY</option>
-            <option value="gamerpay">GamerPay</option>
             <option value="skinswap">SkinSwap</option>
             <option value="dmarket">DMarket</option>
             <option value="youpin">Youpin</option>
             <option value="other">Other</option>
           </select>
+          {platform === 'other' && (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number" min="0" max="100" step="0.1"
+                value={customFee}
+                onChange={(e) => setCustomFee(e.target.value)}
+                placeholder="Fee %"
+                className={`w-20 ${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-sm focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+              />
+              <span className={`text-sm ${theme.subtext}`}>%</span>
+            </div>
+          )}
           <button
             type="button"
             disabled={confirming || !parseFloat(usdSalePrice) || !selectedId || isFuzzyOnly}
@@ -750,8 +776,8 @@ export default function HandleItemsModal({
                   exchangeRate={exchangeRate}
                   currencySymbol={currencySymbol}
                   displayCurrency={displayCurrency}
-                  onMatch={({ trackedId, salePrice, platform, assetid }) => {
-                    const ok = sellItemDirect(trackedId, salePrice, platform);
+                  onMatch={({ trackedId, salePrice, platform, customFee, assetid }) => {
+                    const ok = sellItemDirect(trackedId, salePrice, platform, customFee);
                     if (ok) onDismiss(assetid, 'outgoing');
                   }}
                   onDismiss={onDismiss}

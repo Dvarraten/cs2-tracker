@@ -57,10 +57,15 @@ function buildIndex(itemsData) {
   const weapons = new Map(); // weapon name → needs ★
   const finishes = new Set();
   const directNames = new Set();
+  const weaponFinishMap = new Map(); // weapon → Set<finish>
   for (const v of Object.values(itemsData)) {
     if (v.weapon) {
       const hasStar = v['full-name']?.startsWith('★');
       weapons.set(v.weapon, weapons.get(v.weapon) || hasStar);
+      if (v.finish) {
+        if (!weaponFinishMap.has(v.weapon)) weaponFinishMap.set(v.weapon, new Set());
+        weaponFinishMap.get(v.weapon).add(v.finish);
+      }
     }
     if (v.finish) finishes.add(v.finish);
   }
@@ -69,10 +74,11 @@ function buildIndex(itemsData) {
     if (!v.weapon && !v.finish && v['full-name']) directNames.add(v['full-name']);
   }
   return {
-    weapon:   [...weapons.entries()].sort(([a],[b]) => a.localeCompare(b)).map(([n, star]) => buildEntry(n, { star })),
-    finish:   [...finishes].sort().map((n) => buildEntry(n)),
-    exterior: EXTERIORS_CANON.map((e) => buildEntry(e.name, { abbr: e.abbr })),
-    direct:   [...directNames].sort().map((n) => buildEntry(n)),
+    weapon:         [...weapons.entries()].sort(([a],[b]) => a.localeCompare(b)).map(([n, star]) => buildEntry(n, { star })),
+    finish:         [...finishes].sort().map((n) => buildEntry(n)),
+    exterior:       EXTERIORS_CANON.map((e) => buildEntry(e.name, { abbr: e.abbr })),
+    direct:         [...directNames].sort().map((n) => buildEntry(n)),
+    weaponFinishMap,
   };
 }
 
@@ -108,15 +114,32 @@ function scoreEntry(entry, q) {
   return 0;
 }
 
-function buildSuggestions(index, query, usedCategories) {
+function buildSuggestions(index, query, usedCategories, tags) {
   if (!query || !index) return [];
   const q = query.toLowerCase().trim();
   if (!q) return [];
 
+  const weaponTag = tags?.find(t => t.category === 'weapon');
+  const allowedFinishes = weaponTag && index.weaponFinishMap
+    ? index.weaponFinishMap.get(weaponTag.name)
+    : null;
+
   const out = [];
   for (const cat of CATEGORY_ORDER) {
     if (cat !== "direct" && usedCategories.has(cat)) continue;
-    for (const e of index[cat]) {
+    // Suppress standalone items once a weapon is selected — they're not skins
+    if (cat === "direct" && weaponTag) continue;
+    let entries = index[cat];
+    if (cat === 'finish' && allowedFinishes) {
+      entries = entries.filter(e => {
+        if (allowedFinishes.has(e.name)) return true;
+        // Include Doppler phases when weapon has base Doppler/Gamma Doppler finish
+        if (allowedFinishes.has('Doppler') && e.name.startsWith('Doppler')) return true;
+        if (allowedFinishes.has('Gamma Doppler') && e.name.startsWith('Gamma Doppler')) return true;
+        return false;
+      });
+    }
+    for (const e of entries) {
       const score = scoreEntry(e, q);
       if (score > 0) out.push({ category: cat, name: e.name, score, star: e.star });
     }
@@ -206,9 +229,10 @@ export default function ItemAutoComplete({ value, onChange, placeholder, theme }
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  const refreshSuggestions = (input, usedOverride) => {
+  const refreshSuggestions = (input, usedOverride, tagsOverride) => {
     const used = usedOverride || usedCategories;
-    const s = buildSuggestions(index, input, used);
+    const activeTags = tagsOverride !== undefined ? tagsOverride : tags;
+    const s = buildSuggestions(index, input, used, activeTags);
     setSuggestions(s);
     setShowDropdown(s.length > 0);
     setSelectedIndex(s.length > 0 ? 0 : -1);
@@ -261,7 +285,7 @@ export default function ItemAutoComplete({ value, onChange, placeholder, theme }
     setTags(next);
     emit(next, currentInput);
     if (currentInput) {
-      refreshSuggestions(currentInput, new Set(next.map((t) => t.category)));
+      refreshSuggestions(currentInput, new Set(next.map((t) => t.category)), next);
     }
     inputRef.current?.focus();
   };

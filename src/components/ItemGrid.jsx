@@ -7,9 +7,10 @@ import { Trash2, CheckCircle, ChevronDown, PackageCheck } from "lucide-react";
 import { getPlatformFee } from "../utils/platformFees";
 import { PlatformBadge } from "./PlatformBadge";
 import { useItemImage } from "../utils/itemImages";
+import buff163Icon  from "../assets/platforms/buff163.webp";
 import csfloatIcon  from "../assets/platforms/csfloat.webp";
 import csmoneyIcon  from "../assets/platforms/csmoney.webp";
-import gamerpayIcon from "../assets/platforms/gamerpay.webp";
+
 import skinswapIcon from "../assets/platforms/skinswap.webp";
 import youpinIcon   from "../assets/platforms/youpin.webp";
 import dmarketIcon  from "../assets/platforms/dmarket.webp";
@@ -44,12 +45,13 @@ function formatDeliveryCountdown(expectedDelivery) {
 }
 
 const SELL_PLATFORMS = [
+  { value: "buff163",  label: "Buff163",  icon: buff163Icon,  fee: "1.5%" },
   { value: "csfloat",  label: "CSFloat",  icon: csfloatIcon,  fee: "2%"   },
   { value: "csmoney",  label: "CS.MONEY", icon: csmoneyIcon,  fee: "5%"   },
-  { value: "gamerpay", label: "GamerPay", icon: gamerpayIcon, fee: "3%"   },
   { value: "skinswap", label: "SkinSwap", icon: skinswapIcon, fee: "5%"   },
   { value: "dmarket",  label: "DMarket",  icon: dmarketIcon,  fee: "5%"   },
   { value: "youpin",   label: "Youpin",   icon: youpinIcon,   fee: "0.5%" },
+  { value: "other",    label: "Other",    icon: null,         fee: "0%", emoji: "🔧" },
 ];
 
 function lerpColor(a, b, t) {
@@ -138,10 +140,10 @@ function PlatformIcon({ platform, size = 14 }) {
   }
   return (
     <span
-      className="rounded-sm bg-white/10 flex items-center justify-center font-bold flex-shrink-0"
-      style={{ width: size, height: size, fontSize: Math.max(8, size / 2) }}
+      className="flex items-center justify-center flex-shrink-0"
+      style={{ width: size, height: size, fontSize: size * 0.9 }}
     >
-      {platform.label[0]}
+      {platform.emoji || platform.label[0]}
     </span>
   );
 }
@@ -272,6 +274,7 @@ function ItemCard({
 }) {
   const [barColor, setBarColor] = useState(accentHex);
   const [localSellAmount, setLocalSellAmount] = useState('');
+  const [customFee, setCustomFee] = useState('');
   const [exiting, setExiting] = useState(false);
   const [soldFeedback, setSoldFeedback] = useState(false);
   const sellAnimRef = useRef(null);
@@ -295,7 +298,7 @@ function ItemCard({
     if (!sellData[item.id] || parseFloat(sellData[item.id]) <= 0) return;
     setSoldFeedback(true);
     animateBarTo('#30914c', 500, () => {
-      handleSellItem(item.id, sellPlatform[item.id] || 'csfloat');
+      handleSellItem(item.id, sellPlatform[item.id] || 'csfloat', customFee || undefined);
     });
   };
 
@@ -326,7 +329,7 @@ function ItemCard({
     : barColor;   // accent (blue) when tradeable or normal active
 
   const fee = !item.sold && sellData[item.id] && parseFloat(sellData[item.id]) > 0
-    ? getPlatformFee(sellPlatform[item.id] || 'csfloat') : null;
+    ? getPlatformFee(sellPlatform[item.id] || 'csfloat', customFee || undefined) : null;
   const estProfit = fee !== null ? parseFloat(sellData[item.id]) * (1 - fee) - item.purchasePrice : null;
   const estProfitPct = estProfit !== null ? (estProfit / item.purchasePrice) * 100 : null;
 
@@ -456,9 +459,22 @@ function ItemCard({
               {/* Platform row */}
               <SellPlatformPicker
                 value={sellPlatform[item.id] || 'csfloat'}
-                onChange={(val) => setSellPlatform(prev => ({ ...prev, [item.id]: val }))}
+                onChange={(val) => { setSellPlatform(prev => ({ ...prev, [item.id]: val })); setCustomFee(val === 'other' ? '0' : ''); }}
                 theme={theme}
               />
+              {/* Custom fee input — only for "other" platform */}
+              {(sellPlatform[item.id] || 'csfloat') === 'other' && (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number" min="0" max="100" step="0.1"
+                    value={customFee}
+                    onChange={(e) => setCustomFee(e.target.value)}
+                    placeholder="Fee"
+                    className={`flex-1 h-7 ${theme.inputSell} rounded-lg px-2 ${theme.text} text-xs font-mono focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                  />
+                  <span className={`text-xs ${theme.subtext} shrink-0`}>%</span>
+                </div>
+              )}
               {/* USD | local | Sell */}
               <div className="grid gap-1.5" style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr) auto' }}>
                 <div className="relative">

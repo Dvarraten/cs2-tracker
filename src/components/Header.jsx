@@ -128,9 +128,6 @@ export default function Header({
                       <p className={`${theme?.text || 'text-white'} text-sm font-medium truncate`}>
                         {user.personaName}
                       </p>
-                      <p className="text-slate-500 text-xs truncate">
-                        Steam ID: {user.steamId}
-                      </p>
                     </div>
                   )}
                   <div className="py-1">
