@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, ArrowDownCircle, ArrowUpCircle, RefreshCw, AlertTriangle, Clock, CheckCircle, Shield } from 'lucide-react';
 import SteamLoginModal from './SteamLoginModal';
-import SteamQRSetup from './SteamQRSetup';
+
 import PricePair from './PricePair';
 import PlatformPicker from './PlatformPicker';
 import { PLATFORMS } from '../utils/platforms';
@@ -678,13 +678,6 @@ export default function HandleItemsModal({
                 Sync failed: {lastError}
               </span>
             )}
-          </div>
-        )}
-
-        {/* Token setup/renewal banner */}
-        {(hasTokenSetup === false || tokenExpired) && (
-          <div className="px-4 py-3">
-            <SteamQRSetup theme={theme} onComplete={refreshTokenStatus} expired={tokenExpired} hasRefreshToken={hasRefreshToken} refreshTokenExp={refreshTokenExp} />
           </div>
         )}
 
