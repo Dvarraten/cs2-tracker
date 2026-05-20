@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, ArrowDownCircle, ArrowUpCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import SteamQRSetup from './SteamQRSetup';
+import PricePair from './PricePair';
 
 const STEAM_IMG_BASE = 'https://community.akamai.steamstatic.com/economy/image/';
 
@@ -69,53 +70,6 @@ function nameMatchScore(steamName, trackerName) {
   return matched / trackerTokens.length;
 }
 
-// ─── Currency-paired price input ────────────────────────────────────────────
-// Two inputs that sync via the live exchange rate. The USD field is the
-// "source of truth" — that's what gets stored on the item. Editing either
-// field updates the other so users can type in whichever currency they
-// actually paid in.
-function PricePair({ usdValue, cnyValue, onChange, exchangeRate, theme, label }) {
-  const handleUsd = (raw) => {
-    const num = parseFloat(raw);
-    const cny =
-      isNaN(num) || !exchangeRate ? '' : (num * exchangeRate).toFixed(2);
-    onChange({ usd: raw, cny });
-  };
-  const handleCny = (raw) => {
-    const num = parseFloat(raw);
-    const usd =
-      isNaN(num) || !exchangeRate ? '' : (num / exchangeRate).toFixed(2);
-    onChange({ usd, cny: raw });
-  };
-  const inputClass = `w-full ${theme.input} rounded-md pl-6 pr-2 py-1.5 ${theme.text} text-sm placeholder-slate-500 focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`;
-  return (
-    <div className="flex items-center gap-1.5 min-w-[220px] flex-1">
-      <div className="relative flex-1 min-w-[100px]">
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none">$</span>
-        <input
-          type="number"
-          step="0.01"
-          value={usdValue}
-          onChange={(e) => handleUsd(e.target.value)}
-          placeholder={label || 'USD'}
-          className={inputClass}
-        />
-      </div>
-      <div className="relative flex-1 min-w-[100px]">
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none">¥</span>
-        <input
-          type="number"
-          step="0.01"
-          value={cnyValue}
-          onChange={(e) => handleCny(e.target.value)}
-          placeholder={exchangeRate ? 'CNY' : 'rate loading…'}
-          disabled={!exchangeRate}
-          className={`${inputClass} ${!exchangeRate ? 'opacity-50 cursor-not-allowed' : ''}`}
-        />
-      </div>
-    </div>
-  );
-}
 
 function ItemImage({ iconUrl, alt }) {
   if (!iconUrl) {

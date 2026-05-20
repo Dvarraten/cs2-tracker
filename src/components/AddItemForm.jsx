@@ -4,8 +4,8 @@
 import React, { useState, useEffect } from "react";
 import { CheckCircle, Clock, PackagePlus } from "lucide-react";
 import ItemAutoComplete from "./ItemAutoComplete";
-import PasteButton from "./PasteButton";
 import PlatformPicker from "./PlatformPicker";
+import PricePair from "./PricePair";
 import { useItemImage } from "../utils/itemImages";
 
 import csfloatIcon from "../assets/platforms/csfloat.webp";
@@ -34,9 +34,11 @@ export default function AddItemForm({
   setFormData,
   handleAddItem,
   theme,
+  exchangeRate = null,
   bare = false,
 }) {
   const [success, setSuccess] = useState(false);
+  const [cnyPrice, setCnyPrice] = useState('');
 
   const resolvedIcon = useItemImage({ name: formData.itemName });
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function AddItemForm({
   const onAdd = () => {
     if (!formData.itemName || !formData.purchasePrice) return;
     handleAddItem();
+    setCnyPrice('');
     setSuccess(true);
     setTimeout(() => setSuccess(false), 2000);
   };
@@ -89,28 +92,19 @@ export default function AddItemForm({
           />
         </div>
 
-        {/* Purchase Price */}
-        <div>
-          <label className={label}>Purchase Price ($)</label>
-          <div className="relative">
-            <input
-              type="number"
-              step="0.01"
-              value={formData.purchasePrice}
-              onChange={(e) =>
-                setFormData({ ...formData, purchasePrice: e.target.value })
-              }
-              className={`w-full ${inputH} ${theme.input} rounded-lg px-3 pr-9 text-sm font-mono ${theme.text} placeholder-slate-600 focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-              placeholder="0.00"
-            />
-            <PasteButton
-              onPaste={(val) => {
-                const num = parseFloat(val);
-                if (!isNaN(num))
-                  setFormData({ ...formData, purchasePrice: num });
-              }}
-            />
-          </div>
+        {/* Purchase Price — USD + CNY linked pair */}
+        <div className="md:col-span-2">
+          <label className={label}>Purchase Price</label>
+          <PricePair
+            usdValue={formData.purchasePrice}
+            cnyValue={cnyPrice}
+            onChange={({ usd, cny }) => {
+              setFormData({ ...formData, purchasePrice: usd });
+              setCnyPrice(cny);
+            }}
+            exchangeRate={exchangeRate}
+            theme={theme}
+          />
         </div>
 
         {/* Platform */}

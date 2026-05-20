@@ -312,20 +312,12 @@ export default function CS2TradingTracker() {
                 <X size={18} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            <div className="flex-1 overflow-y-auto p-5">
               <AddItemForm
                 formData={formData} setFormData={setFormData}
-                handleAddItem={handleAddItem} theme={themeStyles} bare
+                handleAddItem={handleAddItem} theme={themeStyles}
+                exchangeRate={exchangeRate} bare
               />
-              <div className={`border-t ${themeStyles.panelBorder} pt-4`}>
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Currency</h3>
-                <CurrencyConverter
-                  usdAmount={usdAmount} rmbAmount={rmbAmount}
-                  exchangeRate={exchangeRate} lastUpdated={lastUpdated}
-                  handleUsdChange={handleUsdChange} handleRmbChange={handleRmbChange}
-                  theme={themeStyles}
-                />
-              </div>
             </div>
           </div>
         </div>
