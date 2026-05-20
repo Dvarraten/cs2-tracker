@@ -89,7 +89,7 @@ function ItemImage({ iconUrl, alt }) {
   );
 }
 
-function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySymbol, pendingMatch, onPromotePending }) {
+function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySymbol, displayCurrency, pendingMatch, onPromotePending }) {
   const [usdPrice, setUsdPrice] = useState('');
   const [cnyPrice, setCnyPrice] = useState('');
   const [platform, setPlatform] = useState('csfloat');
@@ -193,6 +193,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
             exchangeRate={exchangeRate}
             theme={theme}
             currencySymbol={currencySymbol}
+            displayCurrency={displayCurrency}
           />
           <select
             value={platform}
@@ -239,7 +240,7 @@ function formatCandidateLabel(c) {
   return base;
 }
 
-function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, theme, exchangeRate, currencySymbol }) {
+function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, theme, exchangeRate, currencySymbol, displayCurrency }) {
   const [browseAll, setBrowseAll] = useState(candidates.length === 0);
   const [browseQuery, setBrowseQuery] = useState('');
   const [selectedId, setSelectedId] = useState(
@@ -352,6 +353,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
             exchangeRate={exchangeRate}
             theme={theme}
             currencySymbol={currencySymbol}
+            displayCurrency={displayCurrency}
           />
           <select
             value={platform}
@@ -414,6 +416,7 @@ export default function HandleItemsModal({
   promotePendingItem,
   exchangeRate,
   currencySymbol = '¥',
+  displayCurrency = 'CNY',
   usdAmount,
   rmbAmount,
   handleUsdChange,
@@ -719,6 +722,7 @@ export default function HandleItemsModal({
                     theme={theme}
                     exchangeRate={exchangeRate}
                     currencySymbol={currencySymbol}
+                    displayCurrency={displayCurrency}
                     pendingMatch={findPendingMatch(entry)}
                     onPromotePending={promotePendingItem}
                     onAdd={(payload) => {
@@ -745,6 +749,7 @@ export default function HandleItemsModal({
                   theme={theme}
                   exchangeRate={exchangeRate}
                   currencySymbol={currencySymbol}
+                  displayCurrency={displayCurrency}
                   onMatch={({ trackedId, salePrice, platform, assetid }) => {
                     const ok = sellItemDirect(trackedId, salePrice, platform);
                     if (ok) onDismiss(assetid, 'outgoing');

@@ -209,6 +209,7 @@ function SellPlatformPicker({ value, onChange, theme }) {
       >
         <PlatformIcon platform={selected} size={13} />
         <span className="truncate">{selected.label}</span>
+        <span className={`${theme.subtext} text-[9px] shrink-0`}>{selected.fee}</span>
         <ChevronDown
           size={10}
           className={`text-slate-400 transition-transform ml-auto shrink-0 ${open ? "rotate-180" : ""}`}
@@ -267,7 +268,7 @@ function ItemCard({
   sellData, setSellData, sellPlatform, setSellPlatform,
   handleSellItem, handleDeleteItem, promotePendingItem,
   selectMode, isSelected, onToggleSelect,
-  exchangeRate, currencySymbol,
+  exchangeRate, currencySymbol, displayCurrency,
 }) {
   const [barColor, setBarColor] = useState(accentHex);
   const [localSellAmount, setLocalSellAmount] = useState('');
@@ -477,8 +478,8 @@ function ItemCard({
                     value={localSellAmount}
                     onChange={(e) => handleSellLocal(e.target.value)}
                     disabled={!exchangeRate}
-                    className={`w-full h-8 ${theme.inputSell} rounded-lg pl-5 pr-2 ${theme.text} text-xs font-mono focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${!exchangeRate ? 'opacity-50' : ''}`}
-                    placeholder={currencySymbol}
+                    className={`w-full h-8 ${theme.inputSell} rounded-lg ${currencySymbol.length > 1 ? 'pl-8' : 'pl-5'} pr-2 ${theme.text} text-xs font-mono focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${!exchangeRate ? 'opacity-50' : ''}`}
+                    placeholder={displayCurrency || currencySymbol}
                   />
                 </div>
                 <button
@@ -553,7 +554,7 @@ export default function ItemGrid({
   handleSellItem, handleDeleteItem, promotePendingItem,
   theme, sortedItems, searchTerm, activeTab,
   selectMode, selectedIds, onToggleSelect,
-  exchangeRate, currencySymbol,
+  exchangeRate, currencySymbol, displayCurrency,
 }) {
   const accentHex = getThemeAccentHex(theme.accentBg + ' ' + theme.dot);
 
@@ -623,6 +624,7 @@ export default function ItemGrid({
             onToggleSelect={onToggleSelect}
             exchangeRate={exchangeRate}
             currencySymbol={currencySymbol}
+            displayCurrency={displayCurrency}
           />
         ))}
 

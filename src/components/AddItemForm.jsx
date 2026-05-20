@@ -36,6 +36,7 @@ export default function AddItemForm({
   theme,
   exchangeRate = null,
   currencySymbol = '¥',
+  displayCurrency = 'CNY',
   bare = false,
 }) {
   const [success, setSuccess] = useState(false);
@@ -106,6 +107,7 @@ export default function AddItemForm({
             exchangeRate={exchangeRate}
             theme={theme}
             currencySymbol={currencySymbol}
+            displayCurrency={displayCurrency}
           />
         </div>
 

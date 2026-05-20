@@ -1,6 +1,6 @@
-// Linked USD ↔ [display currency] input pair with currency picker and
-// copy buttons. Display currency is persisted and shared across all
-// price pair inputs in the app.
+// Free-form currency converter — both fields have their own currency
+// selector. The right field's currency also drives the display currency
+// used in all price pair inputs across the app.
 import React, { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { CURRENCIES } from "../../hooks/useExchangeRate";
@@ -30,67 +30,75 @@ function CopyButton({ value }) {
   );
 }
 
+function CurrencySelect({ value, onChange, theme }) {
+  return (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className={`${theme.input} text-[10px] font-mono rounded px-1.5 py-0.5 border focus:outline-none ${theme.text} cursor-pointer`}
+    >
+      {CURRENCIES.map(c => (
+        <option key={c.code} value={c.code}>{c.code}</option>
+      ))}
+    </select>
+  );
+}
+
+function symbolPad(symbol) {
+  return symbol.length > 1 ? 'pl-9' : 'pl-7';
+}
+
 export default function CurrencyConverter({
   usdAmount, rmbAmount,
-  exchangeRate, lastUpdated,
+  sidebarRate, lastUpdated,
   handleUsdChange, handleRmbChange, theme,
+  currency1, setCurrency1, currency1Symbol,
   displayCurrency, setDisplayCurrency, currencySymbol,
 }) {
   return (
     <div className="space-y-2">
-      {/* Currency picker */}
-      <div className="flex flex-wrap gap-1">
-        {CURRENCIES.map(c => (
-          <button
-            key={c.code}
-            onClick={() => setDisplayCurrency(c.code)}
-            className={`text-[9px] font-mono px-1.5 py-0.5 rounded border transition-colors ${
-              displayCurrency === c.code
-                ? `${theme.accentBg} text-white border-transparent`
-                : `${theme.subtext} border ${theme.cardBorder} ${theme.itemHoverBg}`
-            }`}
-          >
-            {c.code}
-          </button>
-        ))}
-      </div>
-
-      {/* USD input */}
+      {/* Field 1: currency1 */}
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-mono pointer-events-none">$</span>
+        <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none z-10">
+          <span className="text-slate-500 text-xs font-mono">{currency1Symbol}</span>
+        </div>
         <input
           type="text"
           inputMode="decimal"
           value={usdAmount}
           onChange={(e) => handleUsdChange(e.target.value)}
-          placeholder="USD"
-          className={`w-full ${theme.input} pl-7 pr-8 py-2 rounded-lg text-sm font-mono ${theme.textSecondary} placeholder-slate-600 focus:outline-none transition-colors border`}
+          placeholder={currency1}
+          className={`w-full ${theme.input} ${symbolPad(currency1Symbol)} pr-20 py-2 rounded-lg text-sm font-mono ${theme.textSecondary} placeholder-slate-600 focus:outline-none transition-colors border`}
         />
-        <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          <CurrencySelect value={currency1} onChange={setCurrency1} theme={theme} />
           <CopyButton value={usdAmount} />
         </div>
       </div>
 
-      {/* Display currency input */}
+      {/* Field 2: displayCurrency */}
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-mono pointer-events-none">{currencySymbol}</span>
+        <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none z-10">
+          <span className="text-slate-500 text-xs font-mono">{currencySymbol}</span>
+        </div>
         <input
           type="text"
           inputMode="decimal"
           value={rmbAmount}
           onChange={(e) => handleRmbChange(e.target.value)}
           placeholder={displayCurrency}
-          disabled={!exchangeRate}
-          className={`w-full ${theme.input} pl-7 pr-8 py-2 rounded-lg text-sm font-mono ${theme.textSecondary} placeholder-slate-600 focus:outline-none transition-colors border ${!exchangeRate ? 'opacity-50' : ''}`}
+          disabled={!sidebarRate}
+          className={`w-full ${theme.input} ${symbolPad(currencySymbol)} pr-20 py-2 rounded-lg text-sm font-mono ${theme.textSecondary} placeholder-slate-600 focus:outline-none transition-colors border ${!sidebarRate ? 'opacity-50' : ''}`}
         />
-        <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          <CurrencySelect value={displayCurrency} onChange={setDisplayCurrency} theme={theme} />
           <CopyButton value={rmbAmount} />
         </div>
       </div>
 
-      {exchangeRate && (
+      {sidebarRate && (
         <p className="text-xs text-slate-500 text-center">
-          1 USD ≈ {exchangeRate.toFixed(2)} {displayCurrency}
+          1 {currency1} ≈ {sidebarRate.toFixed(4)} {displayCurrency}
         </p>
       )}
     </div>

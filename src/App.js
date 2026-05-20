@@ -54,7 +54,8 @@ export default function CS2TradingTracker() {
 
   const {
     usdAmount, rmbAmount,
-    exchangeRate, lastUpdated, handleUsdChange, handleRmbChange,
+    exchangeRate, sidebarRate, lastUpdated, handleUsdChange, handleRmbChange,
+    currency1, setCurrency1, currency1Symbol,
     displayCurrency, setDisplayCurrency, currencySymbol,
   } = useExchangeRate();
 
@@ -241,15 +242,18 @@ export default function CS2TradingTracker() {
 
           {/* Currency Converter */}
           <div className={`${themeStyles.panel} border ${themeStyles.panelBorder} rounded-2xl p-4`}>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Currency</h3>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Currency Converter</h3>
             <CurrencyConverter
               usdAmount={usdAmount}
               rmbAmount={rmbAmount}
-              exchangeRate={exchangeRate}
+              sidebarRate={sidebarRate}
               lastUpdated={lastUpdated}
               handleUsdChange={handleUsdChange}
               handleRmbChange={handleRmbChange}
               theme={themeStyles}
+              currency1={currency1}
+              setCurrency1={setCurrency1}
+              currency1Symbol={currency1Symbol}
               displayCurrency={displayCurrency}
               setDisplayCurrency={setDisplayCurrency}
               currencySymbol={currencySymbol}
@@ -290,6 +294,7 @@ export default function CS2TradingTracker() {
               TrendingUp={TrendingUp} Trash2={Trash2}
               exchangeRate={exchangeRate}
               currencySymbol={currencySymbol}
+              displayCurrency={displayCurrency}
             />
           </div>
         </main>
@@ -312,7 +317,7 @@ export default function CS2TradingTracker() {
               <AddItemForm
                 formData={formData} setFormData={setFormData}
                 handleAddItem={handleAddItem} theme={themeStyles}
-                exchangeRate={exchangeRate} currencySymbol={currencySymbol} bare
+                exchangeRate={exchangeRate} currencySymbol={currencySymbol} displayCurrency={displayCurrency} bare
               />
             </div>
           </div>
@@ -333,6 +338,7 @@ export default function CS2TradingTracker() {
           promotePendingItem={promotePendingItem}
           exchangeRate={exchangeRate}
           currencySymbol={currencySymbol}
+          displayCurrency={displayCurrency}
           usdAmount={usdAmount}
           rmbAmount={rmbAmount}
           handleUsdChange={handleUsdChange}
