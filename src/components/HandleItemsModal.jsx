@@ -212,7 +212,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, pendingMatc
               type="checkbox"
               checked={onHold}
               onChange={(e) => setOnHold(e.target.checked)}
-              className="rounded border-slate-600 bg-slate-700 text-indigo-500 focus:ring-0 focus:ring-offset-0"
+              className={`rounded ${theme.cardBorder} ${theme.card} text-indigo-500 focus:ring-0 focus:ring-offset-0`}
             />
             <span className="text-xs text-slate-300">Trade hold</span>
           </label>

@@ -117,7 +117,7 @@ export default function SteamQRSetup({
         <p className="text-xs font-semibold text-emerald-400">Recommended — lasts ~6 months</p>
         <p className={`text-xs ${sub}`}>
           Run{' '}
-          <code className="text-slate-300 bg-slate-700/60 px-1 rounded">node scripts/get-refresh-token.mjs</code>
+          <code className="text-slate-300 bg-black/20 px-1 rounded">node scripts/get-refresh-token.mjs</code>
           {' '}in the project folder, then paste the token it outputs below.
         </p>
       </div>
@@ -146,7 +146,7 @@ export default function SteamQRSetup({
           </li>
           <li className="flex items-start gap-2">
             <span className="text-indigo-400 font-bold shrink-0">2.</span>
-            <span>Find <code className="text-slate-300 bg-slate-700/60 px-1 rounded">webapi_token</code> in the JSON and copy its value.</span>
+            <span>Find <code className="text-slate-300 bg-black/20 px-1 rounded">webapi_token</code> in the JSON and copy its value.</span>
           </li>
         </ol>
       </details>

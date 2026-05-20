@@ -105,26 +105,26 @@ export default function Header({
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen((o) => !o)}
-                className="flex items-center gap-2 rounded-lg p-1 transition-all hover:bg-white/10 active:scale-95"
+                className="rounded-full p-0.5 transition-all"
               >
                 {user.avatarUrl ? (
                   <img
                     src={user.avatarUrl}
                     alt={user.personaName || ""}
-                    className={`w-8 h-8 rounded-full ring-2 transition-all ${dropdownOpen ? "ring-white/60 scale-95" : "ring-white/20 hover:ring-white/50"}`}
+                    className={`w-10 h-10 rounded-full ring-2 transition-all ${dropdownOpen ? "ring-white/70" : "ring-white/20 hover:ring-white/55"}`}
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                    <User size={16} className="text-slate-400" />
+                  <div className={`w-10 h-10 rounded-full ring-2 transition-all flex items-center justify-center ${theme?.card || 'bg-white/10'} ${dropdownOpen ? "ring-white/70" : "ring-white/20 hover:ring-white/55"}`}>
+                    <User size={18} className="text-slate-400" />
                   </div>
                 )}
               </button>
 
               {dropdownOpen && (
-                <div className="absolute right-0 top-11 w-52 rounded-xl border border-white/10 bg-[#151f35] shadow-xl overflow-hidden z-50">
+                <div className={`absolute right-0 top-12 w-52 rounded-xl border ${theme?.panelBorder || 'border-white/10'} ${theme?.panel || 'bg-[#151f35]'} shadow-xl overflow-hidden z-50`}>
                   {user.personaName && (
-                    <div className="px-4 py-3 border-b border-white/8">
-                      <p className="text-white text-sm font-medium truncate">
+                    <div className={`px-4 py-3 border-b ${theme?.panelBorder || 'border-white/10'}`}>
+                      <p className={`${theme?.text || 'text-white'} text-sm font-medium truncate`}>
                         {user.personaName}
                       </p>
                       <p className="text-slate-500 text-xs truncate">
@@ -137,7 +137,7 @@ export default function Header({
                       href={`https://steamcommunity.com/profiles/${user.steamId}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/8 transition-all"
+                      className={`flex items-center gap-3 px-4 py-2.5 text-sm ${theme?.textSecondary || 'text-slate-300'} ${theme?.textHover || 'hover:text-white'} ${theme?.itemHoverBg || 'hover:bg-white/8'} transition-all`}
                       onClick={() => setDropdownOpen(false)}
                     >
                       <ExternalLink size={15} />
@@ -147,7 +147,7 @@ export default function Header({
                       href={`https://steamcommunity.com/profiles/${user.steamId}/inventory/#730`}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/8 transition-all"
+                      className={`flex items-center gap-3 px-4 py-2.5 text-sm ${theme?.textSecondary || 'text-slate-300'} ${theme?.textHover || 'hover:text-white'} ${theme?.itemHoverBg || 'hover:bg-white/8'} transition-all`}
                       onClick={() => setDropdownOpen(false)}
                     >
                       <ExternalLink size={15} />
@@ -155,11 +155,8 @@ export default function Header({
                     </a>
                     {onExportCSV && (
                       <button
-                        onClick={() => {
-                          onExportCSV();
-                          setDropdownOpen(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/8 transition-all"
+                        onClick={() => { onExportCSV(); setDropdownOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm ${theme?.textSecondary || 'text-slate-300'} ${theme?.textHover || 'hover:text-white'} ${theme?.itemHoverBg || 'hover:bg-white/8'} transition-all`}
                       >
                         <Download size={15} />
                         Export CSV
@@ -180,7 +177,7 @@ export default function Header({
                         />
                         <button
                           onClick={() => importInputRef.current?.click()}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/8 transition-all"
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm ${theme?.textSecondary || 'text-slate-300'} ${theme?.textHover || 'hover:text-white'} ${theme?.itemHoverBg || 'hover:bg-white/8'} transition-all`}
                         >
                           <Upload size={15} />
                           Import CSV
@@ -188,22 +185,16 @@ export default function Header({
                       </>
                     )}
                     <button
-                      onClick={() => {
-                        onAnalyticsClick();
-                        setDropdownOpen(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/8 transition-all"
+                      onClick={() => { onAnalyticsClick(); setDropdownOpen(false); }}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm ${theme?.textSecondary || 'text-slate-300'} ${theme?.textHover || 'hover:text-white'} ${theme?.itemHoverBg || 'hover:bg-white/8'} transition-all`}
                     >
                       <BarChart3 size={15} />
                       Analytics
                     </button>
-                    <div className="border-t border-white/8 mt-1 pt-1">
+                    <div className={`border-t ${theme?.panelBorder || 'border-white/10'} mt-1 pt-1`}>
                       <button
-                        onClick={() => {
-                          onLogout();
-                          setDropdownOpen(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-white/8 transition-all"
+                        onClick={() => { onLogout(); setDropdownOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 ${theme?.itemHoverBg || 'hover:bg-white/8'} transition-all`}
                       >
                         <LogOut size={15} />
                         Sign out

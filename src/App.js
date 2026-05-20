@@ -168,6 +168,7 @@ export default function CS2TradingTracker() {
             localStorage.setItem('cs2-auth-dismissed', '1');
             setAuthDismissed(true);
           }}
+          theme={themeStyles}
         />
       )}
 
@@ -310,7 +311,7 @@ export default function CS2TradingTracker() {
         </div>
       )}
 
-      {showAbout && <AboutModal onClose={closeModal} />}
+      {showAbout && <AboutModal onClose={closeModal} theme={themeStyles} />}
 
       {/* Handle Items modal */}
       {showHandleItems && (
