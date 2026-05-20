@@ -33,10 +33,13 @@ function buildDescIndex(descriptions = []) {
 // Returns true for medals, coins, and other collectibles that have no
 // trade/investment value. Checks the Steam tags array on the description.
 function isCollectible(desc) {
-  return (desc.tags || []).some(t =>
+  if ((desc.tags || []).some(t =>
     t.internal_name === 'CSGO_Type_Collectible' ||
     (t.category === 'Type' && (t.localized_tag_name || '').toLowerCase().includes('collectible'))
-  );
+  )) return true;
+  // Vanilla (stock) weapons have type starting with "Stock"
+  if ((desc.type || '').startsWith('Stock')) return true;
+  return false;
 }
 
 export async function runSync({ force = false, steamId = null } = {}) {
