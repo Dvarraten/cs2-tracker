@@ -6,12 +6,12 @@ import logoSrc from '../utils/skinroi-logo.svg';
 import logoLightSrc from '../utils/skinroi-logo-light.svg';
 
 const features = [
-  { icon: RefreshCw, text: 'Automatic Steam inventory sync — detects incoming and outgoing items' },
-  { icon: TrendingUp, text: 'Profit & loss tracking after platform fees across CSFloat, Buff163, YouPin, CSMoney' },
-  { icon: Layers, text: 'Pending Purchases tab for items in 7-day Steam trade hold' },
-  { icon: Tag, text: 'Tag-based skin autocomplete — type "but dop fn" to find Butterfly Knife Doppler FN' },
-  { icon: Globe, text: 'Live USD ↔ CNY conversion wired into every price input' },
-  { icon: BarChart3, text: 'Analytics: P&L over time, weekly / monthly summaries, 90-day heatmap' },
+  { icon: RefreshCw, text: 'Automatic Steam inventory sync. Tradeable items appear instantly. To track trade-protected items before the hold lifts, connect your Steam account in Handle Items.' },
+  { icon: TrendingUp, text: 'Profit and loss tracking with accurate fee deductions across CSFloat, Buff163, Youpin, CS.MONEY and more.' },
+  { icon: Layers, text: 'Pending tab for items in 7-day Steam trade hold.' },
+  { icon: Tag, text: 'Smart skin autocomplete. Type "kara fade fn" to find Karambit Fade Factory New.' },
+  { icon: Globe, text: 'Live currency conversion between any two currencies on every price input.' },
+  { icon: BarChart3, text: 'Analytics with P&L chart, weekly and monthly summaries and a 30-day heatmap.' },
 ];
 
 export default function AboutModal({ onClose, theme }) {

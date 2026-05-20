@@ -1,8 +1,8 @@
 // Free-form currency converter — both fields have their own currency
 // selector. The right field's currency also drives the display currency
 // used in all price pair inputs across the app.
-import React, { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Copy, Check, ChevronDown } from "lucide-react";
 import { CURRENCIES } from "../../hooks/useExchangeRate";
 
 function CopyButton({ value }) {
@@ -31,16 +31,43 @@ function CopyButton({ value }) {
 }
 
 function CurrencySelect({ value, onChange, theme }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
   return (
-    <select
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      className={`${theme.input} text-[10px] font-mono rounded px-1.5 py-0.5 border focus:outline-none ${theme.text} cursor-pointer`}
-    >
-      {CURRENCIES.map(c => (
-        <option key={c.code} value={c.code}>{c.code}</option>
-      ))}
-    </select>
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-1 px-1.5 h-7 rounded border text-[10px] font-mono font-medium transition-colors ${theme.input} ${theme.text}`}
+      >
+        {value}
+        <ChevronDown size={9} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className={`absolute right-0 top-8 z-50 w-20 max-h-52 overflow-y-auto rounded-lg border ${theme.panelBorder} ${theme.panel} shadow-xl`}>
+          {CURRENCIES.map(c => (
+            <button
+              key={c.code}
+              type="button"
+              onClick={() => { onChange(c.code); setOpen(false); }}
+              className={`w-full text-left px-2.5 py-1.5 text-xs font-mono transition-colors ${
+                c.code === value ? `${theme.text} bg-white/10` : `${theme.textSecondary} ${theme.itemHoverBg}`
+              }`}
+            >
+              {c.code}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
