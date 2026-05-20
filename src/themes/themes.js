@@ -23,6 +23,7 @@ export const themes = {
   default: {
     name: "Midnight Blue",
     dot: "bg-blue-500",
+    dotColor: "#3b82f6",
     bg: "bg-[#0c1120]",
     card: "bg-[#151f35]",
     cardHover: "hover:border-slate-500/50",
@@ -55,6 +56,7 @@ export const themes = {
   dark: {
     name: "Dark",
     dot: "bg-[#3b82f6]",
+    dotColor: "#3b82f6",
     bg: "bg-[#0a0b0f]",
     card: "bg-[#111318]",
     cardHover: "hover:border-[#1e2028]/80",
@@ -86,6 +88,7 @@ export const themes = {
   light: {
     name: "Light",
     dot: "bg-blue-500",
+    dotColor: "#3b82f6",
     bg: "bg-[#e8eaed]",
     card: "bg-[#f0f2f5]",
     cardHover: "hover:border-slate-400",
@@ -118,6 +121,7 @@ export const themes = {
   arctic: {
     name: "Arctic",
     dot: "bg-sky-400",
+    dotColor: "#38bdf8",
     bg: "bg-[#1a2332]",
     card: "bg-[#1f2d40]",
     cardHover: "hover:border-sky-600/40",
@@ -149,6 +153,7 @@ export const themes = {
   teal: {
     name: "Deep Teal",
     dot: "bg-[#049f9a]",
+    dotColor: "#049f9a",
     bg: "bg-[#081614]",
     card: "bg-[#0d2120]",
     cardHover: "hover:border-teal-600/40",
@@ -180,6 +185,7 @@ export const themes = {
   indigo: {
     name: "Indigo",
     dot: "bg-[#5d36ff]",
+    dotColor: "#5d36ff",
     bg: "bg-[#0d0b1e]",
     card: "bg-[#14113a]",
     cardHover: "hover:border-indigo-500/40",
@@ -211,6 +217,7 @@ export const themes = {
   lavender: {
     name: "Soft Lavender",
     dot: "bg-[#C9ADA7]",
+    dotColor: "#C9ADA7",
     bg: "bg-[#22223B]",
     card: "bg-[#2c2c4a]",
     cardHover: "hover:border-[#9A8C98]/50",
@@ -242,6 +249,7 @@ export const themes = {
   sap: {
     name: "SAP Fiori",
     dot: "bg-[#0070f2]",
+    dotColor: "#0070f2",
     bg: "bg-[#0a1626]",
     card: "bg-[#172638]",
     cardHover: "hover:border-[#0070f2]/40",
@@ -273,6 +281,7 @@ export const themes = {
   graphite: {
     name: "Graphite",
     dot: "bg-zinc-300",
+    dotColor: "#d4d4d8",
     bg: "bg-[#0e0e10]",
     card: "bg-[#18181b]",
     cardHover: "hover:border-zinc-500/40",
@@ -304,6 +313,7 @@ export const themes = {
   olive: {
     name: "Olive",
     dot: "bg-[#75980b]",
+    dotColor: "#75980b",
     bg: "bg-[#0e1209]",
     card: "bg-[#161d0d]",
     cardHover: "hover:border-lime-700/40",

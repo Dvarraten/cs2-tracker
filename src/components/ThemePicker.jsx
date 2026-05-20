@@ -43,7 +43,7 @@ export default function ThemePicker({
                   : `${themeStyles.subtext} ${themeStyles.textHover} hover:bg-white/5`
               }`}
             >
-              <span className={`w-3 h-3 rounded-full flex-shrink-0 ${th.dot}`} />
+              <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: th.dotColor }} />
               <span>{th.name}</span>
               {theme === key && (
                 <svg
