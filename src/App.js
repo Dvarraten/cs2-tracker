@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, TrendingUp, BarChart3, Download, X } from 'lucide-react';
+import { Trash2, TrendingUp, BarChart3, X } from 'lucide-react';
 import { themes } from './themes/themes';
 import './index.css';
 
@@ -254,7 +254,7 @@ export default function CS2TradingTracker() {
         {/* Main Content */}
         <main className="flex-1 min-w-0 flex flex-col gap-4">
 
-          <div className={`sticky top-[72px] z-30 ${themeStyles.bg} -mx-1 px-1 pb-2`}>
+          <div className={`sticky top-[72px] z-40 ${themeStyles.bg} -mx-1 px-1 pb-2`}>
             <TabsAndSearchbar
               theme={themeStyles}
               setActiveTab={setActiveTab} activeTab={activeTab}
@@ -269,18 +269,20 @@ export default function CS2TradingTracker() {
             />
           </div>
 
-          <ItemGrid
-            sellPlatform={sellPlatform} setSellData={setSellData}
-            sellData={sellData} setSellPlatform={setSellPlatform}
-            handleSellItem={handleSellItem} handleDeleteItem={handleDeleteItem}
-            promotePendingItem={promotePendingItem}
-            theme={themeStyles} items={items} sortedItems={sortedItems}
-            searchTerm={searchTerm} activeTab={activeTab}
-            selectMode={selectMode}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelect}
-            TrendingUp={TrendingUp} Trash2={Trash2}
-          />
+          <div className="isolate">
+            <ItemGrid
+              sellPlatform={sellPlatform} setSellData={setSellData}
+              sellData={sellData} setSellPlatform={setSellPlatform}
+              handleSellItem={handleSellItem} handleDeleteItem={handleDeleteItem}
+              promotePendingItem={promotePendingItem}
+              theme={themeStyles} items={items} sortedItems={sortedItems}
+              searchTerm={searchTerm} activeTab={activeTab}
+              selectMode={selectMode}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
+              TrendingUp={TrendingUp} Trash2={Trash2}
+            />
+          </div>
         </main>
       </div>
 

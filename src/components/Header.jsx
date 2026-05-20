@@ -105,13 +105,13 @@ export default function Header({
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen((o) => !o)}
-                className="flex items-center gap-2 hover:bg-white/8 rounded-lg p-1 transition-all"
+                className="flex items-center gap-2 rounded-lg p-1 transition-all hover:bg-white/10 active:scale-95"
               >
                 {user.avatarUrl ? (
                   <img
                     src={user.avatarUrl}
                     alt={user.personaName || ""}
-                    className="w-8 h-8 rounded-full ring-1 ring-white/20"
+                    className={`w-8 h-8 rounded-full ring-2 transition-all ${dropdownOpen ? "ring-white/60 scale-95" : "ring-white/20 hover:ring-white/50"}`}
                   />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
