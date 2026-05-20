@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { CheckCircle, AlertTriangle, RefreshCw, ExternalLink } from 'lucide-react';
 
 const BASE = process.env.REACT_APP_STEAM_SYNC_URL || '';
 
@@ -106,16 +106,26 @@ export default function SteamQRSetup({
         </div>
       ) : (
         <div>
-          <p className={`text-sm font-semibold ${text}`}>Connect Steam account</p>
-          <p className={`text-xs mt-0.5 ${sub}`}>Needed for automatically showing trade-protected items in the list, otherwise they show up when trade-protection lifts.</p>
+          <p className={`text-sm font-semibold ${text}`}>Enable trade-hold detection</p>
+          <p className={`text-xs mt-0.5 ${sub}`}>Without this, trade-protected items appear only after the hold lifts. Token expires daily.</p>
         </div>
       )}
 
-      <p className={`text-xs ${sub}`}>
-        Run{' '}
-        <code className="bg-black/20 px-1 rounded">node scripts/get-refresh-token.mjs</code>
-        {' '}in the project folder, then paste the token it outputs below. Lasts ~6 months.
-      </p>
+      <ol className={`text-xs ${sub} space-y-1 list-none`}>
+        <li className="flex items-start gap-2">
+          <span className="font-bold shrink-0">1.</span>
+          <span>Make sure you're logged into Steam in this browser, then{' '}
+            <a href="https://store.steampowered.com/pointssummary/ajaxgetasyncconfig" target="_blank" rel="noreferrer"
+              className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 inline-flex items-center gap-1">
+              open this page <ExternalLink size={10} />
+            </a>
+          </span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="font-bold shrink-0">2.</span>
+          <span>Find <code className="bg-black/20 px-1 rounded">webapi_token</code> and paste its value below.</span>
+        </li>
+      </ol>
 
       <div className="flex gap-2">
         <input

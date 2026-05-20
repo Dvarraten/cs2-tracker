@@ -11,7 +11,7 @@ import {
   PackagePlus,
   Inbox,
   Info,
-  Shield,
+
   CheckCircle,
 } from "lucide-react";
 import steamLogo from "../assets/platforms/steam.png";
@@ -36,7 +36,6 @@ export default function Header({
   onLogout,
   onExportCSV,
   onImportCSV,
-  onConnectSteam,
   hasRefreshToken = false,
   children,
 }) {
@@ -194,21 +193,11 @@ export default function Header({
                       Analytics
                     </button>
                     <div className={`border-t ${theme?.panelBorder || 'border-white/10'} mt-1 pt-1`}>
-                      {onConnectSteam && (
-                        hasRefreshToken ? (
-                          <div className="flex items-center gap-3 px-4 py-2.5 text-sm text-emerald-400">
-                            <CheckCircle size={15} />
-                            Connected
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => { onConnectSteam(); setDropdownOpen(false); }}
-                            className={`w-full flex items-center text-left gap-3 px-4 py-2.5 text-sm ${theme?.textSecondary || 'text-slate-300'} ${theme?.textHover || 'hover:text-white'} ${theme?.itemHoverBg || 'hover:bg-white/8'} transition-all`}
-                          >
-                            <Shield size={15} />
-                            Connect Steam account
-                          </button>
-                        )
+                      {hasRefreshToken && (
+                        <div className="flex items-center gap-3 px-4 py-2.5 text-sm text-emerald-400">
+                          <CheckCircle size={15} />
+                          Trade sync active
+                        </div>
                       )}
                       <button
                         onClick={() => { onLogout(); setDropdownOpen(false); }}

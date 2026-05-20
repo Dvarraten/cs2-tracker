@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, ArrowDownCircle, ArrowUpCircle, RefreshCw, AlertTriangle, Clock, CheckCircle, Shield } from 'lucide-react';
-import SteamLoginModal from './SteamLoginModal';
+import { X, ArrowDownCircle, ArrowUpCircle, RefreshCw, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import SteamQRSetup from './SteamQRSetup';
 
 import PricePair from './PricePair';
 import PlatformPicker from './PlatformPicker';
@@ -458,14 +458,6 @@ export default function HandleItemsModal({
   refreshTokenStatus,
 }) {
   const [tab, setTab] = useState('incoming');
-  const [showSteamLogin, setShowSteamLogin] = useState(false);
-  const [loginBannerDismissed, setLoginBannerDismissed] = useState(
-    () => !!localStorage.getItem('skinroi-login-banner-dismissed')
-  );
-  const dismissLoginBanner = () => {
-    localStorage.setItem('skinroi-login-banner-dismissed', '1');
-    setLoginBannerDismissed(true);
-  };
 
   // Lock body scroll while open as a modal — never lock when embedded.
   useEffect(() => {
@@ -589,17 +581,6 @@ export default function HandleItemsModal({
 
   if (!embedded && !open) return null;
 
-  const steamLoginModal = showSteamLogin && (
-    <SteamLoginModal
-      theme={theme}
-      onClose={() => setShowSteamLogin(false)}
-      onSuccess={() => {
-        setShowSteamLogin(false);
-        setLoginBannerDismissed(true);
-        setTimeout(() => refreshTokenStatus?.(), 500);
-      }}
-    />
-  );
 
   const incomingCount = visibleIncoming.length;
   const outgoingCount = outgoing.length;
@@ -656,26 +637,10 @@ export default function HandleItemsModal({
           </div>
         )}
 
-        {/* Steam login banner — shown when no refresh token and not dismissed */}
-        {!hasRefreshToken && !loginBannerDismissed && (
-          <div className={`flex items-center justify-between gap-3 px-4 py-2.5 border-b ${theme.panelBorder || theme.cardBorder}`}>
-            <div className="flex items-center gap-2 min-w-0">
-              <Shield size={13} className="text-amber-400 shrink-0" />
-              <p className={`text-xs ${theme.subtext} truncate`}>Connect Steam to detect trade-protected items automatically.</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowSteamLogin(true)}
-                className={`relative group flex items-center gap-1 px-2.5 h-7 rounded-lg text-xs font-medium border transition-all ${theme.card} ${theme.cardBorder} ${theme.text}`}
-              >
-                Connect
-                <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 w-0 group-hover:w-full ${theme.dot}`} />
-              </button>
-              <button type="button" onClick={dismissLoginBanner} className="text-slate-500 hover:text-slate-400 transition-colors">
-                <X size={13} />
-              </button>
-            </div>
+        {/* Token setup — shown when no refresh token */}
+        {!hasRefreshToken && (
+          <div className="px-4 py-3 border-b" style={{borderColor: 'inherit'}}>
+            <SteamQRSetup theme={theme} onComplete={refreshTokenStatus} expired={false} hasRefreshToken={false} refreshTokenExp={null} />
           </div>
         )}
 
@@ -803,33 +768,27 @@ export default function HandleItemsModal({
 
   if (embedded) {
     return (
-      <>
-        <div
-          id="section-handle"
-          className={`relative w-full min-h-[480px] ${theme.panel} ${theme.panelBorder} rounded-xl border shadow-lg flex flex-col overflow-hidden`}
-        >
-          {innerUi}
-        </div>
-        {steamLoginModal}
-      </>
+      <div
+        id="section-handle"
+        className={`relative w-full min-h-[480px] ${theme.panel} ${theme.panelBorder} rounded-xl border shadow-lg flex flex-col overflow-hidden`}
+      >
+        {innerUi}
+      </div>
     );
   }
 
   return (
-    <>
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
       <div
-        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-        onClick={onClose}
+        className={`relative w-full max-w-3xl max-h-[85vh] overflow-hidden ${theme.panel || theme.card} ${theme.cardBorder} rounded-2xl border shadow-2xl flex flex-col`}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div
-          className={`relative w-full max-w-3xl max-h-[85vh] overflow-hidden ${theme.panel || theme.card} ${theme.cardBorder} rounded-2xl border shadow-2xl flex flex-col`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {innerUi}
-        </div>
+        {innerUi}
       </div>
-      {steamLoginModal}
-    </>
+    </div>
   );
 }
 

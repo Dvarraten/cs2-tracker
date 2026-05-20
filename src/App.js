@@ -23,7 +23,6 @@ import TabsAndSearchbar from './components/TabsAndSearchbar';
 import Header from './components/Header';
 import HandleItemsModal from './components/HandleItemsModal';
 import AboutModal from './components/AboutModal';
-import SteamLoginModal from './components/SteamLoginModal';
 
 export default function CS2TradingTracker() {
   const { user, loading: authLoading, login, logout } = useAuth();
@@ -72,7 +71,6 @@ export default function CS2TradingTracker() {
   const showAddItem    = activeModal === 'addItem';
   const showHandleItems = activeModal === 'handleItems';
   const showAbout      = activeModal === 'about';
-  const [showSteamLogin, setShowSteamLogin] = useState(false);
   const openModal  = (name) => setActiveModal(prev => prev === name ? null : name);
   const closeModal = () => setActiveModal(null);
 
@@ -203,7 +201,6 @@ export default function CS2TradingTracker() {
         onLogout={logout}
         onExportCSV={() => exportToCSV(items)}
         onImportCSV={handleImportCSV}
-        onConnectSteam={user ? () => setShowSteamLogin(true) : null}
         hasRefreshToken={steamSync.hasRefreshToken}
       >
         <div onClick={e => e.stopPropagation()}>
@@ -329,7 +326,6 @@ export default function CS2TradingTracker() {
       )}
 
       {showAbout && <AboutModal onClose={closeModal} theme={themeStyles} />}
-      {showSteamLogin && <SteamLoginModal theme={themeStyles} onClose={() => setShowSteamLogin(false)} onSuccess={() => { setShowSteamLogin(false); setTimeout(() => steamSync.refreshTokenStatus(), 500); }} />}
 
       {/* Handle Items modal */}
       {showHandleItems && (
