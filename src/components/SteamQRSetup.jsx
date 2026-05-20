@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { ExternalLink, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 
 const BASE = process.env.REACT_APP_STEAM_SYNC_URL || '';
 const TOKEN_URL = 'https://store.steampowered.com/pointssummary/ajaxgetasyncconfig';
@@ -107,46 +107,16 @@ export default function SteamQRSetup({
         </div>
       ) : (
         <div>
-          <p className={`text-sm font-semibold ${text}`}>Enable trade hold detection</p>
-          <p className={`text-xs mt-0.5 ${sub}`}>Required to detect items on a 7-day trade hold. Already tradeable items sync without this.</p>
+          <p className={`text-sm font-semibold ${text}`}>Connect Steam account</p>
+          <p className={`text-xs mt-0.5 ${sub}`}>Needed for automatically showing trade-protected items in the list, otherwise they show up when trade-protection lifts.</p>
         </div>
       )}
 
-      {/* Primary: webapi_token */}
-      <ol className={`text-xs ${sub} flex flex-col gap-1.5 list-none`}>
-        <li className="flex items-start gap-2">
-          <span className="font-bold shrink-0">1.</span>
-          <span>
-            Make sure you're logged into Steam in this browser, then{' '}
-            <a
-              href={TOKEN_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 inline-flex items-center gap-1"
-            >
-              open this page <ExternalLink size={10} />
-            </a>
-          </span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="font-bold shrink-0">2.</span>
-          <span>Find <code className="bg-black/20 px-1 rounded">webapi_token</code> and paste its value below.</span>
-        </li>
-      </ol>
-
-      {/* Developer option: long-lived script token */}
-      <details className="group">
-        <summary className={`text-xs ${sub} cursor-pointer ${textHover} transition-colors list-none flex items-center gap-1`}>
-          <span className="group-open:hidden">▸</span>
-          <span className="hidden group-open:inline">▾</span>
-          Developer option — token lasts ~6 months
-        </summary>
-        <p className={`text-xs ${sub} mt-2`}>
-          Run{' '}
-          <code className="bg-black/20 px-1 rounded">node scripts/get-refresh-token.mjs</code>
-          {' '}in the project folder and paste the output below.
-        </p>
-      </details>
+      <p className={`text-xs ${sub}`}>
+        Run{' '}
+        <code className="bg-black/20 px-1 rounded">node scripts/get-refresh-token.mjs</code>
+        {' '}in the project folder, then paste the token it outputs below. Lasts ~6 months.
+      </p>
 
       <div className="flex gap-2">
         <input
