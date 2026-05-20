@@ -596,7 +596,7 @@ export default function HandleItemsModal({
       onSuccess={() => {
         setShowSteamLogin(false);
         setLoginBannerDismissed(true);
-        refreshTokenStatus?.();
+        setTimeout(() => refreshTokenStatus?.(), 500);
       }}
     />
   );

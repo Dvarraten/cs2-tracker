@@ -329,7 +329,7 @@ export default function CS2TradingTracker() {
       )}
 
       {showAbout && <AboutModal onClose={closeModal} theme={themeStyles} />}
-      {showSteamLogin && <SteamLoginModal theme={themeStyles} onClose={() => setShowSteamLogin(false)} onSuccess={() => { setShowSteamLogin(false); steamSync.refreshTokenStatus(); }} />}
+      {showSteamLogin && <SteamLoginModal theme={themeStyles} onClose={() => setShowSteamLogin(false)} onSuccess={() => { setShowSteamLogin(false); setTimeout(() => steamSync.refreshTokenStatus(), 500); }} />}
 
       {/* Handle Items modal */}
       {showHandleItems && (

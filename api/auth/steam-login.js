@@ -54,9 +54,11 @@ export default async function handler(req, res) {
       // For app-approval flow, pre-register the event so it fires whenever
       // the user approves — the poll action will pick it up.
       session.on('authenticated', async () => {
-        entry.authenticated = true;
-        entry.token = session.refreshToken;
-        try { await storeTokens(steamId, { refreshToken: session.refreshToken }); } catch {}
+        try {
+          await storeTokens(steamId, { refreshToken: session.refreshToken });
+          entry.token = session.refreshToken;
+          entry.authenticated = true; // only mark true AFTER Redis write succeeds
+        } catch {}
       });
       session.on('error', () => {});
 
