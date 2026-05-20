@@ -56,7 +56,7 @@ export const themes = {
   dark: {
     name: "Dark",
     dot: "bg-[#3b82f6]",
-    dotColor: "#3b82f6",
+    dotColor: "#111318",
     bg: "bg-[#0a0b0f]",
     card: "bg-[#111318]",
     cardHover: "hover:border-[#1e2028]/80",
@@ -88,7 +88,7 @@ export const themes = {
   light: {
     name: "Light",
     dot: "bg-blue-500",
-    dotColor: "#3b82f6",
+    dotColor: "#f0f2f5",
     bg: "bg-[#e8eaed]",
     card: "bg-[#f0f2f5]",
     cardHover: "hover:border-slate-400",
