@@ -117,9 +117,11 @@ export default function SteamLoginModal({ onClose, onSuccess, theme }) {
               <div className={`text-xs ${sub} space-y-1.5`}>
                 <p className="font-medium">Approve the login in your Steam app:</p>
                 <ol className="space-y-1 list-none">
-                  <li className="flex items-center gap-2"><span className="text-amber-400 font-bold shrink-0">1.</span> Open the Steam app on your phone</li>
-                  <li className="flex items-center gap-2"><span className="text-amber-400 font-bold shrink-0">2.</span> Tap <span className="font-medium">Approve</span> on the login request</li>
-                  <li className="flex items-center gap-2"><span className="text-amber-400 font-bold shrink-0">3.</span> Select <span className="font-medium">Other</span></li>
+                  <li className="flex items-center gap-2"><span className="text-amber-400 font-bold shrink-0">1.</span> Open Steam Mobile App</li>
+                  <li className="flex items-center gap-2"><span className="text-amber-400 font-bold shrink-0">2.</span> Click <span className="font-medium">Approve</span></li>
+                  <li className="flex items-center gap-2"><span className="text-amber-400 font-bold shrink-0">3.</span> Choose <span className="font-medium">Steam Mobile App (iOS, Android, etc)</span></li>
+                  <li className="flex items-center gap-2"><span className="text-amber-400 font-bold shrink-0">4.</span> Choose <span className="font-medium">Ashburn, VA, US</span></li>
+                  <li className="flex items-center gap-2"><span className="text-amber-400 font-bold shrink-0">5.</span> Choose <span className="font-medium">Other</span></li>
                 </ol>
               </div>
               <div className="flex items-center justify-center gap-2 py-3">
