@@ -204,6 +204,7 @@ export default function CS2TradingTracker() {
         onExportCSV={() => exportToCSV(items)}
         onImportCSV={handleImportCSV}
         onConnectSteam={user ? () => setShowSteamLogin(true) : null}
+        hasRefreshToken={steamSync.hasRefreshToken}
       >
         <div onClick={e => e.stopPropagation()}>
           <ThemePicker
@@ -328,7 +329,7 @@ export default function CS2TradingTracker() {
       )}
 
       {showAbout && <AboutModal onClose={closeModal} theme={themeStyles} />}
-      {showSteamLogin && <SteamLoginModal theme={themeStyles} onClose={() => setShowSteamLogin(false)} onSuccess={() => setShowSteamLogin(false)} />}
+      {showSteamLogin && <SteamLoginModal theme={themeStyles} onClose={() => setShowSteamLogin(false)} onSuccess={() => { setShowSteamLogin(false); steamSync.refreshTokenStatus(); }} />}
 
       {/* Handle Items modal */}
       {showHandleItems && (

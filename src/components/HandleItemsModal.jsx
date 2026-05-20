@@ -593,7 +593,11 @@ export default function HandleItemsModal({
     <SteamLoginModal
       theme={theme}
       onClose={() => setShowSteamLogin(false)}
-      onSuccess={() => { setShowSteamLogin(false); setLoginBannerDismissed(true); }}
+      onSuccess={() => {
+        setShowSteamLogin(false);
+        setLoginBannerDismissed(true);
+        refreshTokenStatus?.();
+      }}
     />
   );
 
