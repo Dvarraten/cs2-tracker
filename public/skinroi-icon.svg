@@ -1,17 +1,19 @@
 <svg viewBox="0 0 128 128" width="128" height="128" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <clipPath id="diamond-clip-sm">
-      <polygon points="64,8 120,64 64,120 8,64"/>
+    <clipPath id="clip">
+      <polygon points="64,6 122,64 64,122 6,64"/>
     </clipPath>
   </defs>
-  <polygon points="64,8 120,64 64,120 8,64" fill="none" stroke="#F3BA2F" stroke-width="2"/>
-  <path d="M 12,90 L 30,78 L 48,86 L 64,68 L 82,74 L 100,52 L 116,40 L 200,0 L 200,200 L 12,200 Z" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)" fill-opacity="0.38"/>
-  <polyline points="12,90 30,78 48,86 64,68 82,74 100,52 116,40" fill="none" stroke="#F3BA2F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="12" cy="90" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="30" cy="78" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="48" cy="86" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="64" cy="68" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="82" cy="74" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="100" cy="52" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
-  <circle cx="116" cy="40" r="2.5" fill="#F3BA2F" clip-path="url(#diamond-clip-sm)"/>
+  <!-- Solid gold diamond background -->
+  <polygon points="64,6 122,64 64,122 6,64" fill="#F3BA2F"/>
+  <!-- Bold dark chart line clipped to diamond -->
+  <polyline points="14,92 32,76 50,84 64,66 80,72 100,50 114,38"
+    fill="none" stroke="#1a1200" stroke-width="10"
+    stroke-linecap="round" stroke-linejoin="round"
+    clip-path="url(#clip)"/>
+  <!-- Dots -->
+  <circle cx="50" cy="84" r="6" fill="#1a1200" clip-path="url(#clip)"/>
+  <circle cx="64" cy="66" r="6" fill="#1a1200" clip-path="url(#clip)"/>
+  <circle cx="80" cy="72" r="6" fill="#1a1200" clip-path="url(#clip)"/>
+  <circle cx="100" cy="50" r="6" fill="#1a1200" clip-path="url(#clip)"/>
 </svg>
