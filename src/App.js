@@ -106,11 +106,13 @@ export default function CS2TradingTracker() {
   }, [items]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stats = {
-    totalActive: items.filter(i => !i.sold).length,
+    totalActive: items.filter(i => !i.sold).reduce((sum, i) => sum + i.purchasePrice, 0),
+    totalActiveCount: items.filter(i => !i.sold).length,
     totalPending: items.filter(i => !i.sold && i.pending).length,
-    totalSold: items.filter(i => i.sold).length,
+    totalSold: items.filter(i => i.sold).reduce((sum, i) => sum + i.purchasePrice + i.profit, 0),
+    totalSoldCount: items.filter(i => i.sold).length,
     totalProfit: items.filter(i => i.sold).reduce((sum, i) => sum + i.profit, 0),
-    totalInvested: items.filter(i => !i.sold).reduce((sum, i) => sum + i.purchasePrice, 0),
+    totalInvested: items.reduce((sum, i) => sum + i.purchasePrice, 0),
   };
 
   const filteredItems = items.filter(item => {

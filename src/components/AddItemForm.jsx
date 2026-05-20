@@ -192,27 +192,19 @@ export default function AddItemForm({
       >
         <button
           onClick={onAdd}
-          className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 active:scale-95
-            ${
-              success ? "bg-profit text-white" : `${theme.accentBg} text-white`
-            }`}
+          className={`relative group flex items-center gap-2 px-5 h-9 rounded-lg text-sm font-medium border transition-all duration-200
+            ${theme.card} ${theme.cardBorder} ${success ? "text-profit" : theme.text}`}
         >
           {success ? (
-            <>
-              <CheckCircle size={15} /> Added!
-            </>
+            <><CheckCircle size={15} /> Added!</>
           ) : formData.pending ? (
-            <>
-              <Clock size={15} className="text-white/70" />
-              {formData.quantity > 1
-                ? `Add ${formData.quantity} Pending`
-                : "Add Pending"}
-            </>
+            <><Clock size={15} />{formData.quantity > 1 ? `Add ${formData.quantity} Pending` : "Add Pending"}</>
           ) : formData.quantity > 1 ? (
             `Add ${formData.quantity} Items`
           ) : (
             "Add Item"
           )}
+          <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${success ? `w-full bg-profit` : `w-0 group-hover:w-full ${theme.dot}`}`} />
         </button>
 
         <button
@@ -228,15 +220,13 @@ export default function AddItemForm({
             });
           }}
           title="Item is on trade hold (not yet received)"
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all
+          className={`relative group flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-medium border transition-all
             ${theme.card} ${theme.cardBorder}
-            ${formData.pending ? "text-warn ring-1 ring-warn/30" : `text-slate-400 ${theme.textHover}`}`}
+            ${formData.pending ? "text-warn" : `${theme.subtext} ${theme.textHover}`}`}
         >
-          <Clock
-            size={15}
-            className={formData.pending ? "text-warn" : "text-slate-500"}
-          />
+          <Clock size={15} />
           Trade hold
+          <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 bg-warn ${formData.pending ? "w-full" : "w-0 group-hover:w-full"}`} />
         </button>
 
         {formData.pending && (

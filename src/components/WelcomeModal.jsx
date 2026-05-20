@@ -3,6 +3,7 @@
 import React from "react";
 import steamLogo from "../assets/platforms/steam.png";
 import logoSrc from "../utils/skinroi-logo.svg";
+import logoLightSrc from "../utils/skinroi-logo-light.svg";
 
 export default function WelcomeModal({ onLogin, onContinue, theme }) {
   const panel       = theme?.panel       || 'bg-[#111827]';
@@ -13,7 +14,7 @@ export default function WelcomeModal({ onLogin, onContinue, theme }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className={`${panel} border ${panelBorder} rounded-2xl p-8 w-full max-w-sm mx-4 flex flex-col items-center gap-6 shadow-2xl`}>
         <div className="flex flex-col items-center gap-2">
-          <img src={logoSrc} alt="SkinROI" style={{ height: '80px', width: 'auto' }} />
+          <img src={theme?.name === 'Light' ? logoLightSrc : logoSrc} alt="SkinROI" style={{ height: '80px', width: 'auto' }} />
           <p className="text-slate-500 text-sm text-center">
             Track your CS2 skin investments across markets and see your real profit, fees, and ROI at a glance.
           </p>

@@ -204,17 +204,14 @@ function SellPlatformPicker({ value, onChange, theme }) {
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`w-full h-9 flex items-center justify-between gap-2 px-3 rounded-lg border text-xs font-medium transition-colors
+        className={`w-full h-8 flex items-center gap-1.5 px-2 rounded-lg border text-[10px] font-medium transition-colors
           ${theme.inputSell} ${theme.text}`}
       >
-        <span className="flex items-center gap-2 min-w-0">
-          <PlatformIcon platform={selected} size={14} />
-          <span className="truncate">{selected.label}</span>
-          <span className={`${theme.subtext} text-[10px]`}>{selected.fee}</span>
-        </span>
+        <PlatformIcon platform={selected} size={13} />
+        <span className="truncate">{selected.label}</span>
         <ChevronDown
-          size={14}
-          className={`text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+          size={10}
+          className={`text-slate-400 transition-transform ml-auto shrink-0 ${open ? "rotate-180" : ""}`}
         />
       </button>
 
@@ -322,7 +319,7 @@ function ItemCard({
       className={`relative ${theme.panel} backdrop-blur-sm rounded-xl border ${
         selectMode && isSelected ? 'border-red-500 ring-2 ring-red-500/40' : theme.cardBorder
       }
-        transition-all duration-300 overflow-hidden flex
+        transition-all duration-300 overflow-hidden
         ${exiting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
         ${soldFeedback && !item.sold ? 'ring-2 ring-profit/60' : ''}
         ${selectMode ? 'cursor-pointer' : ''}
@@ -343,14 +340,14 @@ function ItemCard({
           role="button"
         />
       )}
-      {/* Colored sidebar */}
+      {/* Colored bottom bar */}
       <div
-        className="w-1 flex-shrink-0 rounded-l-xl"
+        className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-xl z-10"
         style={{ backgroundColor: currentBarColor, transition: 'background-color 0.1s' }}
       />
 
       {/* Card content */}
-      <div className="flex-1 p-3 min-w-0 flex flex-col">
+      <div className="flex-1 p-3 pb-4 min-w-0 flex flex-col">
 
         {/* Delete button — absolute top-right */}
         {!selectMode && (
@@ -387,7 +384,7 @@ function ItemCard({
         </div>
 
         {/* Name */}
-        <h3 className={`text-xs font-medium ${theme.textSecondary} leading-snug mb-1.5 line-clamp-2`}>
+        <h3 className={`text-xs font-medium ${theme.textSecondary} mb-1.5 truncate`}>
           {item.itemName}
         </h3>
 
@@ -441,7 +438,7 @@ function ItemCard({
           ) : !item.sold ? (
             <div className="space-y-1.5">
               {/* Platform · Price · Sell — picker and price 50/50, sell fixed */}
-              <div className="grid gap-1.5" style={{ gridTemplateColumns: '1fr 1fr auto' }}>
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'auto 1fr auto' }}>
                 <SellPlatformPicker
                   value={sellPlatform[item.id] || 'csfloat'}
                   onChange={(val) => setSellPlatform(prev => ({ ...prev, [item.id]: val }))}
@@ -453,16 +450,16 @@ function ItemCard({
                     type="number" step="0.01"
                     value={sellData[item.id] || ''}
                     onChange={(e) => setSellData(prev => ({ ...prev, [item.id]: e.target.value }))}
-                    className={`w-full h-9 ${theme.inputSell} rounded-lg pl-5 pr-2 ${theme.text} text-sm font-mono focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                    className={`w-full h-8 ${theme.inputSell} rounded-lg pl-5 pr-2 ${theme.text} text-xs font-mono focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                     placeholder="0.00"
                   />
                 </div>
                 <button
                   onClick={onSell}
-                  className={`px-3 h-9 rounded-lg text-sm font-medium transition-all duration-300 active:scale-95 flex items-center gap-1
+                  className={`px-2 h-8 rounded-lg text-xs font-medium transition-all duration-300 active:scale-95 flex items-center gap-1
                     ${soldFeedback ? 'bg-profit text-white scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
                 >
-                  {soldFeedback ? <><CheckCircle size={13} /> Sold!</> : 'Sell'}
+                  {soldFeedback ? <><CheckCircle size={12} /> Sold!</> : 'Sell'}
                 </button>
               </div>
               {/* Est. profit — shown below when price is typed */}

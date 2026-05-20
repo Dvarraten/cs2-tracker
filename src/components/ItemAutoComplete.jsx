@@ -315,9 +315,12 @@ export default function ItemAutoComplete({ value, onChange, placeholder, theme }
   };
 
   // ─ Render ─
+  // Derive focus-within border from the theme's focus:border-* class so it
+  // matches the theme accent instead of being hardcoded indigo.
+  const focusWithin = '';
   const wrapperClasses = `flex flex-wrap items-center gap-1.5 w-full ${
     theme?.input ?? "bg-slate-800/60 border-slate-600/50"
-  } rounded-lg pl-2 pr-9 py-1.5 min-h-[40px] border focus-within:border-indigo-400/60 transition-colors cursor-text`;
+  } rounded-lg pl-2 pr-9 py-1.5 min-h-[36px] border ${focusWithin} transition-colors cursor-text`;
 
   return (
     <div ref={wrapperRef} className="relative">

@@ -158,7 +158,7 @@ export default function SteamQRSetup({
           value={token}
           onChange={(e) => setToken(e.target.value)}
           placeholder="Paste token here…"
-          className={`flex-1 text-xs px-3 py-2 rounded-lg border ${input} ${text} placeholder-slate-500 focus:outline-none focus:border-indigo-500`}
+          className={`flex-1 text-xs px-3 py-2 rounded-lg border ${input} ${text} placeholder-slate-500 focus:outline-none`}
           onKeyDown={(e) => e.key === 'Enter' && save()}
         />
         <button

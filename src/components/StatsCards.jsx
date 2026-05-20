@@ -44,7 +44,7 @@ export default function StatsCards({ stats, theme }) {
   const cards = [
     {
       label: "Active",
-      value: <AnimatedNumber value={stats.totalActive} />,
+      value: <AnimatedNumber value={stats.totalActive} prefix="$" decimals={2} />,
       icon: Package,
       iconColor: "text-slate-400",
       iconBg: "bg-slate-500/10",
@@ -52,7 +52,7 @@ export default function StatsCards({ stats, theme }) {
     },
     {
       label: "Sold",
-      value: <AnimatedNumber value={stats.totalSold} />,
+      value: <AnimatedNumber value={stats.totalSold} prefix="$" decimals={2} />,
       icon: isGain ? TrendingUp : TrendingDown,
       iconColor: isGain ? "text-profit" : "text-loss",
       iconBg: isGain ? "bg-profit/10" : "bg-loss/10",

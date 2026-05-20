@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import steamLogo from "../assets/platforms/steam.png";
 import logoSrc from "../utils/skinroi-logo.svg";
+import logoLightSrc from "../utils/skinroi-logo-light.svg";
 
 function SteamIcon({ className }) {
   return <img src={steamLogo} alt="" className={className} />;
@@ -61,7 +62,7 @@ export default function Header({
         {/* LEFT: Logo + Nav */}
         <div className="flex items-center gap-8">
           <img
-            src={logoSrc}
+            src={theme?.name === 'Light' ? logoLightSrc : logoSrc}
             alt="SkinROI"
             style={{ height: "52px", width: "auto" }}
           />

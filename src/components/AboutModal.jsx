@@ -3,6 +3,7 @@
 import React from 'react';
 import { X, TrendingUp, RefreshCw, BarChart3, Globe, Tag, Layers } from 'lucide-react';
 import logoSrc from '../utils/skinroi-logo.svg';
+import logoLightSrc from '../utils/skinroi-logo-light.svg';
 
 const features = [
   { icon: RefreshCw, text: 'Automatic Steam inventory sync — detects incoming and outgoing items' },
@@ -28,7 +29,7 @@ export default function AboutModal({ onClose, theme }) {
         onClick={e => e.stopPropagation()}
       >
         <div className={`flex items-center justify-between px-6 py-4 border-b ${panelBorder}`}>
-          <img src={logoSrc} alt="SkinROI" style={{ height: '52px', width: 'auto' }} />
+          <img src={theme?.name === 'Light' ? logoLightSrc : logoSrc} alt="SkinROI" style={{ height: '52px', width: 'auto' }} />
           <button onClick={onClose} className="text-slate-500 hover:text-slate-400 transition-colors">
             <X size={18} />
           </button>

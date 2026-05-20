@@ -26,17 +26,17 @@ function TabButton({ label, count, isActive, onClick, theme, accentClass, badgeC
   return (
     <button
       onClick={onClick}
-      className={`relative pl-5 pr-4 py-2 rounded-lg text-sm font-medium transition-all border flex items-center gap-2 overflow-hidden ${
+      className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all border flex items-center gap-2 group ${
         isActive
           ? `${theme.card} ${theme.cardBorder} ${theme.text}`
           : `bg-transparent ${theme.cardBorder} ${theme.subtext} ${theme.textHover} hover:bg-white/5`
       }`}
     >
-      {isActive && <span className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${accentClass}`} />}
       <span>{label}</span>
       <span className={`text-xs font-semibold font-mono rounded-full px-1.5 py-0.5 ${badgeClass}`}>
         {count}
       </span>
+      <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${accentClass} ${isActive ? "w-full" : "w-0 group-hover:w-full"}`} />
     </button>
   );
 }
@@ -71,7 +71,7 @@ export default function TabsAndSearchbar({
       {/* Tabs */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         <TabButton
-          label="Active" count={stats.totalActive}
+          label="Active" count={stats.totalActiveCount}
           isActive={activeTab === 'active'} onClick={() => switchTab('active')}
           theme={theme} accentClass="bg-blue-500"
           badgeClass={activeTab === 'active' ? `bg-white/15 ${theme.text}` : 'bg-white/5 text-slate-500'}
@@ -87,7 +87,7 @@ export default function TabsAndSearchbar({
           }
         />
         <TabButton
-          label="Sold" count={stats.totalSold}
+          label="Sold" count={stats.totalSoldCount}
           isActive={activeTab === 'sold'} onClick={() => switchTab('sold')}
           theme={theme} accentClass="bg-profit"
           badgeClass={activeTab === 'sold' ? `bg-white/15 ${theme.text}` : 'bg-white/5 text-slate-500'}
