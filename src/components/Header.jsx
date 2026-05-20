@@ -8,6 +8,9 @@ import {
   Download,
   Upload,
   User,
+  PackagePlus,
+  Inbox,
+  Info,
 } from "lucide-react";
 import steamLogo from "../assets/platforms/steam.png";
 import logoSrc from "../utils/skinroi-logo.svg";
@@ -63,14 +66,16 @@ export default function Header({
             style={{ height: "52px", width: "auto" }}
           />
           <nav className="hidden md:flex items-center gap-6">
-            <button onClick={onAddItemClick} className={navBtn(showAddItem)}>
+            <button onClick={onAddItemClick} className={`flex items-center gap-1.5 ${navBtn(showAddItem)}`}>
+              <PackagePlus size={15} />
               Add Item
               <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${showAddItem ? "w-full bg-[#FBBF24]" : "w-0 bg-[#FBBF24] group-hover:w-full"}`} />
             </button>
             <button
               onClick={onHandleItemsClick}
-              className={`flex items-center gap-2 ${navBtn(showHandleItems)}`}
+              className={`flex items-center gap-1.5 ${navBtn(showHandleItems)}`}
             >
+              <Inbox size={15} />
               <span>Handle Items</span>
               {pendingCount > 0 && (
                 <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
@@ -79,11 +84,13 @@ export default function Header({
               )}
               <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${showHandleItems ? "w-full bg-[#FBBF24]" : "w-0 bg-[#FBBF24] group-hover:w-full"}`} />
             </button>
-            <button onClick={onAnalyticsClick} className={navBtn(false)}>
+            <button onClick={onAnalyticsClick} className={`flex items-center gap-1.5 ${navBtn(false)}`}>
+              <BarChart3 size={15} />
               Analytics
               <span className="absolute bottom-0 left-0 h-[2px] w-0 rounded-full bg-[#FBBF24] transition-all duration-200 group-hover:w-full" />
             </button>
-            <button onClick={onAboutClick} className={navBtn(false)}>
+            <button onClick={onAboutClick} className={`flex items-center gap-1.5 ${navBtn(false)}`}>
+              <Info size={15} />
               About
               <span className="absolute bottom-0 left-0 h-[2px] w-0 rounded-full bg-[#FBBF24] transition-all duration-200 group-hover:w-full" />
             </button>

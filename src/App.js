@@ -249,21 +249,6 @@ export default function CS2TradingTracker() {
             />
           </div>
 
-          {/* Utility buttons */}
-          <button
-            onClick={() => openModal('analytics')}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border ${themeStyles.cardBorder} ${themeStyles.subtext} ${themeStyles.textHover} text-sm transition-colors`}
-          >
-            <BarChart3 size={14} />
-            Analytics
-          </button>
-          <button
-            onClick={() => exportToCSV(items)}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border ${themeStyles.cardBorder} ${themeStyles.subtext} ${themeStyles.textHover} text-sm transition-colors`}
-          >
-            <Download size={14} />
-            Export CSV
-          </button>
         </aside>
 
         {/* Main Content */}
