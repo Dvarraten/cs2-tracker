@@ -68,6 +68,14 @@ export default async function handler(req, res) {
     if (!cached) return res.status(400).json({ error: 'Session expired. Please start over.' });
 
     try {
+      // If the session was already authenticated via mobile approval, refreshToken
+      // is already set and submitSteamGuardCode throws "DuplicateRequest".
+      if (cached.session.refreshToken) {
+        await storeTokens(steamId, { refreshToken: cached.session.refreshToken });
+        pendingSessions.delete(sessionKey);
+        return res.status(200).json({ ok: true });
+      }
+
       await cached.session.submitSteamGuardCode(code);
 
       const token = await new Promise((resolve, reject) => {
@@ -80,6 +88,12 @@ export default async function handler(req, res) {
       pendingSessions.delete(sessionKey);
       return res.status(200).json({ ok: true });
     } catch (err) {
+      // DuplicateRequest means Steam already authenticated (e.g. mobile approval)
+      if (err.message?.includes('DuplicateRequest') && cached?.session?.refreshToken) {
+        await storeTokens(steamId, { refreshToken: cached.session.refreshToken });
+        pendingSessions.delete(sessionKey);
+        return res.status(200).json({ ok: true });
+      }
       pendingSessions.delete(sessionKey);
       return res.status(400).json({ error: err.message || 'Invalid code' });
     }

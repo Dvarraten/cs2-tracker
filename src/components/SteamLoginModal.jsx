@@ -38,6 +38,7 @@ export default function SteamLoginModal({ onClose, onSuccess, theme }) {
       if (!data.needsGuard) {
         setStep('done');
         onSuccess?.();
+        setTimeout(() => onClose?.(), 2000);
       } else {
         setSessionKey(data.sessionKey);
         setGuardType(data.guardType);
@@ -65,6 +66,7 @@ export default function SteamLoginModal({ onClose, onSuccess, theme }) {
       if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
       setStep('done');
       onSuccess?.();
+      setTimeout(() => onClose?.(), 2000);
     } catch (err) {
       setError(err.message);
       setSlots(['', '', '', '', '']);
