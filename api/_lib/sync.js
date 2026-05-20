@@ -84,6 +84,7 @@ export async function runSync({ force = false, steamId = null } = {}) {
       const next = {
         ...freshForInit,
         hasInitialSnapshot: true,
+        firstSyncAt: freshForInit.firstSyncAt || startedAt,
         snapshot,
         pending: freshForInit.pending
           .filter(p => !dismissedForInit.has(p.assetid))
@@ -141,6 +142,10 @@ export async function runSync({ force = false, steamId = null } = {}) {
     const append = [];
     const newTradeIds = [];
     let maxTime = state.lastTradeTime || 0;
+    const eightDaysAgo = Math.floor(Date.now() / 1000) - 8 * 24 * 60 * 60;
+    const firstSyncTs = state.firstSyncAt
+      ? Math.floor(new Date(state.firstSyncAt).getTime() / 1000)
+      : eightDaysAgo;
 
     for (const trade of trades) {
       maxTime = Math.max(maxTime, trade.time_init || 0);
@@ -154,8 +159,13 @@ export async function runSync({ force = false, steamId = null } = {}) {
             || descIndex.get(`${asset.classid}_0`);
           if (!desc || !desc.market_hash_name) continue;
           const assetid = asset.new_assetid || asset.assetid;
-          // Only surface incoming items currently in inventory (filters old sold items)
-          if (type === 'incoming' && currentAssetIds.size > 0 && !currentAssetIds.has(assetid)) continue;
+          // Incoming: must be in current inventory AND received within 8-day hold window
+          if (type === 'incoming') {
+            if (currentAssetIds.size > 0 && !currentAssetIds.has(assetid)) continue;
+            if ((trade.time_init || 0) < eightDaysAgo) continue;
+          }
+          // Outgoing: only surface trades that happened after the user's first sync
+          if (type === 'outgoing' && (trade.time_init || 0) < firstSyncTs) continue;
           const key = `${type}:${assetid}`;
           if (seen.has(key)) continue;
           append.push({
