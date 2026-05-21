@@ -388,7 +388,7 @@ function ItemCard({
           <h3 className={`text-xs font-medium ${theme.textSecondary} truncate leading-tight`}>
             {baseName}
           </h3>
-          <span className={`text-[10px] ${theme.subtext} opacity-70 font-normal tracking-wide block leading-tight pl-2`}>
+          <span className={`text-xs ${theme.subtext} opacity-70 font-normal block leading-tight mt-1`}>
             {wear || ' '}
           </span>
         </div>
@@ -461,7 +461,7 @@ function ItemCard({
                   {/* Item name for context */}
                   <div className="mb-auto pr-6">
                     <p className={`text-xs font-medium ${theme.textSecondary} truncate leading-tight`}>{baseName}</p>
-                    <span className={`text-[10px] ${theme.subtext} opacity-70 block leading-tight`}>{wear || ' '}</span>
+                    <span className={`text-xs ${theme.subtext} opacity-70 block leading-tight mt-1`}>{wear || ' '}</span>
                   </div>
 
                   {/* Form fields */}

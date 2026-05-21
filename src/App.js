@@ -236,7 +236,7 @@ export default function CS2TradingTracker() {
       <div className="flex gap-6 px-6 overflow-hidden" style={{ height: 'calc(100vh - 72px)' }}>
 
         {/* Sidebar — full height, internal scroll, no scrollbar */}
-        <aside className="w-[360px] shrink-0 flex flex-col gap-4 overflow-y-auto py-6 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <aside className="w-[360px] shrink-0 flex flex-col gap-8 overflow-y-auto py-6 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
           {/* Overview */}
           <div>
