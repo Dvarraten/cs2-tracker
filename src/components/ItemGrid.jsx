@@ -383,16 +383,14 @@ function ItemCard({
           style={{ backgroundColor: currentBarColor, transition: 'background-color 0.1s' }}
         />
 
-        {/* Name + wear */}
+        {/* Name + wear — wear always occupies a line to keep meta row at fixed position */}
         <div className="mb-1.5">
           <h3 className={`text-xs font-medium ${theme.textSecondary} truncate leading-tight`}>
             {baseName}
           </h3>
-          {wear && (
-            <span className={`text-[10px] ${theme.subtext} opacity-70 font-normal tracking-wide`}>
-              {wear}
-            </span>
-          )}
+          <span className={`text-[10px] ${theme.subtext} opacity-70 font-normal tracking-wide block leading-tight`}>
+            {wear || ' '}
+          </span>
         </div>
 
         {/* Meta row — active/pending only */}
@@ -463,7 +461,7 @@ function ItemCard({
                   {/* Item name for context */}
                   <div className="mb-auto pr-6">
                     <p className={`text-xs font-medium ${theme.textSecondary} truncate leading-tight`}>{baseName}</p>
-                    {wear && <span className={`text-[10px] ${theme.subtext} opacity-70`}>{wear}</span>}
+                    <span className={`text-[10px] ${theme.subtext} opacity-70 block leading-tight`}>{wear || ' '}</span>
                   </div>
 
                   {/* Form fields */}
