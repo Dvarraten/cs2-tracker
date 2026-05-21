@@ -3,7 +3,7 @@
 // Trash icon revealed on card hover. Wear on second line. Notes chip top-left.
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Trash2, CheckCircle, ChevronDown, PackageCheck, ChevronRight } from "lucide-react";
+import { Trash2, CheckCircle, ChevronDown, PackageCheck, ChevronRight, X } from "lucide-react";
 import { getPlatformFee } from "../utils/platformFees";
 import { PlatformBadge } from "./PlatformBadge";
 import { useItemImage } from "../utils/itemImages";
@@ -437,7 +437,8 @@ function ItemCard({
               </button>
             </div>
           ) : !item.sold ? (
-            !sellOpen ? (
+            <>
+              {/* Collapsed sell trigger */}
               <button
                 type="button"
                 onClick={() => setSellOpen(true)}
@@ -446,71 +447,92 @@ function ItemCard({
                 Sell
                 <ChevronRight size={12} className="opacity-50" />
               </button>
-            ) : (
-              <div className="space-y-1.5">
-                <SellPlatformPicker
-                  value={sellPlatform[item.id] || 'csfloat'}
-                  onChange={(val) => { setSellPlatform(prev => ({ ...prev, [item.id]: val })); setCustomFee(val === 'other' ? '0' : ''); }}
-                  theme={theme}
-                />
-                {(sellPlatform[item.id] || 'csfloat') === 'other' && (
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="number" min="0" max="100" step="0.1"
-                      value={customFee}
-                      onChange={(e) => setCustomFee(e.target.value)}
-                      placeholder="Fee"
-                      className={`flex-1 h-7 ${theme.inputSell} rounded-lg px-2 ${theme.text} text-xs font-mono focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                    />
-                    <span className={`text-xs ${theme.subtext} shrink-0`}>%</span>
-                  </div>
-                )}
-                <div className="grid gap-1.5" style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr) auto' }}>
-                  <div className="relative">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-mono pointer-events-none">$</span>
-                    <input
-                      type="number" step="0.01"
-                      value={sellData[item.id] || ''}
-                      onChange={(e) => handleSellUsd(e.target.value)}
-                      className={`w-full h-8 ${theme.inputSell} rounded-lg pl-5 pr-2 ${theme.text} text-xs font-mono focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                      placeholder="USD"
-                      autoFocus
-                    />
-                  </div>
-                  <div className="relative">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-mono pointer-events-none">{currencySymbol}</span>
-                    <input
-                      type="number" step="0.01"
-                      value={localSellAmount}
-                      onChange={(e) => handleSellLocal(e.target.value)}
-                      disabled={!exchangeRate}
-                      className={`w-full h-8 ${theme.inputSell} rounded-lg ${currencySymbol.length > 1 ? 'pl-8' : 'pl-5'} pr-2 ${theme.text} text-xs font-mono focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${!exchangeRate ? 'opacity-50' : ''}`}
-                      placeholder={displayCurrency || currencySymbol}
-                    />
-                  </div>
+
+              {/* Sell overlay — absolutely positioned so it never stretches the grid row */}
+              {sellOpen && (
+                <div className={`absolute inset-0 z-10 flex flex-col p-3 rounded-xl ${theme.panel} border ${theme.cardBorder}`}>
+                  {/* Close */}
                   <button
-                    onClick={onSell}
-                    className={`px-2 h-8 rounded-lg text-xs font-medium transition-all duration-300 active:scale-95 flex items-center gap-1
-                      ${soldFeedback ? 'bg-profit text-white scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                    type="button"
+                    onClick={() => setSellOpen(false)}
+                    className="absolute top-1.5 right-1.5 p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/8 transition-colors"
                   >
-                    {soldFeedback ? <><CheckCircle size={12} /> Sold!</> : 'Sell'}
+                    <X size={13} />
                   </button>
-                </div>
-                {estProfit !== null && (
-                  <div className={`rounded-md py-1 px-2 text-xs font-mono font-semibold text-center ${estProfit >= 0 ? 'bg-profit/10 text-profit' : 'bg-loss/10 text-loss'}`}>
-                    {estProfit >= 0 ? '+' : ''}${estProfit.toFixed(2)}
-                    <span className="opacity-60 ml-1">({estProfitPct >= 0 ? '+' : ''}{estProfitPct.toFixed(0)}%)</span>
+
+                  {/* Item name for context */}
+                  <div className="mb-auto pr-6">
+                    <p className={`text-xs font-medium ${theme.textSecondary} truncate leading-tight`}>{baseName}</p>
+                    {wear && <span className={`text-[10px] ${theme.subtext} opacity-70`}>{wear}</span>}
                   </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setSellOpen(false)}
-                  className={`w-full text-[10px] ${theme.subtext} hover:text-slate-300 transition-colors`}
-                >
-                  Cancel
-                </button>
-              </div>
-            )
+
+                  {/* Form fields */}
+                  <div className="space-y-1.5 mt-3">
+                    <SellPlatformPicker
+                      value={sellPlatform[item.id] || 'csfloat'}
+                      onChange={(val) => { setSellPlatform(prev => ({ ...prev, [item.id]: val })); setCustomFee(val === 'other' ? '0' : ''); }}
+                      theme={theme}
+                    />
+                    {(sellPlatform[item.id] || 'csfloat') === 'other' && (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number" min="0" max="100" step="0.1"
+                          value={customFee}
+                          onChange={(e) => setCustomFee(e.target.value)}
+                          placeholder="Fee"
+                          className={`flex-1 h-7 ${theme.inputSell} rounded-lg px-2 ${theme.text} text-xs font-mono focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                        />
+                        <span className={`text-xs ${theme.subtext} shrink-0`}>%</span>
+                      </div>
+                    )}
+                    <div className="grid gap-1.5" style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr) auto' }}>
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-mono pointer-events-none">$</span>
+                        <input
+                          type="number" step="0.01"
+                          value={sellData[item.id] || ''}
+                          onChange={(e) => handleSellUsd(e.target.value)}
+                          className={`w-full h-8 ${theme.inputSell} rounded-lg pl-5 pr-2 ${theme.text} text-xs font-mono focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                          placeholder="USD"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-mono pointer-events-none">{currencySymbol}</span>
+                        <input
+                          type="number" step="0.01"
+                          value={localSellAmount}
+                          onChange={(e) => handleSellLocal(e.target.value)}
+                          disabled={!exchangeRate}
+                          className={`w-full h-8 ${theme.inputSell} rounded-lg ${currencySymbol.length > 1 ? 'pl-8' : 'pl-5'} pr-2 ${theme.text} text-xs font-mono focus:outline-none transition-colors border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${!exchangeRate ? 'opacity-50' : ''}`}
+                          placeholder={displayCurrency || currencySymbol}
+                        />
+                      </div>
+                      <button
+                        onClick={onSell}
+                        className={`px-2 h-8 rounded-lg text-xs font-medium transition-all duration-300 active:scale-95 flex items-center gap-1
+                          ${soldFeedback ? 'bg-profit text-white scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                      >
+                        {soldFeedback ? <><CheckCircle size={12} /> Sold!</> : 'Sell'}
+                      </button>
+                    </div>
+                    {estProfit !== null && (
+                      <div className={`rounded-md py-1 px-2 text-xs font-mono font-semibold text-center ${estProfit >= 0 ? 'bg-profit/10 text-profit' : 'bg-loss/10 text-loss'}`}>
+                        {estProfit >= 0 ? '+' : ''}${estProfit.toFixed(2)}
+                        <span className="opacity-60 ml-1">({estProfitPct >= 0 ? '+' : ''}{estProfitPct.toFixed(0)}%)</span>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setSellOpen(false)}
+                      className={`w-full flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs font-medium border transition-colors ${theme.card} ${theme.cardBorder} ${theme.textSecondary} ${theme.textHover} hover:border-white/20`}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="space-y-1.5">
               <div className="flex items-center gap-1 text-[11px] font-mono">
