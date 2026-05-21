@@ -49,7 +49,17 @@ function getSkinPart(name) {
 // somewhere in the tracker name — that way "Asiimov" or "AK-47 Asiimov" or
 // "AK-47 | Asiimov" all match an outgoing AK-47 | Asiimov, but a tracker
 // item called "AK-47 | Redline" does NOT match (it'd score 0/1 = 0).
+const WEAR_LEVELS = ['Factory New', 'Minimal Wear', 'Field-Tested', 'Well-Worn', 'Battle-Scarred'];
+function getWearLevel(name) {
+  return WEAR_LEVELS.find(w => (name || '').includes(w)) ?? null;
+}
+
 function nameMatchScore(steamName, trackerName) {
+  // Wear levels must match when both names specify one — MW ≠ BS even if the skin name is identical.
+  const sw = getWearLevel(steamName);
+  const tw = getWearLevel(trackerName);
+  if (sw && tw && sw !== tw) return 0;
+
   const steamSkin = getSkinPart(steamName);
 
   if (steamSkin) {
@@ -105,7 +115,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
     if (!v || v <= 0) return;
     setConfirming(true);
     const expectedDelivery = onHold
-      ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       : null;
     onAdd({
       itemName: entry.marketHashName,
@@ -194,6 +204,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
             usdValue={usdPrice}
             cnyValue={cnyPrice}
             onChange={({ usd, cny }) => { setUsdPrice(usd); setCnyPrice(cny); }}
+            onCnyTyped={() => setPlatform('youpin')}
             exchangeRate={exchangeRate}
             theme={theme}
             currencySymbol={currencySymbol}
@@ -226,7 +237,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
                 ${onHold ? 'text-warn' : `${theme.subtext} ${theme.textHover}`}`}
             >
               <Clock size={15} />
-              Trade hold
+              Protected
               <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 bg-warn ${onHold ? 'w-full' : 'w-0 group-hover:w-full'}`} />
             </button>
             <button
@@ -237,12 +248,124 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
                 ${theme.card} ${theme.cardBorder} ${confirming ? 'text-profit' : theme.text}
                 disabled:opacity-40 disabled:cursor-not-allowed`}
             >
-              {confirming ? <><CheckCircle size={15} /> Added!</> : onHold ? 'Add as pending' : 'Add to tracker'}
+              {confirming ? <><CheckCircle size={15} /> Added!</> : onHold ? 'Add as protected' : 'Add to tracker'}
               <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${confirming ? 'w-full bg-profit' : `w-0 group-hover:w-full ${theme.dot}`}`} />
             </button>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function GroupedIncomingRow({ entries, onAddAll, onDismissAll, theme, exchangeRate, currencySymbol, displayCurrency }) {
+  const [usdPrice, setUsdPrice] = useState('');
+  const [cnyPrice, setCnyPrice] = useState('');
+  const [platform, setPlatform] = useState('csfloat');
+  const [customFee, setCustomFee] = useState('');
+  const [onHold, setOnHold] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const rep = entries[0];
+  const count = entries.length;
+
+  const submitAll = () => {
+    const v = parseFloat(usdPrice);
+    if (!v || v <= 0) return;
+    setConfirming(true);
+    const expectedDelivery = onHold
+      ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+    onAddAll({
+      itemName: rep.marketHashName,
+      purchasePrice: v,
+      platform,
+      pending: onHold,
+      expectedDelivery,
+      notes: '',
+      iconUrl: rep.iconUrl
+        ? `https://community.akamai.steamstatic.com/economy/image/${rep.iconUrl}/96fx96f`
+        : null,
+    });
+  };
+
+  return (
+    <div className={`flex flex-col gap-3 p-3 rounded-lg ${theme.card} border ${theme.cardBorder}`}>
+      <div className="flex items-start gap-3">
+        <ItemImage iconUrl={rep.iconUrl} alt={rep.marketHashName} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <div className={`text-sm font-semibold ${theme.text} truncate`}>{rep.marketHashName}</div>
+            <span className={`shrink-0 text-[11px] font-bold px-1.5 py-0.5 rounded-full ${theme.accentBg} text-white`}>×{count}</span>
+          </div>
+          <div className="text-[11px] text-slate-500 mt-0.5">
+            {count} items — set one price to add all
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onDismissAll}
+          className="text-slate-500 hover:text-slate-200 p-1 rounded hover:bg-white/5"
+          title="Dismiss all"
+        >
+          <X size={14} />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <PricePair
+          usdValue={usdPrice}
+          cnyValue={cnyPrice}
+          onChange={({ usd, cny }) => { setUsdPrice(usd); setCnyPrice(cny); }}
+          exchangeRate={exchangeRate}
+          theme={theme}
+          currencySymbol={currencySymbol}
+          displayCurrency={displayCurrency}
+        />
+        <PlatformPicker
+          value={platform}
+          onChange={(val) => { setPlatform(val); setCustomFee(val === 'other' ? '0' : ''); }}
+          theme={theme}
+          platforms={PLATFORMS}
+        />
+        {platform === 'other' && (
+          <div className="flex items-center gap-1.5">
+            <input
+              type="number" min="0" max="100" step="0.1"
+              value={customFee}
+              onChange={(e) => setCustomFee(e.target.value)}
+              placeholder="Fee %"
+              className={`w-24 h-9 ${theme.input} rounded-lg px-3 ${theme.text} text-sm focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+            />
+            <span className={`text-sm ${theme.subtext}`}>%</span>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setOnHold(h => !h)}
+            className={`relative group flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-medium border transition-all
+              ${theme.card} ${theme.cardBorder}
+              ${onHold ? 'text-warn' : `${theme.subtext} ${theme.textHover}`}`}
+          >
+            <Clock size={15} />
+            Protected
+            <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 bg-warn ${onHold ? 'w-full' : 'w-0 group-hover:w-full'}`} />
+          </button>
+          <button
+            type="button"
+            disabled={confirming || !parseFloat(usdPrice)}
+            onClick={submitAll}
+            className={`relative group flex items-center gap-2 px-5 h-9 rounded-lg text-sm font-medium border transition-all duration-200
+              ${theme.card} ${theme.cardBorder} ${confirming ? 'text-profit' : theme.text}
+              disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            {confirming
+              ? <><CheckCircle size={15} /> Added!</>
+              : onHold ? `Add ${count} as protected` : `Add all ${count}`}
+            <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${confirming ? 'w-full bg-profit' : `w-0 group-hover:w-full ${theme.dot}`}`} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -726,25 +849,49 @@ export default function HandleItemsModal({
                       : "No new items detected. You're all caught up."
                   }
                 />
-              ) : (
-                visibleIncoming.map((entry) => (
+              ) : (() => {
+                // Group visibleIncoming by marketHashName so duplicate items render as one row
+                const groups = [];
+                const seen = new Map();
+                for (const entry of visibleIncoming) {
+                  const k = entry.marketHashName;
+                  if (!seen.has(k)) { seen.set(k, []); groups.push(seen.get(k)); }
+                  seen.get(k).push(entry);
+                }
+                return groups.map(group => group.length === 1 ? (
                   <IncomingRow
-                    key={`in-${entry.assetid}`}
-                    entry={entry}
+                    key={`in-${group[0].assetid}`}
+                    entry={group[0]}
                     theme={theme}
                     exchangeRate={exchangeRate}
                     currencySymbol={currencySymbol}
                     displayCurrency={displayCurrency}
-                    pendingMatch={findPendingMatch(entry)}
+                    pendingMatch={findPendingMatch(group[0])}
                     onPromotePending={promotePendingItem}
                     onAdd={(payload) => {
                       addItemDirect(payload);
-                      onDismiss(entry.assetid, 'incoming');
+                      onDismiss(group[0].assetid, 'incoming');
                     }}
                     onDismiss={onDismiss}
                   />
-                ))
-              )}
+                ) : (
+                  <GroupedIncomingRow
+                    key={`group-${group[0].marketHashName}`}
+                    entries={group}
+                    theme={theme}
+                    exchangeRate={exchangeRate}
+                    currencySymbol={currencySymbol}
+                    displayCurrency={displayCurrency}
+                    onAddAll={(payload) => {
+                      group.forEach(e => {
+                        addItemDirect(payload);
+                        onDismiss(e.assetid, 'incoming');
+                      });
+                    }}
+                    onDismissAll={() => group.forEach(e => onDismiss(e.assetid, 'incoming'))}
+                  />
+                ));
+              })()}
             </>
           )}
 
@@ -792,7 +939,7 @@ export default function HandleItemsModal({
       onClick={onClose}
     >
       <div
-        className={`relative w-full max-w-3xl max-h-[85vh] overflow-hidden ${theme.panel || theme.card} ${theme.cardBorder} rounded-2xl border shadow-2xl flex flex-col`}
+        className={`relative w-full max-w-3xl h-[85vh] overflow-hidden ${theme.panel || theme.card} ${theme.cardBorder} rounded-2xl border shadow-2xl flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         {innerUi}

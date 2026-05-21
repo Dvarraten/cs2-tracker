@@ -1,7 +1,7 @@
 // The main item list — renders cards for Active, Pending, and Sold tabs.
 // Sell form collapses to a single button by default; click to expand.
 // Trash icon revealed on card hover. Wear on second line. Notes chip top-left.
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Trash2, CheckCircle, ChevronDown, PackageCheck, ChevronRight, X } from "lucide-react";
 import { getPlatformFee } from "../utils/platformFees";
@@ -42,9 +42,9 @@ function formatDeliveryCountdown(expectedDelivery) {
     : expectedDelivery;
   if (isNaN(ts)) return null;
   const days = Math.round((ts - Date.now()) / (24 * 60 * 60 * 1000));
-  if (days > 1) return { label: `${days}d hold`, overdue: false };
-  if (days === 1) return { label: '1d hold', overdue: false };
-  if (days === 0) return { label: 'Due today', overdue: false };
+  if (days > 1) return { label: `Protected · ${days}d`, overdue: false };
+  if (days === 1) return { label: 'Protected · 1d', overdue: false };
+  if (days === 0) return { label: 'Protected · today', overdue: false };
   return { label: 'Tradeable', overdue: true };
 }
 
@@ -247,13 +247,14 @@ function ItemCard({
   handleSellItem, handleDeleteItem, promotePendingItem,
   selectMode, isSelected, onToggleSelect,
   exchangeRate, currencySymbol, displayCurrency,
+  initialSellOpen = false,
 }) {
   const [barColor, setBarColor] = useState(accentHex);
   const [localSellAmount, setLocalSellAmount] = useState('');
   const [customFee, setCustomFee] = useState('');
   const [exiting, setExiting] = useState(false);
   const [soldFeedback, setSoldFeedback] = useState(false);
-  const [sellOpen, setSellOpen] = useState(false);
+  const [sellOpen, setSellOpen] = useState(initialSellOpen);
   const sellAnimRef = useRef(null);
 
   const soldBarColor = item.profit >= 0 ? '#30914c' : '#f53232';
@@ -295,6 +296,7 @@ function ItemCard({
     const usd = exchangeRate && val && !isNaN(val)
       ? (parseFloat(val) / exchangeRate).toFixed(2) : '';
     setSellData(prev => ({ ...prev, [item.id]: usd }));
+    if (val) setSellPlatform(prev => ({ ...prev, [item.id]: 'youpin' }));
   };
 
   const countdown = item.pending ? formatDeliveryCountdown(item.expectedDelivery) : null;
@@ -568,6 +570,58 @@ function ItemCard({
   );
 }
 
+
+// --- StackedCard ---
+// Representative card with xN badge. Clicking Sell expands the group to individual cards.
+function StackedCard({ items, theme, accentHex, onExpand }) {
+  const rep = items[0];
+  const countdown = rep.pending ? formatDeliveryCountdown(rep.expectedDelivery) : null;
+  const isOnHold = rep.pending && countdown && !countdown.overdue;
+  const barColor = isOnHold ? '#f59e0b' : accentHex;
+  const { baseName, wear } = parseItemName(rep.itemName);
+
+  return (
+    <div
+      className={`relative group flex flex-col h-full ${theme.panel} backdrop-blur-sm rounded-xl border ${theme.cardBorder} overflow-hidden`}
+      style={{ animation: 'fadeSlideIn 0.3s ease both' }}
+    >
+      {/* xN badge */}
+      <div className="absolute top-1.5 left-1.5 z-10">
+        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${theme.accentBg} text-white leading-tight block`}>
+          x{items.length}
+        </span>
+      </div>
+      <div className="flex-1 p-3 pb-4 flex flex-col">
+        <div className="-mx-3 -mt-3 mb-0 h-24 relative flex justify-center items-center bg-gradient-to-b from-white/[0.06] to-black/25">
+          <ItemThumbnail item={rep} />
+        </div>
+        <div className="mx-4 h-[3px] rounded-full mb-3" style={{ backgroundColor: barColor }} />
+        <div className="mb-1.5">
+          <h3 className={`text-xs font-medium ${theme.textSecondary} truncate leading-tight`}>{baseName}</h3>
+          <span className={`text-xs ${theme.subtext} opacity-70 font-normal block leading-tight mt-1`}>{wear || ' '}</span>
+        </div>
+        <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] mb-3">
+          <span className={`font-mono ${theme.text} font-semibold`}>${rep.purchasePrice.toFixed(2)}</span>
+          <span className="text-slate-600">·</span>
+          <span className="text-slate-500">
+            {rep.datePurchased ? new Date(rep.datePurchased).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
+          </span>
+        </div>
+        <div className="mt-auto">
+          <button
+            type="button"
+            onClick={onExpand}
+            className={`w-full flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs font-medium border transition-colors ${theme.card} ${theme.cardBorder} ${theme.textSecondary} ${theme.textHover} hover:border-white/20`}
+          >
+            Sell {items.length} items
+            <ChevronRight size={12} className="opacity-50" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- ItemGrid ---
 
 const INITIAL_VISIBLE = 60;
@@ -582,30 +636,64 @@ export default function ItemGrid({
 }) {
   const accentHex = getThemeAccentHex(theme.accentBg + ' ' + theme.dot);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
   const sentinelRef = useRef(null);
 
   const listKey = `${activeTab}|${searchTerm}|${sortedItems.length}|${sortedItems[0]?.id ?? ''}`;
-  useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [listKey]);
+  useEffect(() => { setVisibleCount(INITIAL_VISIBLE); setExpandedGroups(new Set()); }, [listKey]);
+
+  // Group active non-pending items with identical name+price into stacks.
+  const displayRows = useMemo(() => {
+    if (activeTab !== 'active') return sortedItems.map(item => ({ type: 'item', key: String(item.id), items: [item] }));
+    const map = new Map();
+    const order = [];
+    for (const item of sortedItems) {
+      if (item.pending) { order.push({ type: 'item', key: String(item.id), items: [item] }); continue; }
+      const k = `${item.itemName}||${item.purchasePrice.toFixed(2)}`;
+      if (!map.has(k)) { map.set(k, []); order.push({ type: 'group', key: k, items: map.get(k) }); }
+      map.get(k).push(item);
+    }
+    return order;
+  }, [sortedItems, activeTab]);
+
+  // Flatten groups for pagination (expanded groups count as N rows)
+  const flatRows = useMemo(() => {
+    const rows = [];
+    for (const row of displayRows) {
+      if (row.type === 'item' || row.items.length === 1 || expandedGroups.has(row.key)) {
+        row.items.forEach(item => rows.push({ type: 'item', key: String(item.id), item, expandedSell: row.items.length > 1 && expandedGroups.has(row.key) }));
+      } else {
+        rows.push({ type: 'stack', key: row.key, items: row.items });
+      }
+    }
+    return rows;
+  }, [displayRows, expandedGroups]);
 
   useEffect(() => {
     const node = sentinelRef.current;
-    if (!node || visibleCount >= sortedItems.length) return;
+    if (!node || visibleCount >= flatRows.length) return;
     const obs = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) setVisibleCount(c => Math.min(c + VISIBLE_STEP, sortedItems.length)); },
+      (entries) => { if (entries[0].isIntersecting) setVisibleCount(c => Math.min(c + VISIBLE_STEP, flatRows.length)); },
       { rootMargin: '300px' }
     );
     obs.observe(node);
     return () => obs.disconnect();
-  }, [visibleCount, sortedItems.length]);
+  }, [visibleCount, flatRows.length]);
 
-  const visibleItems = sortedItems.slice(0, visibleCount);
-  const hasMore = visibleCount < sortedItems.length;
+  const visibleRows = flatRows.slice(0, visibleCount);
+  const hasMore = visibleCount < flatRows.length;
 
   const emptyText =
     searchTerm ? 'No items match your search.'
     : activeTab === 'active' ? 'No active items. Add your first purchase!'
     : activeTab === 'pending' ? 'No pending purchases.'
     : 'No sold items yet.';
+
+  const commonCardProps = {
+    theme, accentHex, sellData, setSellData, sellPlatform, setSellPlatform,
+    handleSellItem, handleDeleteItem, promotePendingItem,
+    selectMode, onToggleSelect, exchangeRate, currencySymbol, displayCurrency,
+  };
 
   return (
     <>
@@ -617,30 +705,26 @@ export default function ItemGrid({
           }
         `}</style>
 
-        {visibleItems.map((item, index) => (
-          <ItemCard
-            key={item.id}
-            item={item}
-            index={index}
+        {visibleRows.map((row, index) => row.type === 'stack' ? (
+          <StackedCard
+            key={row.key}
+            items={row.items}
             theme={theme}
             accentHex={accentHex}
-            sellData={sellData}
-            setSellData={setSellData}
-            sellPlatform={sellPlatform}
-            setSellPlatform={setSellPlatform}
-            handleSellItem={handleSellItem}
-            handleDeleteItem={handleDeleteItem}
-            promotePendingItem={promotePendingItem}
-            selectMode={selectMode}
-            isSelected={selectedIds && selectedIds.has(item.id)}
-            onToggleSelect={onToggleSelect}
-            exchangeRate={exchangeRate}
-            currencySymbol={currencySymbol}
-            displayCurrency={displayCurrency}
+            onExpand={() => setExpandedGroups(prev => new Set([...prev, row.key]))}
+          />
+        ) : (
+          <ItemCard
+            key={row.key}
+            item={row.item}
+            index={index}
+            isSelected={selectedIds && selectedIds.has(row.item.id)}
+            initialSellOpen={row.expandedSell}
+            {...commonCardProps}
           />
         ))}
 
-        {sortedItems.length === 0 && (
+        {flatRows.length === 0 && (
           <div className="col-span-full text-center py-12 text-slate-400">
             <p className="text-lg">{emptyText}</p>
           </div>
@@ -649,12 +733,12 @@ export default function ItemGrid({
 
       {hasMore && (
         <div ref={sentinelRef} className="w-full text-center py-6 text-xs text-slate-500">
-          Loading more… ({visibleCount} of {sortedItems.length})
+          Loading more… ({visibleCount} of {flatRows.length})
         </div>
       )}
-      {!hasMore && sortedItems.length > INITIAL_VISIBLE && (
+      {!hasMore && flatRows.length > INITIAL_VISIBLE && (
         <div className="w-full text-center py-4 text-xs text-slate-600">
-          Showing all {sortedItems.length} items
+          Showing all {flatRows.length} item{flatRows.length !== 1 ? 's' : ''}
         </div>
       )}
     </>

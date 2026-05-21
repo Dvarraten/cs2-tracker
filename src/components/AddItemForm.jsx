@@ -47,7 +47,7 @@ export default function AddItemForm({
   };
 
   const defaultDeliveryISO = (() => {
-    const d = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000);
+    const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     return d.toISOString().split("T")[0];
   })();
 
@@ -89,6 +89,7 @@ export default function AddItemForm({
               setFormData({ ...formData, purchasePrice: usd });
               setCnyPrice(cny);
             }}
+            onCnyTyped={() => setFormData(prev => ({ ...prev, platform: 'youpin' }))}
             exchangeRate={exchangeRate}
             theme={theme}
             currencySymbol={currencySymbol}
@@ -220,13 +221,13 @@ export default function AddItemForm({
                 : "",
             });
           }}
-          title="Item is on trade hold (not yet received)"
+          title="Item is Steam trade-protected (not yet received)"
           className={`relative group flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-medium border transition-all
             ${theme.card} ${theme.cardBorder}
             ${formData.pending ? "text-warn" : `${theme.subtext} ${theme.textHover}`}`}
         >
           <Clock size={15} />
-          Trade hold
+          Protected
           <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 bg-warn ${formData.pending ? "w-full" : "w-0 group-hover:w-full"}`} />
         </button>
 

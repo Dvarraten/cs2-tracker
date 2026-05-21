@@ -80,11 +80,11 @@ export const useItems = (steamId) => {
     const purchaseDate = new Date();
     const quantity = Math.max(1, parseInt(formData.quantity) || 1);
     const isPending = !!formData.pending;
-    // Default expected delivery = 8-day Steam trade hold.
+    // Default expected delivery = exactly 7 days (168 hours) — Steam trade protection window.
     const expectedDelivery = isPending
       ? formData.expectedDelivery
         ? new Date(formData.expectedDelivery).getTime()
-        : Date.now() + 8 * 24 * 60 * 60 * 1000
+        : Date.now() + 7 * 24 * 60 * 60 * 1000
       : null;
 
     const newItems = Array.from({ length: quantity }, (_, i) => ({
