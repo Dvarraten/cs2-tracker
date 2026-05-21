@@ -1,5 +1,5 @@
-// Sticky app header — logo, nav buttons, pending-item badge, user account
-// dropdown (login/logout, import/export CSV).
+// Sticky app header — logo, nav buttons, currency popover, theme picker,
+// pending-item badge, and user account dropdown.
 import React, { useRef, useState, useEffect } from "react";
 import {
   BarChart3,
@@ -11,12 +11,15 @@ import {
   PackagePlus,
   Inbox,
   Info,
-
   CheckCircle,
+  ArrowLeftRight,
+  Home,
+  ShieldCheck,
 } from "lucide-react";
 import steamLogo from "../assets/platforms/steam.png";
 import logoSrc from "../utils/skinroi-logo.svg";
 import logoLightSrc from "../utils/skinroi-logo-light.svg";
+import CurrencyConverter from "./Sidebar/CurrencyConverter";
 
 function SteamIcon({ className }) {
   return <img src={steamLogo} alt="" className={className} />;
@@ -28,6 +31,7 @@ export default function Header({
   onAddItemClick,
   onHandleItemsClick,
   onAboutClick,
+  onHomeClick,
   showAddItem = false,
   showHandleItems = false,
   pendingCount = 0,
@@ -37,11 +41,28 @@ export default function Header({
   onExportCSV,
   onImportCSV,
   hasRefreshToken = false,
+  tradeHoldDismissed = false,
+  onEnableTradeHold,
+  // Currency converter props (for popover)
+  usdAmount,
+  rmbAmount,
+  sidebarRate,
+  lastUpdated,
+  handleUsdChange,
+  handleRmbChange,
+  currency1,
+  setCurrency1,
+  currency1Symbol,
+  displayCurrency,
+  setDisplayCurrency,
+  currencySymbol,
   children,
 }) {
   const importInputRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const currencyRef = useRef(null);
 
   useEffect(() => {
     if (!dropdownOpen) return;
@@ -54,10 +75,23 @@ export default function Header({
     return () => document.removeEventListener("mousedown", handler);
   }, [dropdownOpen]);
 
+  useEffect(() => {
+    if (!currencyOpen) return;
+    const handler = (e) => {
+      if (currencyRef.current && !currencyRef.current.contains(e.target)) {
+        setCurrencyOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [currencyOpen]);
+
   const navBtn = (active) =>
-    `relative px-1 py-1.5 text-sm font-medium transition-colors group ${
+    `relative px-1 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition-colors group ${
       active ? (theme?.text || "text-white") : `text-slate-400 ${theme?.textHover || "hover:text-white"}`
     }`;
+
+  const accentUnderline = theme?.dot || "bg-blue-500";
 
   return (
     <header className={`w-full sticky top-0 z-50 px-4 pt-3 pb-1 ${theme?.bg || 'bg-[#0c1120]'}`}>
@@ -70,10 +104,16 @@ export default function Header({
             style={{ height: "52px", width: "auto" }}
           />
           <nav className="hidden md:flex items-center gap-6">
+            {/* Home — always active since we're always on the main view */}
+            <button onClick={onHomeClick} className={`flex items-center gap-1.5 ${navBtn(true)}`}>
+              <Home size={15} />
+              Home
+              <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 w-full ${accentUnderline}`} />
+            </button>
             <button onClick={onAddItemClick} className={`flex items-center gap-1.5 ${navBtn(showAddItem)}`}>
               <PackagePlus size={15} />
               Add Item
-              <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${showAddItem ? "w-full bg-[#FBBF24]" : "w-0 bg-[#FBBF24] group-hover:w-full"}`} />
+              <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${showAddItem ? "w-full" : "w-0 group-hover:w-full"} ${accentUnderline}`} />
             </button>
             <button
               onClick={onHandleItemsClick}
@@ -86,23 +126,65 @@ export default function Header({
                   {pendingCount > 99 ? "99+" : pendingCount}
                 </span>
               )}
-              <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${showHandleItems ? "w-full bg-[#FBBF24]" : "w-0 bg-[#FBBF24] group-hover:w-full"}`} />
+              <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${showHandleItems ? "w-full" : "w-0 group-hover:w-full"} ${accentUnderline}`} />
             </button>
             <button onClick={onAnalyticsClick} className={`flex items-center gap-1.5 ${navBtn(false)}`}>
               <BarChart3 size={15} />
               Analytics
-              <span className="absolute bottom-0 left-0 h-[2px] w-0 rounded-full bg-[#FBBF24] transition-all duration-200 group-hover:w-full" />
+              <span className={`absolute bottom-0 left-0 h-[2px] w-0 rounded-full transition-all duration-200 group-hover:w-full ${accentUnderline}`} />
             </button>
             <button onClick={onAboutClick} className={`flex items-center gap-1.5 ${navBtn(false)}`}>
               <Info size={15} />
               About
-              <span className="absolute bottom-0 left-0 h-[2px] w-0 rounded-full bg-[#FBBF24] transition-all duration-200 group-hover:w-full" />
+              <span className={`absolute bottom-0 left-0 h-[2px] w-0 rounded-full transition-all duration-200 group-hover:w-full ${accentUnderline}`} />
             </button>
           </nav>
         </div>
 
         {/* RIGHT */}
         <div className="flex items-center gap-3">
+          {/* Currency converter popover */}
+          <div className="relative" ref={currencyRef}>
+            <button
+              onClick={() => setCurrencyOpen(o => !o)}
+              title="Currency converter"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-colors text-xs font-medium ${
+                currencyOpen
+                  ? `${theme?.card || 'bg-white/10'} ${theme?.cardBorder || 'border-white/10'} ${theme?.text || 'text-white'}`
+                  : `border-transparent text-slate-400 hover:text-slate-200 ${theme?.itemHoverBg || 'hover:bg-white/8'}`
+              }`}
+            >
+              <ArrowLeftRight size={14} />
+              <span className="font-mono text-[11px]">{currency1} / {displayCurrency}</span>
+            </button>
+
+            {currencyOpen && (
+              <div className={`absolute right-0 top-12 w-72 rounded-xl border ${theme?.panelBorder || 'border-white/10'} ${theme?.panel || 'bg-[#151f35]'} shadow-xl p-4 z-[60]`}>
+                <p className={`text-xs font-semibold ${theme?.subtext || 'text-slate-400'} uppercase tracking-wide mb-3`}>Currency Converter</p>
+                <CurrencyConverter
+                  usdAmount={usdAmount}
+                  rmbAmount={rmbAmount}
+                  sidebarRate={sidebarRate}
+                  lastUpdated={lastUpdated}
+                  handleUsdChange={handleUsdChange}
+                  handleRmbChange={handleRmbChange}
+                  theme={theme}
+                  currency1={currency1}
+                  setCurrency1={setCurrency1}
+                  currency1Symbol={currency1Symbol}
+                  displayCurrency={displayCurrency}
+                  setDisplayCurrency={setDisplayCurrency}
+                  currencySymbol={currencySymbol}
+                />
+                {lastUpdated && (
+                  <p className={`text-[10px] ${theme?.subtext || 'text-slate-500'} mt-2 text-center`}>
+                    Rates updated at {lastUpdated}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           {children}
 
           {user ? (
@@ -199,6 +281,15 @@ export default function Header({
                           Trade sync active
                         </div>
                       )}
+                      {!hasRefreshToken && tradeHoldDismissed && onEnableTradeHold && (
+                        <button
+                          onClick={() => { onEnableTradeHold(); setDropdownOpen(false); }}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-blue-400 hover:text-blue-300 ${theme?.itemHoverBg || 'hover:bg-white/8'} transition-all`}
+                        >
+                          <ShieldCheck size={15} />
+                          Enable trade-hold detection
+                        </button>
+                      )}
                       <button
                         onClick={() => { onLogout(); setDropdownOpen(false); }}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 ${theme?.itemHoverBg || 'hover:bg-white/8'} transition-all`}
@@ -214,10 +305,11 @@ export default function Header({
           ) : (
             <button
               onClick={onLogin}
-              className="flex items-center gap-2 bg-[#1b2838] hover:bg-[#2a475e] border border-white/10 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+              className={`relative flex items-center gap-1.5 px-1 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition-colors group text-slate-400 ${theme?.textHover || "hover:text-white"}`}
             >
-              <SteamIcon className="h-4 w-4" />
+              <SteamIcon className="h-3.5 w-3.5" />
               Sign in
+              <span className={`absolute bottom-0 left-0 h-[2px] w-0 rounded-full transition-all duration-200 group-hover:w-full ${accentUnderline}`} />
             </button>
           )}
         </div>

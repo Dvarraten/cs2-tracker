@@ -456,6 +456,8 @@ export default function HandleItemsModal({
   hasRefreshToken = false,
   refreshTokenExp = null,
   refreshTokenStatus,
+  tradeHoldDismissed = false,
+  onDismissTradeHold,
 }) {
   const [tab, setTab] = useState('incoming');
 
@@ -637,10 +639,17 @@ export default function HandleItemsModal({
           </div>
         )}
 
-        {/* Token setup — shown when no refresh token */}
-        {!hasRefreshToken && (
+        {/* Token setup — shown when no refresh token and not dismissed */}
+        {!hasRefreshToken && !tradeHoldDismissed && (
           <div className="px-4 py-3 border-b" style={{borderColor: 'inherit'}}>
             <SteamQRSetup theme={theme} onComplete={refreshTokenStatus} expired={false} hasRefreshToken={false} refreshTokenExp={null} />
+            <button
+              type="button"
+              onClick={onDismissTradeHold}
+              className="mt-2 text-xs text-red-400 hover:text-red-300 transition-colors"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 

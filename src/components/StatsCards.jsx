@@ -1,7 +1,7 @@
-// Summary statistics row — total invested, realised profit, ROI %, and
-// active item count. Values animate via requestAnimationFrame on change.
+// Summary statistics row — Holding, Realised, ROI, and Profit.
+// Values animate via requestAnimationFrame on change.
 import React, { useEffect, useRef, useState } from "react";
-import { Package, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { Package, TrendingUp, TrendingDown } from "lucide-react";
 
 function AnimatedNumber({ value, prefix = "", suffix = "", decimals = 0 }) {
   const [display, setDisplay] = useState(value);
@@ -40,35 +40,41 @@ function AnimatedNumber({ value, prefix = "", suffix = "", decimals = 0 }) {
 export default function StatsCards({ stats, theme }) {
   const profit = stats.totalProfit;
   const isGain = profit >= 0;
+  const roi = stats.totalInvested > 0 ? (profit / stats.totalInvested) * 100 : 0;
+  const isRoiGain = roi >= 0;
 
   const cards = [
     {
-      label: "Active",
+      label: "Holding",
       value: <AnimatedNumber value={stats.totalActive} prefix="$" decimals={2} />,
+      sub: `· ${stats.totalActiveCount} item${stats.totalActiveCount !== 1 ? 's' : ''}`,
       icon: Package,
       iconColor: "text-slate-400",
       iconBg: "bg-slate-500/10",
       valueColor: theme.text,
     },
     {
-      label: "Sold",
+      label: "Realised",
       value: <AnimatedNumber value={stats.totalSold} prefix="$" decimals={2} />,
+      sub: `· ${stats.totalSoldCount} sold`,
       icon: isGain ? TrendingUp : TrendingDown,
       iconColor: isGain ? "text-profit" : "text-loss",
       iconBg: isGain ? "bg-profit/10" : "bg-loss/10",
       valueColor: theme.text,
     },
     {
-      label: "Invested",
-      value: <AnimatedNumber value={stats.totalInvested} prefix="$" decimals={2} />,
-      icon: DollarSign,
-      iconColor: "text-blue-400",
-      iconBg: "bg-blue-500/10",
-      valueColor: theme.text,
+      label: "ROI",
+      value: <>{isRoiGain ? "+" : ""}<AnimatedNumber value={roi} decimals={1} suffix="%" /></>,
+      sub: `· ${isGain ? '+' : ''}$${Math.abs(profit).toFixed(0)} profit`,
+      icon: isRoiGain ? TrendingUp : TrendingDown,
+      iconColor: isRoiGain ? "text-profit" : "text-loss",
+      iconBg: isRoiGain ? "bg-profit/10" : "bg-loss/10",
+      valueColor: isRoiGain ? "text-profit" : "text-loss",
     },
     {
       label: "Profit",
       value: <>{isGain ? "+" : ""}<AnimatedNumber value={profit} prefix="$" decimals={2} /></>,
+      sub: null,
       icon: isGain ? TrendingUp : TrendingDown,
       iconColor: isGain ? "text-profit" : "text-loss",
       iconBg: isGain ? "bg-profit/10" : "bg-loss/10",

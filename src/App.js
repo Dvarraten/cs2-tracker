@@ -17,7 +17,6 @@ import ItemGrid from './components/ItemGrid';
 import AddItemForm from './components/AddItemForm';
 import RecentSales from './components/RecentSales';
 import ProfitChart from './components/ProfitChart';
-import CurrencyConverter from './components/Sidebar/CurrencyConverter';
 import ThemePicker from './components/ThemePicker';
 import TabsAndSearchbar from './components/TabsAndSearchbar';
 import Header from './components/Header';
@@ -62,6 +61,7 @@ export default function CS2TradingTracker() {
   const [activeTab, setActiveTab] = useState('active');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [tradeHoldDismissed, setTradeHoldDismissed] = useState(() => !!localStorage.getItem('skinroi-tradehold-dismissed'));
   const [activeModal, setActiveModal] = useState(null); // null | 'analytics' | 'addItem' | 'handleItems' | 'about'
   const [chartPeriod, setChartPeriod] = useState('30d');
   const [theme, setTheme] = useState(() => { const t = localStorage.getItem('cs2-theme'); return t === 'v2' ? 'dark' : (t || 'default'); });
@@ -78,6 +78,9 @@ export default function CS2TradingTracker() {
   const { profitChartData } = useChartData(items, chartPeriod);
 
   useEffect(() => { localStorage.setItem('cs2-theme', theme); }, [theme]);
+
+  const dismissTradeHold = () => { localStorage.setItem('skinroi-tradehold-dismissed', '1'); setTradeHoldDismissed(true); };
+  const enableTradeHold = () => { localStorage.removeItem('skinroi-tradehold-dismissed'); setTradeHoldDismissed(false); };
 
   useEffect(() => {
     if (
@@ -193,6 +196,7 @@ export default function CS2TradingTracker() {
         onAddItemClick={() => openModal('addItem')}
         onHandleItemsClick={() => openModal('handleItems')}
         onAboutClick={() => openModal('about')}
+        onHomeClick={closeModal}
         showAddItem={showAddItem}
         showHandleItems={showHandleItems}
         pendingCount={steamSync.pendingCount}
@@ -202,6 +206,20 @@ export default function CS2TradingTracker() {
         onExportCSV={() => exportToCSV(items)}
         onImportCSV={handleImportCSV}
         hasRefreshToken={steamSync.hasRefreshToken}
+        tradeHoldDismissed={tradeHoldDismissed}
+        onEnableTradeHold={enableTradeHold}
+        usdAmount={usdAmount}
+        rmbAmount={rmbAmount}
+        sidebarRate={sidebarRate}
+        lastUpdated={lastUpdated}
+        handleUsdChange={handleUsdChange}
+        handleRmbChange={handleRmbChange}
+        currency1={currency1}
+        setCurrency1={setCurrency1}
+        currency1Symbol={currency1Symbol}
+        displayCurrency={displayCurrency}
+        setDisplayCurrency={setDisplayCurrency}
+        currencySymbol={currencySymbol}
       >
         <div onClick={e => e.stopPropagation()}>
           <ThemePicker
@@ -221,44 +239,25 @@ export default function CS2TradingTracker() {
         <aside className="w-[360px] shrink-0 flex flex-col gap-4 overflow-y-auto py-6 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
           {/* Overview */}
-          <div className={`${themeStyles.panel} border ${themeStyles.panelBorder} rounded-2xl p-4`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Overview</h3>
-              <button
-                onClick={() => openModal('analytics')}
-                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-300 hover:bg-white/8 transition-colors"
-                title="View analytics"
-              >
-                <BarChart3 size={14} />
-              </button>
-            </div>
+          <div>
+            <button
+              onClick={() => openModal('analytics')}
+              className="w-full flex items-center justify-center gap-2 mb-4 group"
+              title="View analytics"
+            >
+              <BarChart3 size={13} className="text-slate-500 group-hover:text-slate-300 transition-colors" />
+              <h3 className="text-xs font-semibold text-slate-500 group-hover:text-slate-300 uppercase tracking-widest transition-colors">Overview</h3>
+            </button>
             <StatsCards stats={stats} theme={themeStyles} />
           </div>
 
           {/* Recent Sales */}
-          <div className={`${themeStyles.panel} border ${themeStyles.panelBorder} rounded-2xl p-4`}>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Recent Sales</h3>
+          <div>
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <TrendingUp size={13} className="text-slate-500" />
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Recent Sales</h3>
+            </div>
             <RecentSales items={items} theme={themeStyles} />
-          </div>
-
-          {/* Currency Converter */}
-          <div className={`${themeStyles.panel} border ${themeStyles.panelBorder} rounded-2xl p-4`}>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Currency Converter</h3>
-            <CurrencyConverter
-              usdAmount={usdAmount}
-              rmbAmount={rmbAmount}
-              sidebarRate={sidebarRate}
-              lastUpdated={lastUpdated}
-              handleUsdChange={handleUsdChange}
-              handleRmbChange={handleRmbChange}
-              theme={themeStyles}
-              currency1={currency1}
-              setCurrency1={setCurrency1}
-              currency1Symbol={currency1Symbol}
-              displayCurrency={displayCurrency}
-              setDisplayCurrency={setDisplayCurrency}
-              currencySymbol={currencySymbol}
-            />
           </div>
 
         </aside>
@@ -347,6 +346,8 @@ export default function CS2TradingTracker() {
           {...steamSync}
           onSync={steamSync.sync}
           onDismiss={steamSync.dismiss}
+          tradeHoldDismissed={tradeHoldDismissed}
+          onDismissTradeHold={dismissTradeHold}
         />
       )}
     </div>

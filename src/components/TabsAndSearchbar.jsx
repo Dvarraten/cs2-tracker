@@ -1,7 +1,7 @@
 // Tab bar (Active / Pending / Sold) with item counts, free-text search,
-// and per-tab sort controls. Also owns the bulk-delete select mode UI.
+// segmented sort control, stacked-view toggle, and bulk-delete select mode.
 import React from "react";
-import { Search } from "lucide-react";
+import { Search, MousePointer2 } from "lucide-react";
 
 const SORTS = {
   active: [
@@ -26,14 +26,14 @@ function TabButton({ label, count, isActive, onClick, theme, accentClass, badgeC
   return (
     <button
       onClick={onClick}
-      className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all border flex items-center gap-2 group ${
+      className={`relative px-4 py-2 text-[11px] font-semibold uppercase tracking-widest transition-all border flex items-center gap-2 group ${
         isActive
-          ? `${theme.card} ${theme.cardBorder} ${theme.text}`
-          : `bg-transparent ${theme.cardBorder} ${theme.subtext} ${theme.textHover} hover:bg-white/5`
+          ? `${theme.card} ${theme.cardBorder} rounded-lg ${theme.text}`
+          : `bg-transparent border ${theme.cardBorder} rounded-lg ${theme.subtext} ${theme.textHover} hover:bg-white/5`
       }`}
     >
       <span>{label}</span>
-      <span className={`text-xs font-semibold font-mono rounded-full px-1.5 py-0.5 ${badgeClass}`}>
+      <span className={`text-[10px] font-semibold font-mono rounded-full px-1.5 py-0.5 ${badgeClass}`}>
         {count}
       </span>
       <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${accentClass} ${isActive ? "w-full" : "w-0 group-hover:w-full"}`} />
@@ -68,12 +68,11 @@ export default function TabsAndSearchbar({
 
   return (
     <div>
-      {/* Tabs */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap mb-3">
         <TabButton
           label="Active" count={stats.totalActiveCount}
           isActive={activeTab === 'active'} onClick={() => switchTab('active')}
-          theme={theme} accentClass="bg-blue-500"
+          theme={theme} accentClass={theme.dot}
           badgeClass={activeTab === 'active' ? `bg-white/15 ${theme.text}` : 'bg-white/5 text-slate-500'}
         />
         <TabButton
@@ -94,10 +93,10 @@ export default function TabsAndSearchbar({
         />
       </div>
 
-      {/* Search + sort + bulk */}
+      {/* Search + segmented sort + stacked toggle + select */}
       <div className="flex items-center gap-2 flex-wrap">
 
-        {/* Search with icon */}
+        {/* Search */}
         <div className="relative flex-1 min-w-[180px]">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
           <input
@@ -109,16 +108,18 @@ export default function TabsAndSearchbar({
           />
         </div>
 
-        {/* Sort buttons */}
-        <div className="flex items-center gap-1">
-          {sorts.map(sort => (
+        {/* Segmented sort control */}
+        <div className={`flex items-center rounded-lg border ${theme.cardBorder} overflow-hidden`}>
+          {sorts.map((sort, i) => (
             <button
               key={sort.label}
               onClick={() => handleSortClick(sort)}
-              className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+              className={`px-3 py-[7px] text-xs font-medium transition-colors whitespace-nowrap ${
+                i > 0 ? `border-l ${theme.cardBorder}` : ''
+              } ${
                 isSortActive(sort)
-                  ? `${theme.card} border ${theme.cardBorder} ${theme.textSecondary}`
-                  : `text-slate-600 hover:text-slate-300 hover:bg-white/5`
+                  ? `${theme.card} ${theme.textSecondary}`
+                  : `text-slate-600 hover:text-slate-300 ${theme.itemHoverBg}`
               }`}
             >
               {sort.label}{sortArrow(sort)}
@@ -126,12 +127,14 @@ export default function TabsAndSearchbar({
           ))}
         </div>
 
-        {/* Bulk select */}
+        {/* Divider + Select — pushed to far right */}
+        <div className="h-5 w-px bg-slate-600/40 ml-auto" />
         {!selectMode ? (
           <button
             onClick={onEnterSelectMode}
-            className={`text-xs px-3 py-2 rounded-lg border ${theme.cardBorder} ${theme.subtext} ${theme.textHover} transition-colors`}
+            className={`flex items-center gap-1.5 text-xs px-3 py-[7px] rounded-lg border ${theme.cardBorder} ${theme.subtext} ${theme.textHover} transition-colors`}
           >
+            <MousePointer2 size={12} />
             Select
           </button>
         ) : (
