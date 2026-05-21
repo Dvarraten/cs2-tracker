@@ -388,7 +388,7 @@ function ItemCard({
           <h3 className={`text-xs font-medium ${theme.textSecondary} truncate leading-tight`}>
             {baseName}
           </h3>
-          <span className={`text-[10px] ${theme.subtext} opacity-70 font-normal tracking-wide block leading-tight`}>
+          <span className={`text-[10px] ${theme.subtext} opacity-70 font-normal tracking-wide block leading-tight pl-2`}>
             {wear || ' '}
           </span>
         </div>
