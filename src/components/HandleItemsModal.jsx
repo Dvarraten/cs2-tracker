@@ -470,15 +470,15 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
       {visibleCandidates.length === 0 ? (
         <div className="text-xs text-warn bg-warn/10 rounded-md px-2 py-1.5">
           {browseAll
-            ? 'No active items match that search. Try a different word, or dismiss if it wasn\'t a tracked sale.'
+            ? "No active items match that search. Try a different word, or dismiss if it wasn't a tracked sale."
             : 'No tracked item matches this name. Use "Browse all" to pick one manually, or dismiss.'}
         </div>
       ) : (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-2">
           <select
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
-            className={`flex-1 min-w-[200px] ${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-sm focus:outline-none border`}
+            className={`w-full ${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-sm focus:outline-none border`}
           >
             {visibleCandidates.map((c) => (
               <option key={c.id} value={c.id}>
@@ -490,24 +490,18 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
             usdValue={usdSalePrice}
             cnyValue={cnySalePrice}
             onChange={({ usd, cny }) => { setUsdSalePrice(usd); setCnySalePrice(cny); }}
+            onCnyTyped={() => setPlatform('youpin')}
             exchangeRate={exchangeRate}
             theme={theme}
             currencySymbol={currencySymbol}
             displayCurrency={displayCurrency}
           />
-          <select
+          <PlatformPicker
             value={platform}
-            onChange={(e) => { setPlatform(e.target.value); setCustomFee(''); }}
-            className={`${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-sm focus:outline-none border`}
-          >
-            <option value="buff163">Buff163</option>
-            <option value="csfloat">CSFloat</option>
-            <option value="csmoney">CS.MONEY</option>
-            <option value="skinswap">SkinSwap</option>
-            <option value="dmarket">DMarket</option>
-            <option value="youpin">Youpin</option>
-            <option value="other">Other</option>
-          </select>
+            onChange={(val) => { setPlatform(val); setCustomFee(val === 'other' ? '0' : ''); }}
+            theme={theme}
+            platforms={PLATFORMS}
+          />
           {platform === 'other' && (
             <div className="flex items-center gap-1.5">
               <input
@@ -515,7 +509,7 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
                 value={customFee}
                 onChange={(e) => setCustomFee(e.target.value)}
                 placeholder="Fee %"
-                className={`w-20 ${theme.input} rounded-md px-2 py-1.5 ${theme.text} text-sm focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                className={`w-24 h-9 ${theme.input} rounded-lg px-3 ${theme.text} text-sm focus:outline-none border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
               />
               <span className={`text-sm ${theme.subtext}`}>%</span>
             </div>
@@ -524,10 +518,11 @@ function OutgoingRow({ entry, candidates, allActiveItems, onMatch, onDismiss, th
             type="button"
             disabled={confirming || !parseFloat(usdSalePrice) || !selectedId || isFuzzyOnly}
             onClick={submit}
-            className={`${theme.accentBg} text-white text-sm font-medium px-3 py-1.5 rounded-md disabled:opacity-40 disabled:cursor-not-allowed`}
             title={isFuzzyOnly ? 'No confident match — use "Browse all" to pick the item manually' : undefined}
+            className={`relative group w-full flex items-center justify-center gap-2 px-5 h-9 rounded-lg text-sm font-medium border transition-all duration-200 ${theme.card} ${theme.cardBorder} ${confirming ? 'text-profit' : theme.text} disabled:opacity-40 disabled:cursor-not-allowed`}
           >
-            {confirming ? 'Marking…' : 'Mark sold'}
+            {confirming ? <><CheckCircle size={15} /> Marked sold!</> : 'Mark sold'}
+            <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${confirming ? 'w-full bg-profit' : 'w-0 group-hover:w-full ' + theme.dot}`} />
           </button>
         </div>
       )}
