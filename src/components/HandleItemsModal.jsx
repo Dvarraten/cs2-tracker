@@ -316,6 +316,7 @@ function GroupedIncomingRow({ entries, onAddAll, onDismissAll, theme, exchangeRa
           usdValue={usdPrice}
           cnyValue={cnyPrice}
           onChange={({ usd, cny }) => { setUsdPrice(usd); setCnyPrice(cny); }}
+          onCnyTyped={() => setPlatform('youpin')}
           exchangeRate={exchangeRate}
           theme={theme}
           currencySymbol={currencySymbol}
@@ -640,12 +641,32 @@ export default function HandleItemsModal({
     for (const [k, arr] of activeByName.entries()) {
       trackedDatesByName.set(k, arr.map(it => (it.datePurchased || '').slice(0, 10)).sort());
     }
+    // Count pending tracked items per name so arriving trade-protected items are
+    // hidden the same way already-active items are — avoids the "Matches a pending
+    // purchase" banner for items the user is already tracking.
+    const pendingCountByName = new Map();
+    for (const it of pendingItems) {
+      const k = (it.itemName || '').toLowerCase();
+      pendingCountByName.set(k, (pendingCountByName.get(k) || 0) + 1);
+    }
     const usedByName = new Map();
+    const usedPendingByName = new Map();
     const visible = [];
     const hidden = [];
     for (const entry of incoming) {
       const k = (entry.marketHashName || '').toLowerCase();
       const entryDate = (entry.detectedAt || '').slice(0, 10);
+
+      // Hide if it matches a pending tracked item (count-aware).
+      const pendingCount = pendingCountByName.get(k) || 0;
+      const usedPending = usedPendingByName.get(k) || 0;
+      if (usedPending < pendingCount) {
+        usedPendingByName.set(k, usedPending + 1);
+        hidden.push(entry);
+        continue;
+      }
+
+      // Hide if it matches a pre-existing active tracked item (count-aware).
       const dates = trackedDatesByName.get(k) || [];
       const used = usedByName.get(k) || 0;
       const preExisting = dates.filter(d => d < entryDate).length;
@@ -657,7 +678,7 @@ export default function HandleItemsModal({
       }
     }
     return { visibleIncoming: visible, hiddenIncoming: hidden };
-  }, [incoming, activeByName]);
+  }, [incoming, activeByName, pendingItems]);
 
   const dismissAllHidden = async () => {
     // Run in parallel — onDismiss is optimistic so the UI updates fast.
@@ -878,12 +899,10 @@ export default function HandleItemsModal({
                     currencySymbol={currencySymbol}
                     displayCurrency={displayCurrency}
                     onAddAll={(payload) => {
-                      group.forEach(e => {
-                        addItemDirect(payload);
-                        onDismiss(e.assetid, 'incoming');
-                      });
+                      group.forEach(() => addItemDirect(payload));
+                      onDismiss(group.map(e => e.assetid), 'incoming');
                     }}
-                    onDismissAll={() => group.forEach(e => onDismiss(e.assetid, 'incoming'))}
+                    onDismissAll={() => onDismiss(group.map(e => e.assetid), 'incoming')}
                   />
                 ));
               })()}

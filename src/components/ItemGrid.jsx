@@ -42,9 +42,9 @@ function formatDeliveryCountdown(expectedDelivery) {
     : expectedDelivery;
   if (isNaN(ts)) return null;
   const days = Math.round((ts - Date.now()) / (24 * 60 * 60 * 1000));
-  if (days > 1) return { label: `Protected · ${days}d`, overdue: false };
-  if (days === 1) return { label: 'Protected · 1d', overdue: false };
-  if (days === 0) return { label: 'Protected · today', overdue: false };
+  if (days > 1) return { label: `${days}d`, overdue: false };
+  if (days === 1) return { label: '1d', overdue: false };
+  if (days === 0) return { label: 'today', overdue: false };
   return { label: 'Tradeable', overdue: true };
 }
 

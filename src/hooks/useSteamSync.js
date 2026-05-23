@@ -87,23 +87,27 @@ export function useSteamSync() {
     }
   }, [fetchState]);
 
-  const dismiss = useCallback(async (assetid, type) => {
-    // Optimistic update so the modal feels snappy.
+  const dismiss = useCallback(async (assetidOrIds, type) => {
+    const assetids = Array.isArray(assetidOrIds) ? assetidOrIds : [assetidOrIds];
+    const ids = new Set(assetids);
+    // Single optimistic update for all ids so concurrent bulk dismisses are atomic.
     setState((prev) => ({
       ...prev,
       pending: prev.pending.filter(
-        (p) => !(p.assetid === assetid && (!type || p.type === type))
+        (p) => !(ids.has(p.assetid) && (!type || p.type === type))
       ),
     }));
-    try {
-      await fetch(`${BASE}/api/inventory/dismiss`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assetid, type }),
-      });
-    } catch (err) {
-      // Best-effort: re-pull authoritative state if the call failed.
-      fetchState();
+    // Sequential API calls — avoids server-side read-modify-write races.
+    for (const assetid of assetids) {
+      try {
+        await fetch(`${BASE}/api/inventory/dismiss`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assetid, type }),
+        });
+      } catch {
+        fetchState();
+      }
     }
   }, [fetchState]);
 
