@@ -630,63 +630,6 @@ export default function HandleItemsModal({
     return best ? { item: best, matchType: 'fuzzy', matchScore: bestScore } : null;
   };
 
-  // Hide incoming entries whose name matches a *pre-existing* tracked item
-  // (count-aware: if you own 3× "AK-47 | Redline (FT)" already in the
-  // tracker and Steam shows 5 such assets, the extra 2 still surface).
-  // "Pre-existing" means datePurchased is strictly before detectedAt —
-  // items added on the same day or later were likely added from this very
-  // incoming event and should not cancel out a sibling entry.
-  const { visibleIncoming, hiddenIncoming } = useMemo(() => {
-    const trackedDatesByName = new Map();
-    for (const [k, arr] of activeByName.entries()) {
-      trackedDatesByName.set(k, arr.map(it => (it.datePurchased || '').slice(0, 10)).sort());
-    }
-    // Count pending tracked items per name so arriving trade-protected items are
-    // hidden the same way already-active items are — avoids the "Matches a pending
-    // purchase" banner for items the user is already tracking.
-    const pendingCountByName = new Map();
-    for (const it of pendingItems) {
-      const k = (it.itemName || '').toLowerCase();
-      pendingCountByName.set(k, (pendingCountByName.get(k) || 0) + 1);
-    }
-    const usedByName = new Map();
-    const usedPendingByName = new Map();
-    const visible = [];
-    const hidden = [];
-    for (const entry of incoming) {
-      const k = (entry.marketHashName || '').toLowerCase();
-      const entryDate = (entry.detectedAt || '').slice(0, 10);
-
-      // Hide if it matches a pending tracked item (count-aware).
-      const pendingCount = pendingCountByName.get(k) || 0;
-      const usedPending = usedPendingByName.get(k) || 0;
-      if (usedPending < pendingCount) {
-        usedPendingByName.set(k, usedPending + 1);
-        hidden.push(entry);
-        continue;
-      }
-
-      // Hide if it matches a pre-existing active tracked item (count-aware).
-      const dates = trackedDatesByName.get(k) || [];
-      const used = usedByName.get(k) || 0;
-      const preExisting = dates.filter(d => d < entryDate).length;
-      if (used < preExisting) {
-        usedByName.set(k, used + 1);
-        hidden.push(entry);
-      } else {
-        visible.push(entry);
-      }
-    }
-    return { visibleIncoming: visible, hiddenIncoming: hidden };
-  }, [incoming, activeByName, pendingItems]);
-
-  const dismissAllHidden = async () => {
-    // Run in parallel — onDismiss is optimistic so the UI updates fast.
-    await Promise.all(
-      hiddenIncoming.map((entry) => onDismiss(entry.assetid, 'incoming'))
-    );
-  };
-
   // Flat list of every active tracked item — used as escape hatch when the
   // user wants to manually pick a match.
   const activeItems = useMemo(
@@ -723,7 +666,7 @@ export default function HandleItemsModal({
   if (!embedded && !open) return null;
 
 
-  const incomingCount = visibleIncoming.length;
+  const incomingCount = incoming.length;
   const outgoingCount = outgoing.length;
 
   // The actual UI — header, status, tabs, body — captured as a single JSX
@@ -834,42 +777,16 @@ export default function HandleItemsModal({
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {tab === 'incoming' && (
             <>
-              {hiddenIncoming.length > 0 && (
-                <div
-                  className={`flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg text-xs ${theme.card} border ${theme.cardBorder} ${theme.subtext}`}
-                >
-                  <span>
-                    Hiding{' '}
-                    <span className={`${theme.text} font-semibold`}>
-                      {hiddenIncoming.length}
-                    </span>{' '}
-                    item{hiddenIncoming.length === 1 ? '' : 's'} that match an
-                    item already in your tracker.
-                  </span>
-                  <button
-                    type="button"
-                    onClick={dismissAllHidden}
-                    className={`${theme.accentBg} text-white text-xs font-medium px-2.5 py-1 rounded-md`}
-                  >
-                    Dismiss them
-                  </button>
-                </div>
-              )}
-
-              {visibleIncoming.length === 0 ? (
+              {incoming.length === 0 ? (
                 <EmptyState
                   theme={theme}
-                  text={
-                    hiddenIncoming.length > 0
-                      ? "Everything currently incoming is already in your tracker — nothing new to handle."
-                      : "No new items detected. You're all caught up."
-                  }
+                  text="No new items detected. You're all caught up."
                 />
               ) : (() => {
-                // Group visibleIncoming by marketHashName so duplicate items render as one row
+                // Group incoming by marketHashName so duplicate items render as one row
                 const groups = [];
                 const seen = new Map();
-                for (const entry of visibleIncoming) {
+                for (const entry of incoming) {
                   const k = entry.marketHashName;
                   if (!seen.has(k)) { seen.set(k, []); groups.push(seen.get(k)); }
                   seen.get(k).push(entry);
