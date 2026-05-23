@@ -219,20 +219,25 @@ export default function ProfitChart({
               {heatmapDays.map((d) => {
                 const intensity =
                   d.profit === 0 ? 0 : Math.min(Math.abs(d.profit) / maxAbs, 1);
+                const bg =
+                  d.profit === 0
+                    ? theme.chartGrid
+                    : d.profit > 0
+                      ? `rgba(34,197,94,${0.15 + intensity * 0.85})`
+                      : `rgba(239,68,68,${0.15 + intensity * 0.85})`;
                 return (
-                  <div
-                    key={d.date}
-                    title={`${d.date}: ${d.profit >= 0 ? "+" : ""}$${d.profit.toFixed(2)}`}
-                    className="w-4 h-4 rounded-sm"
-                    style={{
-                      backgroundColor:
-                        d.profit === 0
-                          ? theme.chartGrid
-                          : d.profit > 0
-                            ? `rgba(34,197,94,${0.15 + intensity * 0.85})`
-                            : `rgba(239,68,68,${0.15 + intensity * 0.85})`,
-                    }}
-                  />
+                  <div key={d.date} className="relative group">
+                    <div
+                      className="w-4 h-4 rounded-sm cursor-default transition-all duration-150 group-hover:scale-[1.5] group-hover:ring-1 group-hover:ring-white/20 group-hover:z-10"
+                      style={{ backgroundColor: bg }}
+                    />
+                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1.5 rounded-lg text-[10px] whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-20 ${theme.panel} border ${theme.cardBorder} shadow-lg`}>
+                      <div className="text-slate-500 mb-0.5">{d.date}</div>
+                      <div className={`font-mono font-semibold ${d.profit === 0 ? theme.subtext : d.profit > 0 ? 'text-profit' : 'text-loss'}`}>
+                        {d.profit === 0 ? '—' : `${d.profit > 0 ? '+' : ''}$${d.profit.toFixed(2)}`}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </div>

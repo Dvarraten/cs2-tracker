@@ -184,6 +184,7 @@ export default function CS2TradingTracker() {
           profitChartData={profitChartData}
           chartPeriod={chartPeriod}
           setChartPeriod={setChartPeriod}
+          stats={stats}
           theme={themeStyles}
           items={items}
           onClose={closeModal}
