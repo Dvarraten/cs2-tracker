@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, TrendingUp, BarChart3, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { themes } from './themes/themes';
 import './index.css';
 
@@ -12,6 +12,7 @@ import { useSteamSync } from './hooks/useSteamSync';
 import { exportToCSV } from './utils/exportCSV';
 import { importFromCSV } from './utils/importCSV';
 
+import CurrencyConverter from './components/Sidebar/CurrencyConverter';
 import StatsCards from './components/StatsCards';
 import ItemGrid from './components/ItemGrid';
 import AddItemForm from './components/AddItemForm';
@@ -64,8 +65,9 @@ export default function CS2TradingTracker() {
   const [tradeHoldDismissed, setTradeHoldDismissed] = useState(() => !!localStorage.getItem('skinroi-tradehold-dismissed'));
   const [activeModal, setActiveModal] = useState(null); // null | 'analytics' | 'addItem' | 'handleItems' | 'about'
   const [chartPeriod, setChartPeriod] = useState('30d');
-  const [theme, setTheme] = useState(() => { const t = localStorage.getItem('cs2-theme'); return t === 'v2' ? 'dark' : (t || 'default'); });
+  const [theme, setTheme] = useState(() => { const t = localStorage.getItem('cs2-theme'); const r = t === 'v2' ? 'dark' : (t || 'bloomberg'); return themes[r] ? r : 'bloomberg'; });
   const [showThemePicker, setShowThemePicker] = useState(false);
+  const [converterPinned, setConverterPinned] = useState(() => !!localStorage.getItem('skinroi-converter-pinned'));
 
   const showAnalytics  = activeModal === 'analytics';
   const showAddItem    = activeModal === 'addItem';
@@ -78,6 +80,10 @@ export default function CS2TradingTracker() {
   const { profitChartData } = useChartData(items, chartPeriod);
 
   useEffect(() => { localStorage.setItem('cs2-theme', theme); }, [theme]);
+  useEffect(() => {
+    if (converterPinned) localStorage.setItem('skinroi-converter-pinned', '1');
+    else localStorage.removeItem('skinroi-converter-pinned');
+  }, [converterPinned]);
 
   const dismissTradeHold = () => { localStorage.setItem('skinroi-tradehold-dismissed', '1'); setTradeHoldDismissed(true); };
   const enableTradeHold = () => { localStorage.removeItem('skinroi-tradehold-dismissed'); setTradeHoldDismissed(false); };
@@ -221,6 +227,8 @@ export default function CS2TradingTracker() {
         displayCurrency={displayCurrency}
         setDisplayCurrency={setDisplayCurrency}
         currencySymbol={currencySymbol}
+        converterPinned={converterPinned}
+        setConverterPinned={setConverterPinned}
       >
         <div onClick={e => e.stopPropagation()}>
           <ThemePicker
@@ -237,29 +245,32 @@ export default function CS2TradingTracker() {
       <div className="flex gap-6 px-6 overflow-hidden" style={{ height: 'calc(100vh - 72px)' }}>
 
         {/* Sidebar — full height, internal scroll, no scrollbar */}
-        <aside className="w-[360px] shrink-0 flex flex-col gap-8 overflow-y-auto py-6 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <aside className="w-[360px] shrink-0 flex flex-col gap-12 overflow-y-auto py-6 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
-          {/* Overview */}
-          <div>
-            <button
-              onClick={() => openModal('analytics')}
-              className="w-full flex items-center justify-center gap-2 mb-4 group"
-              title="View analytics"
-            >
-              <BarChart3 size={13} className="text-slate-500 group-hover:text-slate-300 transition-colors" />
-              <h3 className="text-xs font-semibold text-slate-500 group-hover:text-slate-300 uppercase tracking-widest transition-colors">Overview</h3>
-            </button>
-            <StatsCards stats={stats} theme={themeStyles} />
-          </div>
+          <StatsCards stats={stats} theme={themeStyles} />
 
-          {/* Recent Sales */}
-          <div>
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <TrendingUp size={13} className="text-slate-500" />
-              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Recent Sales</h3>
+          <RecentSales items={items} theme={themeStyles} />
+
+          {/* Currency Converter (when pinned) */}
+          {converterPinned && (
+            <div>
+              <CurrencyConverter
+                usdAmount={usdAmount}
+                rmbAmount={rmbAmount}
+                sidebarRate={sidebarRate}
+                lastUpdated={lastUpdated}
+                handleUsdChange={handleUsdChange}
+                handleRmbChange={handleRmbChange}
+                theme={themeStyles}
+                currency1={currency1}
+                setCurrency1={setCurrency1}
+                currency1Symbol={currency1Symbol}
+                displayCurrency={displayCurrency}
+                setDisplayCurrency={setDisplayCurrency}
+                currencySymbol={currencySymbol}
+              />
             </div>
-            <RecentSales items={items} theme={themeStyles} />
-          </div>
+          )}
 
         </aside>
 
@@ -292,7 +303,6 @@ export default function CS2TradingTracker() {
               selectMode={selectMode}
               selectedIds={selectedIds}
               onToggleSelect={toggleSelect}
-              TrendingUp={TrendingUp} Trash2={Trash2}
               exchangeRate={exchangeRate}
               currencySymbol={currencySymbol}
               displayCurrency={displayCurrency}

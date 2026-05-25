@@ -1,69 +1,99 @@
-// Read-only feature overview modal — describes what SkinROI does and lists
-// the key capabilities available to the user.
 import React from 'react';
-import { X, TrendingUp, RefreshCw, BarChart3, Globe, Tag, Layers } from 'lucide-react';
+import { X, RefreshCw, TrendingUp, Layers, Tag, Globe, BarChart3 } from 'lucide-react';
 import logoSrc from '../utils/skinroi-logo.svg';
 import logoLightSrc from '../utils/skinroi-logo-light.svg';
 
-const features = [
-  { icon: RefreshCw, text: 'Automatic Steam inventory sync. Tradeable items appear instantly. To track trade-protected items before the hold lifts, connect your Steam account in Handle Items.' },
-  { icon: TrendingUp, text: 'Profit and loss tracking with accurate fee deductions across CSFloat, Buff163, Youpin, CS.MONEY and more.' },
-  { icon: Layers, text: 'Pending tab for items in 7-day Steam trade hold.' },
-  { icon: Tag, text: 'Smart skin autocomplete. Type "kara fade fn" to find Karambit Fade Factory New.' },
-  { icon: Globe, text: 'Live currency conversion between any two currencies on every price input.' },
-  { icon: BarChart3, text: 'Analytics with P&L chart, weekly and monthly summaries and a 30-day heatmap.' },
+const FEATURES = [
+  {
+    icon: RefreshCw,
+    title: 'Steam Sync',
+    desc: 'Inventory changes detected automatically. Connect in Handle Items to track trade-protected skins before the hold lifts.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'P&L Tracking',
+    desc: 'Accurate profit after platform fees — CSFloat, Buff163, Youpin, CS.MONEY, DMarket and more.',
+  },
+  {
+    icon: Layers,
+    title: 'Trade Hold Queue',
+    desc: 'Pending tab for items in the 7-day Steam hold. Mark received when they clear.',
+  },
+  {
+    icon: Tag,
+    title: 'Smart Autocomplete',
+    desc: 'Fuzzy skin search. Type "kara fade fn" to find Karambit | Fade (Factory New) instantly.',
+  },
+  {
+    icon: Globe,
+    title: 'Currency Converter',
+    desc: 'Live exchange rates between any two currencies, synced across every price input.',
+  },
+  {
+    icon: BarChart3,
+    title: 'Analytics',
+    desc: 'Cumulative P&L chart, period filters, win rate, and a 30-day daily heatmap.',
+  },
 ];
 
 export default function AboutModal({ onClose, theme }) {
-  const panel       = theme?.panel       || 'bg-[#111827]';
-  const panelBorder = theme?.panelBorder || 'border-white/10';
-  const text        = theme?.textSecondary || 'text-slate-300';
-
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
-        className={`relative w-full max-w-lg ${panel} border ${panelBorder} rounded-2xl shadow-2xl overflow-hidden`}
+        className={`relative w-full max-w-xl max-h-[85vh] flex flex-col ${theme?.panel || 'bg-[#111827]'} border ${theme?.panelBorder || 'border-white/10'} rounded-2xl shadow-2xl overflow-hidden`}
         onClick={e => e.stopPropagation()}
       >
-        <div className={`flex items-center justify-between px-6 py-4 border-b ${panelBorder}`}>
-          <img src={theme?.name === 'Light' ? logoLightSrc : logoSrc} alt="SkinROI" style={{ height: '52px', width: 'auto' }} />
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-400 transition-colors">
+        {/* Header */}
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${theme?.panelBorder || 'border-white/10'} shrink-0`}>
+          <img
+            src={theme?.name === 'Light' ? logoLightSrc : logoSrc}
+            alt="SkinROI"
+            style={{ height: '44px', width: 'auto' }}
+          />
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-300 transition-colors">
             <X size={18} />
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-5">
-          <p className={`${text} text-sm leading-relaxed`}>
-            SkinROI is a personal profit/loss tracker for buying and selling CS2 skins across
-            multiple third-party markets. It connects to your Steam inventory to detect trades
-            automatically and gives you a clear picture of your actual returns after fees.
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+          {/* Description */}
+          <p className={`text-sm leading-relaxed ${theme?.textSecondary || 'text-slate-300'}`}>
+            Personal profit &amp; loss tracker for buying and selling CS2 skins across
+            third-party markets. Connects to your Steam inventory to detect trades automatically
+            and shows your real returns after platform fees.
           </p>
 
-          <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Features</h3>
-            <ul className="space-y-2.5">
-              {features.map(({ icon: Icon, text: featureText }) => (
-                <li key={featureText} className="flex items-start gap-3">
-                  <Icon size={14} className="text-amber-400 mt-0.5 shrink-0" />
-                  <span className={`${text} text-sm`}>{featureText}</span>
-                </li>
-              ))}
-            </ul>
+          {/* Feature grid */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {FEATURES.map(({ icon: Icon, title, desc }) => (
+              <div
+                key={title}
+                className={`${theme?.card || 'bg-white/5'} border ${theme?.cardBorder || 'border-white/8'} rounded-xl p-3.5 flex flex-col gap-2`}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 bg-white/8">
+                    <Icon size={12} className={theme?.accent || 'text-blue-400'} />
+                  </div>
+                  <span className={`text-xs font-semibold ${theme?.text || 'text-white'}`}>{title}</span>
+                </div>
+                <p className={`text-[11px] leading-relaxed ${theme?.subtext || 'text-slate-500'}`}>{desc}</p>
+              </div>
+            ))}
           </div>
 
-          <div className={`pt-1 border-t ${panelBorder}`}>
-            <p className="text-slate-500 text-xs leading-relaxed">
-              SkinROI is not affiliated with or endorsed by Valve Corporation. Counter-Strike,
-              CS2, and Steam are trademarks of Valve Corporation. Item images are served from
-              Steam's CDN; skin metadata via{' '}
+          {/* Disclaimer */}
+          <div className={`border-t ${theme?.panelBorder || 'border-white/10'} pt-4`}>
+            <p className="text-[11px] text-slate-600 leading-relaxed">
+              Not affiliated with or endorsed by Valve Corporation. Counter-Strike, CS2, and
+              Steam are trademarks of Valve Corporation. Skin metadata via{' '}
               <a
                 href="https://github.com/ByMykel/CSGO-API"
                 target="_blank"
                 rel="noreferrer"
-                className="text-slate-500 hover:text-slate-400 underline"
+                className="text-slate-500 hover:text-slate-400 underline underline-offset-2"
               >
                 ByMykel/CSGO-API
               </a>

@@ -2,6 +2,7 @@
 // weekly and monthly profit summaries, and a 90-day sale heatmap.
 import React, { useMemo } from "react";
 import { X } from "lucide-react";
+import { PROFIT_COLOR, LOSS_COLOR } from "../themes/themes";
 import {
   LineChart,
   Line,
@@ -219,12 +220,16 @@ export default function ProfitChart({
               {heatmapDays.map((d) => {
                 const intensity =
                   d.profit === 0 ? 0 : Math.min(Math.abs(d.profit) / maxAbs, 1);
+                const toRgba = (hex, a) => {
+                  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+                  return `rgba(${r},${g},${b},${a})`;
+                };
                 const bg =
                   d.profit === 0
                     ? theme.chartGrid
                     : d.profit > 0
-                      ? `rgba(34,197,94,${0.15 + intensity * 0.85})`
-                      : `rgba(239,68,68,${0.15 + intensity * 0.85})`;
+                      ? toRgba(PROFIT_COLOR, 0.15 + intensity * 0.85)
+                      : toRgba(LOSS_COLOR,   0.15 + intensity * 0.85);
                 return (
                   <div key={d.date} className="relative group">
                     <div

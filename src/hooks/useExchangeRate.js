@@ -50,7 +50,12 @@ export const useExchangeRate = () => {
       .then(r => r.json())
       .then(data => {
         setAllRates({ USD: 1, ...data.rates });
-        setLastUpdated(new Date().toLocaleTimeString());
+        const now = new Date();
+        const month = now.toLocaleString('en-US', { month: 'short' });
+        const day = now.getDate();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        setLastUpdated(`${month} ${day} ${hh}:${mm}`);
       })
       .catch(() => {
         setAllRates({ USD: 1, CNY: 7.15, EUR: 0.92, GBP: 0.79, SEK: 10.5,

@@ -108,6 +108,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
   const [platform, setPlatform] = useState('csfloat');
   const [customFee, setCustomFee] = useState('');
   const [onHold, setOnHold] = useState(false);
+  const [notes, setNotes] = useState('');
   const [confirming, setConfirming] = useState(false);
 
   const submit = () => {
@@ -123,7 +124,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
       platform,
       pending: onHold,
       expectedDelivery,
-      notes: '',
+      notes,
       iconUrl: entry.iconUrl
         ? `https://community.akamai.steamstatic.com/economy/image/${entry.iconUrl}/96fx96f`
         : null,
@@ -210,12 +211,21 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
             currencySymbol={currencySymbol}
             displayCurrency={displayCurrency}
           />
-          <PlatformPicker
-            value={platform}
-            onChange={(val) => { setPlatform(val); setCustomFee(val === 'other' ? '0' : ''); }}
-            theme={theme}
-            platforms={PLATFORMS}
-          />
+          <div className="flex gap-2">
+            <PlatformPicker
+              value={platform}
+              onChange={(val) => { setPlatform(val); setCustomFee(val === 'other' ? '0' : ''); }}
+              theme={theme}
+              platforms={PLATFORMS}
+            />
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Notes…"
+              className={`flex-1 h-9 ${theme.input} rounded-lg px-3 text-sm ${theme.text} placeholder-slate-600 focus:outline-none border`}
+            />
+          </div>
           {platform === 'other' && (
             <div className="flex items-center gap-1.5">
               <input
@@ -264,6 +274,7 @@ function GroupedIncomingRow({ entries, onAddAll, onDismissAll, theme, exchangeRa
   const [platform, setPlatform] = useState('csfloat');
   const [customFee, setCustomFee] = useState('');
   const [onHold, setOnHold] = useState(false);
+  const [notes, setNotes] = useState('');
   const [confirming, setConfirming] = useState(false);
   const rep = entries[0];
   const count = entries.length;
@@ -281,7 +292,7 @@ function GroupedIncomingRow({ entries, onAddAll, onDismissAll, theme, exchangeRa
       platform,
       pending: onHold,
       expectedDelivery,
-      notes: '',
+      notes,
       iconUrl: rep.iconUrl
         ? `https://community.akamai.steamstatic.com/economy/image/${rep.iconUrl}/96fx96f`
         : null,
@@ -322,12 +333,21 @@ function GroupedIncomingRow({ entries, onAddAll, onDismissAll, theme, exchangeRa
           currencySymbol={currencySymbol}
           displayCurrency={displayCurrency}
         />
-        <PlatformPicker
-          value={platform}
-          onChange={(val) => { setPlatform(val); setCustomFee(val === 'other' ? '0' : ''); }}
-          theme={theme}
-          platforms={PLATFORMS}
-        />
+        <div className="flex gap-2">
+          <PlatformPicker
+            value={platform}
+            onChange={(val) => { setPlatform(val); setCustomFee(val === 'other' ? '0' : ''); }}
+            theme={theme}
+            platforms={PLATFORMS}
+          />
+          <input
+            type="text"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Notes…"
+            className={`flex-1 h-9 ${theme.input} rounded-lg px-3 text-sm ${theme.text} placeholder-slate-600 focus:outline-none border`}
+          />
+        </div>
         {platform === 'other' && (
           <div className="flex items-center gap-1.5">
             <input

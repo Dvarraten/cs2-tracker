@@ -108,7 +108,7 @@ export default function CurrencyConverter({
           value={usdAmount}
           onChange={(e) => handleUsdChange(e.target.value)}
           placeholder={currency1}
-          className={`w-full ${theme.input} ${symbolPad(currency1Symbol)} pr-20 py-2 rounded-lg text-sm font-mono ${theme.textSecondary} placeholder-slate-600 focus:outline-none transition-colors border`}
+          className={`w-full ${theme.card} border ${theme.cardBorder} ${symbolPad(currency1Symbol)} pr-20 py-2 rounded-lg text-sm font-mono ${theme.textSecondary} placeholder-slate-600 focus:outline-none transition-colors`}
         />
         <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
           <CurrencySelect value={currency1} onChange={setCurrency1} theme={theme} />
@@ -128,7 +128,7 @@ export default function CurrencyConverter({
           onChange={(e) => handleRmbChange(e.target.value)}
           placeholder={displayCurrency}
           disabled={!sidebarRate}
-          className={`w-full ${theme.input} ${symbolPad(currencySymbol)} pr-20 py-2 rounded-lg text-sm font-mono ${theme.textSecondary} placeholder-slate-600 focus:outline-none transition-colors border ${!sidebarRate ? 'opacity-50' : ''}`}
+          className={`w-full ${theme.card} border ${theme.cardBorder} ${symbolPad(currencySymbol)} pr-20 py-2 rounded-lg text-sm font-mono ${theme.textSecondary} placeholder-slate-600 focus:outline-none transition-colors ${!sidebarRate ? 'opacity-50' : ''}`}
         />
         <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
           <CurrencySelect value={displayCurrency} onChange={setDisplayCurrency} theme={theme} />
@@ -136,11 +136,6 @@ export default function CurrencyConverter({
         </div>
       </div>
 
-      {sidebarRate && (
-        <p className="text-xs text-slate-500 text-center">
-          1 {currency1} ≈ {sidebarRate.toFixed(4)} {displayCurrency}
-        </p>
-      )}
     </div>
   );
 }

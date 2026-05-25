@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { Trash2, CheckCircle, ChevronDown, PackageCheck, ChevronRight, X } from "lucide-react";
 import { getPlatformFee } from "../utils/platformFees";
 import { PlatformBadge } from "./PlatformBadge";
+import { PROFIT_COLOR, LOSS_COLOR, WARN_COLOR } from "../themes/themes";
 import { useItemImage } from "../utils/itemImages";
 import buff163Icon  from "../assets/platforms/buff163.webp";
 import csfloatIcon  from "../assets/platforms/csfloat.webp";
@@ -67,21 +68,6 @@ function lerpColor(a, b, t) {
   const g = Math.round(ag + (bg-ag)*t);
   const b2 = Math.round(ab + (bb-ab)*t);
   return `rgb(${r},${g},${b2})`;
-}
-
-function getThemeAccentHex(accentClass) {
-  const match = accentClass?.match(/#([0-9a-fA-F]{6})/);
-  if (match) return `#${match[1]}`;
-  const map = {
-    'blue-500': '#3b82f6', 'blue-600': '#2563eb',
-    'sky-400': '#38bdf8',  'sky-500': '#0ea5e9',
-    'teal-500': '#14b8a6', 'violet-500': '#8b5cf6',
-    'indigo-500': '#6366f1','lime-500': '#84cc16',
-  };
-  for (const [k, v] of Object.entries(map)) {
-    if (accentClass?.includes(k)) return v;
-  }
-  return '#3b82f6';
 }
 
 // --- sub-components ---
@@ -257,7 +243,7 @@ function ItemCard({
   const [sellOpen, setSellOpen] = useState(initialSellOpen);
   const sellAnimRef = useRef(null);
 
-  const soldBarColor = item.profit >= 0 ? '#30914c' : '#f53232';
+  const soldBarColor = item.profit >= 0 ? PROFIT_COLOR : LOSS_COLOR;
 
   const animateBarTo = (targetColor, duration, onDone) => {
     const start = performance.now();
@@ -275,7 +261,7 @@ function ItemCard({
   const onSell = () => {
     if (!sellData[item.id] || parseFloat(sellData[item.id]) <= 0) return;
     setSoldFeedback(true);
-    animateBarTo('#30914c', 500, () => {
+    animateBarTo(PROFIT_COLOR, 500, () => {
       handleSellItem(item.id, sellPlatform[item.id] || 'csfloat', customFee || undefined);
     });
   };
@@ -304,7 +290,7 @@ function ItemCard({
   const currentBarColor = item.sold
     ? soldBarColor
     : isOnHold
-    ? '#f59e0b'
+    ? WARN_COLOR
     : barColor;
 
   const fee = !item.sold && sellData[item.id] && parseFloat(sellData[item.id]) > 0
@@ -368,20 +354,22 @@ function ItemCard({
           <ItemThumbnail item={item} />
           {item.pending && countdown && (
             <div className="absolute bottom-1.5 left-0 right-0 flex justify-center pointer-events-none">
-              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border backdrop-blur-sm ${
                 countdown.overdue
                   ? 'bg-blue-500/20 text-blue-400 border-blue-500/20'
-                  : 'bg-warn/20 text-warn border-warn/20'
+                  : 'bg-black/50 text-warn border-warn/25'
               }`}>
-                {countdown.label}
+                {countdown.overdue ? '🔓 ' : '✋ '}{countdown.label}
               </span>
             </div>
           )}
         </div>
 
-        {/* Accent bar — inset from edges, directly under image */}
+        {/* Accent bar — only for sold items; pending uses the image overlay instead */}
         <div
-          className="mx-4 h-[3px] rounded-full mb-3"
+          className={`h-[3px] mb-3 ${
+            item.sold ? 'mx-4 rounded-full' : 'mx-4 opacity-0'
+          }`}
           style={{ backgroundColor: currentBarColor, transition: 'background-color 0.1s' }}
         />
 
@@ -390,7 +378,7 @@ function ItemCard({
           <h3 className={`text-xs font-medium ${theme.textSecondary} truncate leading-tight`}>
             {baseName}
           </h3>
-          <span className={`text-xs ${theme.subtext} opacity-70 font-normal block leading-tight mt-1`}>
+          <span className={`text-xs ${theme.subtext} font-normal block leading-tight mt-1`}>
             {wear || ' '}
           </span>
         </div>
@@ -463,7 +451,7 @@ function ItemCard({
                   {/* Item name for context */}
                   <div className="mb-auto pr-6">
                     <p className={`text-xs font-medium ${theme.textSecondary} truncate leading-tight`}>{baseName}</p>
-                    <span className={`text-xs ${theme.subtext} opacity-70 block leading-tight mt-1`}>{wear || ' '}</span>
+                    <span className={`text-xs ${theme.subtext} block leading-tight mt-1`}>{wear || ' '}</span>
                   </div>
 
                   {/* Form fields */}
@@ -577,7 +565,7 @@ function StackedCard({ items, theme, accentHex, onExpand }) {
   const rep = items[0];
   const countdown = rep.pending ? formatDeliveryCountdown(rep.expectedDelivery) : null;
   const isOnHold = rep.pending && countdown && !countdown.overdue;
-  const barColor = isOnHold ? '#f59e0b' : accentHex;
+  const barColor = isOnHold ? WARN_COLOR : accentHex;
   const { baseName, wear } = parseItemName(rep.itemName);
 
   return (
@@ -595,10 +583,10 @@ function StackedCard({ items, theme, accentHex, onExpand }) {
         <div className="-mx-3 -mt-3 mb-0 h-24 relative flex justify-center items-center bg-gradient-to-b from-white/[0.06] to-black/25">
           <ItemThumbnail item={rep} />
         </div>
-        <div className="mx-4 h-[3px] rounded-full mb-3" style={{ backgroundColor: barColor }} />
+        <div className="mx-4 h-[3px] mb-3 opacity-0" style={{ backgroundColor: barColor }} />
         <div className="mb-1.5">
           <h3 className={`text-xs font-medium ${theme.textSecondary} truncate leading-tight`}>{baseName}</h3>
-          <span className={`text-xs ${theme.subtext} opacity-70 font-normal block leading-tight mt-1`}>{wear || ' '}</span>
+          <span className={`text-xs ${theme.subtext} font-normal block leading-tight mt-1`}>{wear || ' '}</span>
         </div>
         <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] mb-3">
           <span className={`font-mono ${theme.text} font-semibold`}>${rep.purchasePrice.toFixed(2)}</span>
@@ -634,7 +622,7 @@ export default function ItemGrid({
   selectMode, selectedIds, onToggleSelect,
   exchangeRate, currencySymbol, displayCurrency,
 }) {
-  const accentHex = getThemeAccentHex(theme.accentBg + ' ' + theme.dot);
+  const accentHex = theme.dotColor;
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [expandedGroups, setExpandedGroups] = useState(new Set());
   const sentinelRef = useRef(null);

@@ -15,6 +15,7 @@ import {
   ArrowLeftRight,
   Home,
   ShieldCheck,
+  PanelLeft,
 } from "lucide-react";
 import steamLogo from "../assets/platforms/steam.png";
 import logoSrc from "../utils/skinroi-logo.svg";
@@ -56,6 +57,8 @@ export default function Header({
   displayCurrency,
   setDisplayCurrency,
   currencySymbol,
+  converterPinned,
+  setConverterPinned,
   children,
 }) {
   const importInputRef = useRef(null);
@@ -91,7 +94,7 @@ export default function Header({
       active ? (theme?.text || "text-white") : `text-slate-400 ${theme?.textHover || "hover:text-white"}`
     }`;
 
-  const accentUnderline = theme?.dot || "bg-blue-500";
+  const dotColor = theme?.dotColor || '#3b82f6';
 
   return (
     <header className={`w-full sticky top-0 z-50 px-4 pt-3 pb-1 ${theme?.bg || 'bg-[#0c1120]'}`}>
@@ -108,12 +111,12 @@ export default function Header({
             <button onClick={onHomeClick} className={`flex items-center gap-1.5 ${navBtn(true)}`}>
               <Home size={15} />
               Home
-              <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 w-full ${accentUnderline}`} />
+              <span className="absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 w-full" style={{ backgroundColor: dotColor }} />
             </button>
             <button onClick={onAddItemClick} className={`flex items-center gap-1.5 ${navBtn(showAddItem)}`}>
               <PackagePlus size={15} />
               Add Item
-              <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${showAddItem ? "w-full" : "w-0 group-hover:w-full"} ${accentUnderline}`} />
+              <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${showAddItem ? "w-full" : "w-0 group-hover:w-full"}`} style={{ backgroundColor: dotColor }} />
             </button>
             <button
               onClick={onHandleItemsClick}
@@ -126,17 +129,17 @@ export default function Header({
                   {pendingCount > 99 ? "99+" : pendingCount}
                 </span>
               )}
-              <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${showHandleItems ? "w-full" : "w-0 group-hover:w-full"} ${accentUnderline}`} />
+              <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${showHandleItems ? "w-full" : "w-0 group-hover:w-full"}`} style={{ backgroundColor: dotColor }} />
             </button>
             <button onClick={onAnalyticsClick} className={`flex items-center gap-1.5 ${navBtn(false)}`}>
               <BarChart3 size={15} />
               Analytics
-              <span className={`absolute bottom-0 left-0 h-[2px] w-0 rounded-full transition-all duration-200 group-hover:w-full ${accentUnderline}`} />
+              <span className="absolute bottom-0 left-0 h-[2px] w-0 rounded-full transition-all duration-200 group-hover:w-full" style={{ backgroundColor: dotColor }} />
             </button>
             <button onClick={onAboutClick} className={`flex items-center gap-1.5 ${navBtn(false)}`}>
               <Info size={15} />
               About
-              <span className={`absolute bottom-0 left-0 h-[2px] w-0 rounded-full transition-all duration-200 group-hover:w-full ${accentUnderline}`} />
+              <span className="absolute bottom-0 left-0 h-[2px] w-0 rounded-full transition-all duration-200 group-hover:w-full" style={{ backgroundColor: dotColor }} />
             </button>
           </nav>
         </div>
@@ -148,14 +151,13 @@ export default function Header({
             <button
               onClick={() => setCurrencyOpen(o => !o)}
               title="Currency converter"
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-colors text-xs font-medium ${
+              className={`p-2 rounded-lg transition-all ${
                 currencyOpen
-                  ? `${theme?.card || 'bg-white/10'} ${theme?.cardBorder || 'border-white/10'} ${theme?.text || 'text-white'}`
-                  : `border-transparent text-slate-400 hover:text-slate-200 ${theme?.itemHoverBg || 'hover:bg-white/8'}`
+                  ? `${theme?.text || 'text-white'} bg-white/8`
+                  : 'text-slate-400 hover:text-white hover:bg-white/8'
               }`}
             >
-              <ArrowLeftRight size={14} />
-              <span className="font-mono text-[11px]">{currency1} / {displayCurrency}</span>
+              <ArrowLeftRight size={18} />
             </button>
 
             {currencyOpen && (
@@ -178,8 +180,21 @@ export default function Header({
                 />
                 {lastUpdated && (
                   <p className={`text-[10px] ${theme?.subtext || 'text-slate-500'} mt-2 text-center`}>
-                    Rates updated at {lastUpdated}
+                    Last Updated: {lastUpdated}
                   </p>
+                )}
+                {setConverterPinned && (
+                  <button
+                    onClick={() => setConverterPinned(p => !p)}
+                    className={`mt-3 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                      converterPinned
+                        ? `${theme?.accent || 'text-blue-400'} bg-white/8`
+                        : `text-slate-500 hover:text-slate-300 hover:bg-white/5`
+                    }`}
+                  >
+                    <PanelLeft size={12} />
+                    {converterPinned ? 'Pinned to sidebar' : 'Pin to sidebar'}
+                  </button>
                 )}
               </div>
             )}
@@ -309,7 +324,7 @@ export default function Header({
             >
               <SteamIcon className="h-3.5 w-3.5" />
               Sign in
-              <span className={`absolute bottom-0 left-0 h-[2px] w-0 rounded-full transition-all duration-200 group-hover:w-full ${accentUnderline}`} />
+              <span className="absolute bottom-0 left-0 h-[2px] w-0 rounded-full transition-all duration-200 group-hover:w-full" style={{ backgroundColor: dotColor }} />
             </button>
           )}
         </div>

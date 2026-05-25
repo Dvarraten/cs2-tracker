@@ -22,21 +22,24 @@ const SORTS = {
   ],
 };
 
-function TabButton({ label, count, isActive, onClick, theme, accentClass, badgeClass }) {
+function TabButton({ label, count, isActive, onClick, theme, accentColor, badgeClass }) {
   return (
     <button
       onClick={onClick}
-      className={`relative px-4 py-2 text-[11px] font-semibold uppercase tracking-widest transition-all border flex items-center gap-2 group ${
+      className={`relative px-4 py-2 text-[11px] font-semibold uppercase tracking-widest transition-all border flex items-center gap-2 group overflow-hidden rounded-lg ${
         isActive
-          ? `${theme.card} ${theme.cardBorder} rounded-lg ${theme.text}`
-          : `bg-transparent border ${theme.cardBorder} rounded-lg ${theme.subtext} ${theme.textHover} hover:bg-white/5`
+          ? `${theme.card} ${theme.cardBorder} ${theme.text}`
+          : `bg-transparent ${theme.cardBorder} ${theme.subtext} ${theme.textHover} hover:bg-white/5`
       }`}
     >
       <span>{label}</span>
       <span className={`text-[10px] font-semibold font-mono rounded-full px-1.5 py-0.5 ${badgeClass}`}>
         {count}
       </span>
-      <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${accentClass} ${isActive ? "w-full" : "w-0 group-hover:w-full"}`} />
+      <span
+        className={`absolute bottom-0 left-0 h-[2px] transition-all duration-200 ${isActive ? "w-full" : "w-0 group-hover:w-full"}`}
+        style={{ backgroundColor: accentColor }}
+      />
     </button>
   );
 }
@@ -72,13 +75,13 @@ export default function TabsAndSearchbar({
         <TabButton
           label="Active" count={stats.totalActiveCount}
           isActive={activeTab === 'active'} onClick={() => switchTab('active')}
-          theme={theme} accentClass={theme.dot}
+          theme={theme} accentColor={theme.dotColor}
           badgeClass={activeTab === 'active' ? `bg-white/15 ${theme.text}` : 'bg-white/5 text-slate-500'}
         />
         <TabButton
           label="Pending" count={stats.totalPending}
           isActive={activeTab === 'pending'} onClick={() => switchTab('pending')}
-          theme={theme} accentClass="bg-warn"
+          theme={theme} accentColor={theme.dotColor}
           badgeClass={
             stats.totalPending > 0
               ? 'bg-warn/20 text-warn'
@@ -88,7 +91,7 @@ export default function TabsAndSearchbar({
         <TabButton
           label="Sold" count={stats.totalSoldCount}
           isActive={activeTab === 'sold'} onClick={() => switchTab('sold')}
-          theme={theme} accentClass="bg-profit"
+          theme={theme} accentColor={theme.dotColor}
           badgeClass={activeTab === 'sold' ? `bg-white/15 ${theme.text}` : 'bg-white/5 text-slate-500'}
         />
       </div>
