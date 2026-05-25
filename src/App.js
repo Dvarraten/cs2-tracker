@@ -313,10 +313,13 @@ export default function CS2TradingTracker() {
 
       {/* Add Item modal */}
       {showAddItem && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={closeModal}>
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onMouseDown={(e) => { e.currentTarget.dataset.closeIntent = e.target === e.currentTarget ? '1' : '0'; }}
+          onClick={(e) => { if (e.currentTarget.dataset.closeIntent === '1') closeModal(); }}
+        >
           <div
             className={`relative w-full max-w-xl max-h-[85vh] flex flex-col ${themeStyles.panel} border ${themeStyles.panelBorder} rounded-2xl shadow-2xl overflow-hidden`}
-            onClick={e => e.stopPropagation()}
           >
             <div className={`flex items-center justify-between px-5 py-4 border-b ${themeStyles.panelBorder} shrink-0`}>
               <h2 className={`font-semibold ${themeStyles.text}`}>Add New Item</h2>

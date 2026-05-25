@@ -40,7 +40,8 @@ export default function AboutModal({ onClose, theme }) {
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onClick={onClose}
+      onMouseDown={(e) => { e.currentTarget.dataset.closeIntent = e.target === e.currentTarget ? '1' : '0'; }}
+      onClick={(e) => { if (e.currentTarget.dataset.closeIntent === '1') onClose(); }}
     >
       <div
         className={`relative w-full max-w-xl max-h-[85vh] flex flex-col ${theme?.panel || 'bg-[#111827]'} border ${theme?.panelBorder || 'border-white/10'} rounded-2xl shadow-2xl overflow-hidden`}

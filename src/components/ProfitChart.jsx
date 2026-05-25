@@ -93,7 +93,8 @@ export default function ProfitChart({
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
+        onMouseDown={(e) => { e.currentTarget.dataset.closeIntent = e.target === e.currentTarget ? '1' : '0'; }}
+        onClick={(e) => { if (e.currentTarget.dataset.closeIntent === '1') onClose(); }}
       />
 
       <div
