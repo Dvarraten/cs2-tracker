@@ -107,7 +107,7 @@ export default function TabsAndSearchbar({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search items…"
-            className={`w-full pl-8 pr-3 py-2 ${theme.input} rounded-lg text-sm ${theme.text} placeholder-slate-600 focus:outline-none transition-colors border`}
+            className={`w-full pl-8 pr-3 py-2 ${theme.card} border ${theme.cardBorder} rounded-lg text-sm ${theme.textSecondary} placeholder-slate-600 focus:outline-none transition-colors`}
           />
         </div>
 
