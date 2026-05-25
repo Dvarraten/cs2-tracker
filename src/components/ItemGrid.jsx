@@ -92,10 +92,16 @@ function DeleteButton({ onDelete, onConfirmingChange }) {
 
   useEffect(() => {
     if (!confirming) return;
-    const handler = (e) => { if (btnRef.current && !btnRef.current.contains(e.target)) reset(); };
+    const handler = (e) => {
+      if (btnRef.current && !btnRef.current.contains(e.target)) {
+        clearTimeout(timerRef.current);
+        setConfirming(false);
+        onConfirmingChange?.(false);
+      }
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [confirming]);
+  }, [confirming, onConfirmingChange]);
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
