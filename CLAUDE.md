@@ -121,7 +121,13 @@ npm run items:update
 
 ## Hard Project Rules
 
-Never commit secrets. Always pass linting before finishing.
+Never commit secrets. Always pass linting before committing or pushing. Run:
+
+```bash
+npx eslint src/ --max-warnings=0
+```
+
+Fix every error and warning before proceeding. CI treats warnings as errors (`CI=true`), so a clean local lint means a clean Vercel build.
 
 Never hardcode color hex strings in components. Use the exported constants from
 `src/themes/themes.js` instead:
