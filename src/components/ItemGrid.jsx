@@ -72,16 +72,17 @@ function lerpColor(a, b, t) {
 
 // --- sub-components ---
 
-function DeleteButton({ onDelete }) {
+function DeleteButton({ onDelete, onConfirmingChange }) {
   const [confirming, setConfirming] = useState(false);
   const timerRef = useRef(null);
   const btnRef = useRef(null);
 
-  const reset = () => { clearTimeout(timerRef.current); setConfirming(false); };
+  const setC = (val) => { setConfirming(val); onConfirmingChange?.(val); };
+  const reset = () => { clearTimeout(timerRef.current); setC(false); };
 
   const handleClick = () => {
     if (!confirming) {
-      setConfirming(true);
+      setC(true);
       timerRef.current = setTimeout(reset, 2500);
     } else {
       clearTimeout(timerRef.current);
@@ -266,6 +267,8 @@ function ItemCard({
     });
   };
 
+  const [deleteConfirming, setDeleteConfirming] = useState(false);
+
   const onDelete = () => {
     setExiting(true);
     setTimeout(() => handleDeleteItem(item.id), 400);
@@ -331,10 +334,10 @@ function ItemCard({
           </div>
         )}
 
-        {/* Delete button — revealed on hover only */}
+        {/* Delete button — revealed on hover, stays visible while confirming */}
         {!selectMode && (
-          <div className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-            <DeleteButton onDelete={onDelete} />
+          <div className={`absolute top-1.5 right-1.5 z-10 transition-opacity duration-150 ${deleteConfirming ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+            <DeleteButton onDelete={onDelete} onConfirmingChange={setDeleteConfirming} />
           </div>
         )}
 
