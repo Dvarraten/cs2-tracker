@@ -94,7 +94,7 @@ export default function Header({
       active ? (theme?.text || "text-white") : `text-slate-400 ${theme?.textHover || "hover:text-white"}`
     }`;
 
-  const dotColor = theme?.dotColor || '#3b82f6';
+  const dotColor = theme?.accentColor || theme?.dotColor || '#3b82f6';
 
   return (
     <header className={`w-full sticky top-0 z-50 px-4 pt-3 pb-1 ${theme?.bg || 'bg-[#0c1120]'}`}>

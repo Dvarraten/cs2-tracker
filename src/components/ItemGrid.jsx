@@ -334,10 +334,20 @@ function ItemCard({
           </div>
         )}
 
-        {/* Delete button — revealed on hover, stays visible while confirming */}
+        {/* Top-right action: X cancel when sell open, trash on hover otherwise */}
         {!selectMode && (
-          <div className={`absolute top-1.5 right-1.5 z-10 transition-opacity duration-150 ${deleteConfirming ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-            <DeleteButton onDelete={onDelete} onConfirmingChange={setDeleteConfirming} />
+          <div className={`absolute top-1.5 right-1.5 z-20 transition-opacity duration-150 ${sellOpen || deleteConfirming ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+            {sellOpen ? (
+              <button
+                type="button"
+                onClick={() => setSellOpen(false)}
+                className="p-1.5 rounded-lg transition-all text-red-400/50 hover:text-red-400 hover:bg-red-500/10 active:text-red-500 active:bg-red-500/20"
+              >
+                <X size={13} />
+              </button>
+            ) : (
+              <DeleteButton onDelete={onDelete} onConfirmingChange={setDeleteConfirming} />
+            )}
           </div>
         )}
 
@@ -439,26 +449,10 @@ function ItemCard({
                 <ChevronRight size={12} className="opacity-50" />
               </button>
 
-              {/* Sell overlay — absolutely positioned so it never stretches the grid row */}
+              {/* Sell overlay — slides in below image, never stretches the grid row */}
               {sellOpen && (
-                <div className={`absolute inset-0 z-10 flex flex-col p-3 rounded-xl ${theme.panel} border ${theme.cardBorder}`}>
-                  {/* Close */}
-                  <button
-                    type="button"
-                    onClick={() => setSellOpen(false)}
-                    className="absolute top-1.5 right-1.5 p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/8 transition-colors"
-                  >
-                    <X size={13} />
-                  </button>
-
-                  {/* Item name for context */}
-                  <div className="mb-auto pr-6">
-                    <p className={`text-xs font-medium ${theme.textSecondary} truncate leading-tight`}>{baseName}</p>
-                    <span className={`text-xs ${theme.subtext} block leading-tight mt-1`}>{wear || ' '}</span>
-                  </div>
-
-                  {/* Form fields */}
-                  <div className="space-y-1.5 mt-3">
+                <div className={`absolute top-24 inset-x-0 bottom-0 z-10 flex flex-col p-3 ${theme.panel} border-t ${theme.cardBorder}`}>
+                  <div className="space-y-1.5">
                     <SellPlatformPicker
                       value={sellPlatform[item.id] || 'csfloat'}
                       onChange={(val) => { setSellPlatform(prev => ({ ...prev, [item.id]: val })); setCustomFee(val === 'other' ? '0' : ''); }}
@@ -513,13 +507,6 @@ function ItemCard({
                         <span className="opacity-60 ml-1">({estProfitPct >= 0 ? '+' : ''}{estProfitPct.toFixed(0)}%)</span>
                       </div>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => setSellOpen(false)}
-                      className={`w-full flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs font-medium border transition-colors ${theme.card} ${theme.cardBorder} ${theme.textSecondary} ${theme.textHover} hover:border-white/20`}
-                    >
-                      Cancel
-                    </button>
                   </div>
                 </div>
               )}

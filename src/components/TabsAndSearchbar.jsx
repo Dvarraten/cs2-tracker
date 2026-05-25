@@ -75,13 +75,13 @@ export default function TabsAndSearchbar({
         <TabButton
           label="Active" count={stats.totalActiveCount}
           isActive={activeTab === 'active'} onClick={() => switchTab('active')}
-          theme={theme} accentColor={theme.dotColor}
+          theme={theme} accentColor={theme.accentColor}
           badgeClass={activeTab === 'active' ? `bg-white/15 ${theme.text}` : 'bg-white/5 text-slate-500'}
         />
         <TabButton
           label="Pending" count={stats.totalPending}
           isActive={activeTab === 'pending'} onClick={() => switchTab('pending')}
-          theme={theme} accentColor={theme.dotColor}
+          theme={theme} accentColor={theme.accentColor}
           badgeClass={
             stats.totalPending > 0
               ? 'bg-warn/20 text-warn'
@@ -91,7 +91,7 @@ export default function TabsAndSearchbar({
         <TabButton
           label="Sold" count={stats.totalSoldCount}
           isActive={activeTab === 'sold'} onClick={() => switchTab('sold')}
-          theme={theme} accentColor={theme.dotColor}
+          theme={theme} accentColor={theme.accentColor}
           badgeClass={activeTab === 'sold' ? `bg-white/15 ${theme.text}` : 'bg-white/5 text-slate-500'}
         />
       </div>
