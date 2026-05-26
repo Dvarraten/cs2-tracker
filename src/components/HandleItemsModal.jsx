@@ -102,7 +102,7 @@ function ItemImage({ iconUrl, alt }) {
   );
 }
 
-function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySymbol, displayCurrency, pendingMatch, onPromotePending }) {
+function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySymbol, displayCurrency }) {
   const [usdPrice, setUsdPrice] = useState('');
   const [cnyPrice, setCnyPrice] = useState('');
   const [platform, setPlatform] = useState('csfloat');
@@ -131,15 +131,6 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
     });
   };
 
-  const promote = () => {
-    if (!pendingMatch) return;
-    setConfirming(true);
-    const iconUrl = entry.iconUrl
-      ? `https://community.akamai.steamstatic.com/economy/image/${entry.iconUrl}/96fx96f`
-      : null;
-    onPromotePending(pendingMatch.item.id, { iconUrl });
-    onDismiss(entry.assetid, 'incoming');
-  };
 
   return (
     <div className={`flex flex-col gap-3 p-3 rounded-lg ${theme.card} border ${theme.cardBorder}`}>
@@ -163,44 +154,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
         </button>
       </div>
 
-      {pendingMatch ? (
-        <div
-          className={`flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-md border ${theme.cardBorder} bg-amber-500/10`}
-        >
-          <div className="text-xs text-amber-200 leading-snug min-w-0">
-            <div className="font-semibold">
-              Matches a pending purchase
-              {pendingMatch.matchType === 'fuzzy' && pendingMatch.matchScore && (
-                <span className="opacity-70 font-normal">
-                  {' '}
-                  ({Math.round(pendingMatch.matchScore * 100)}% match)
-                </span>
-              )}
-            </div>
-            <div className="text-warn/80 truncate">
-              "{pendingMatch.item.itemName}" — paid <span className="font-mono">${pendingMatch.item.purchasePrice.toFixed(2)}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={confirming}
-              onClick={promote}
-              className="bg-amber-500 hover:bg-amber-400 text-white text-sm font-medium px-3 py-1.5 rounded-md disabled:opacity-40"
-            >
-              {confirming ? 'Promoting…' : 'Mark received'}
-            </button>
-            <button
-              type="button"
-              onClick={() => onDismiss(entry.assetid, 'incoming')}
-              className={`text-xs px-2 py-1 rounded ${theme.subtext} ${theme.textHover}`}
-            >
-              Not this one
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2">
           <PricePair
             usdValue={usdPrice}
             cnyValue={cnyPrice}
@@ -262,8 +216,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
               <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-200 ${confirming ? 'w-full bg-profit' : `w-0 group-hover:w-full ${theme.dot}`}`} />
             </button>
           </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -581,7 +534,6 @@ export default function HandleItemsModal({
   items,
   addItemDirect,
   sellItemDirect,
-  promotePendingItem,
   exchangeRate,
   currencySymbol = '¥',
   displayCurrency = 'CNY',
@@ -608,7 +560,7 @@ export default function HandleItemsModal({
   }, [open, embedded]);
 
   // Index active (non-pending, non-sold) tracked items by market_hash_name
-  // for outgoing matching and the incoming "already tracked" filter.
+  // for outgoing matching.
   const activeByName = useMemo(() => {
     const map = new Map();
     for (const it of items) {
@@ -622,33 +574,6 @@ export default function HandleItemsModal({
     }
     return map;
   }, [items]);
-
-  // Pending purchases — used to surface a "Mark received" shortcut on
-  // incoming Steam items that match something the user is waiting for.
-  const pendingItems = useMemo(
-    () => items.filter((it) => !it.sold && it.pending),
-    [items]
-  );
-
-  const findPendingMatch = (entry) => {
-    const lowerName = (entry.marketHashName || '').toLowerCase();
-    // 1) exact lowercase name match
-    let exact = pendingItems.find(
-      (p) => (p.itemName || '').toLowerCase() === lowerName
-    );
-    if (exact) return { item: exact, matchType: 'exact' };
-    // 2) fuzzy fallback (>= 0.5 score from tracker side)
-    let best = null;
-    let bestScore = 0;
-    for (const p of pendingItems) {
-      const score = nameMatchScore(entry.marketHashName, p.itemName);
-      if (score > bestScore && score >= 0.5) {
-        best = p;
-        bestScore = score;
-      }
-    }
-    return best ? { item: best, matchType: 'fuzzy', matchScore: bestScore } : null;
-  };
 
   // Flat list of every active tracked item — used as escape hatch when the
   // user wants to manually pick a match.
@@ -819,8 +744,6 @@ export default function HandleItemsModal({
                     exchangeRate={exchangeRate}
                     currencySymbol={currencySymbol}
                     displayCurrency={displayCurrency}
-                    pendingMatch={findPendingMatch(group[0])}
-                    onPromotePending={promotePendingItem}
                     onAdd={(payload) => {
                       addItemDirect(payload);
                       onDismiss(group[0].assetid, 'incoming');
