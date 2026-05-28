@@ -597,7 +597,7 @@ function StackedCard({ items, theme, accentHex, onExpand }) {
             onClick={onExpand}
             className={`w-full flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs font-medium border transition-colors ${theme.card} ${theme.cardBorder} ${theme.textSecondary} ${theme.textHover} hover:border-white/20`}
           >
-            Sell {items.length} items
+            {rep.pending ? `${items.length} on hold` : `Sell ${items.length} items`}
             <ChevronRight size={12} className="opacity-50" />
           </button>
         </div>
@@ -632,8 +632,7 @@ export default function ItemGrid({
     const map = new Map();
     const order = [];
     for (const item of sortedItems) {
-      if (item.pending) { order.push({ type: 'item', key: String(item.id), items: [item] }); continue; }
-      const k = `${item.itemName}||${item.purchasePrice.toFixed(2)}`;
+      const k = `${item.pending ? 'p:' : ''}${item.itemName}||${item.purchasePrice.toFixed(2)}`;
       if (!map.has(k)) { map.set(k, []); order.push({ type: 'group', key: k, items: map.get(k) }); }
       map.get(k).push(item);
     }
