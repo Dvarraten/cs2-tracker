@@ -3,7 +3,7 @@
 // Trash icon revealed on card hover. Wear on second line. Notes chip top-left.
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Trash2, CheckCircle, ChevronDown, PackageCheck, ChevronRight, X } from "lucide-react";
+import { Trash2, CheckCircle, ChevronDown, PackageCheck, ChevronRight, X, Lock, Unlock } from "lucide-react";
 import { getPlatformFee } from "../utils/platformFees";
 import { PlatformBadge } from "./PlatformBadge";
 import { PROFIT_COLOR, LOSS_COLOR, WARN_COLOR } from "../themes/themes";
@@ -373,12 +373,12 @@ function ItemCard({
           <ItemThumbnail item={item} />
           {item.pending && countdown && (
             <div className="absolute bottom-1.5 left-0 right-0 flex justify-center pointer-events-none">
-              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border backdrop-blur-sm ${
+              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border backdrop-blur-sm inline-flex items-center gap-1 ${
                 countdown.overdue
                   ? 'bg-blue-500/20 text-blue-400 border-blue-500/20'
                   : 'bg-black/50 text-warn border-warn/25'
               }`}>
-                {countdown.overdue ? '🔓 ' : '✋ '}{countdown.label}
+                {countdown.overdue ? <Unlock size={9} /> : <Lock size={9} />}{countdown.label}
               </span>
             </div>
           )}
@@ -580,12 +580,12 @@ function StackedCard({ items, theme, accentHex, onExpand }) {
           <ItemThumbnail item={rep} />
           {countdown && (
             <div className="absolute bottom-1.5 left-0 right-0 flex justify-center pointer-events-none">
-              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border backdrop-blur-sm ${
+              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border backdrop-blur-sm inline-flex items-center gap-1 ${
                 countdown.overdue
                   ? 'bg-blue-500/20 text-blue-400 border-blue-500/20'
                   : 'bg-black/50 text-warn border-warn/25'
               }`}>
-                {countdown.overdue ? '🔓 ' : '✋ '}{countdown.label}
+                {countdown.overdue ? <Unlock size={9} /> : <Lock size={9} />}{countdown.label}
               </span>
             </div>
           )}
