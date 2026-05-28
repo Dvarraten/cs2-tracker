@@ -578,6 +578,17 @@ function StackedCard({ items, theme, accentHex, onExpand }) {
       <div className="flex-1 p-3 pb-4 flex flex-col">
         <div className="-mx-3 -mt-3 mb-0 h-24 relative flex justify-center items-center bg-gradient-to-b from-white/[0.06] to-black/25">
           <ItemThumbnail item={rep} />
+          {countdown && (
+            <div className="absolute bottom-1.5 left-0 right-0 flex justify-center pointer-events-none">
+              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border backdrop-blur-sm ${
+                countdown.overdue
+                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/20'
+                  : 'bg-black/50 text-warn border-warn/25'
+              }`}>
+                {countdown.overdue ? '🔓 ' : '✋ '}{countdown.label}
+              </span>
+            </div>
+          )}
         </div>
         <div className="mx-4 h-[3px] mb-3 opacity-0" style={{ backgroundColor: barColor }} />
         <div className="mb-1.5">
