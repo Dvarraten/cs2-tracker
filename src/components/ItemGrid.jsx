@@ -402,8 +402,8 @@ function ItemCard({
           </span>
         </div>
 
-        {/* Meta row — active/pending only */}
-        {!item.sold && (
+        {/* Meta row — active/pending only, hidden when sell is open */}
+        {!item.sold && !sellOpen && (
           <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] mb-3">
             <span className={`font-mono ${theme.text} font-semibold`}>${item.purchasePrice.toFixed(2)}</span>
             <span className="text-slate-600">·</span>
@@ -422,7 +422,7 @@ function ItemCard({
         )}
 
         {/* Action zone */}
-        <div className="mt-auto">
+        <div className={!item.sold && !item.pending && sellOpen ? "mt-2" : "mt-auto"}>
           {item.pending && !item.sold ? (
             <div className="flex gap-1.5">
               <button
@@ -446,19 +446,20 @@ function ItemCard({
           ) : !item.sold ? (
             <>
               {/* Collapsed sell trigger */}
-              <button
-                type="button"
-                onClick={() => setSellOpen(true)}
-                className={`w-full flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs font-medium border transition-colors ${theme.card} ${theme.cardBorder} ${theme.textSecondary} ${theme.textHover} hover:border-white/20`}
-              >
-                Sell
-                <ChevronRight size={12} className="opacity-50" />
-              </button>
+              {!sellOpen && (
+                <button
+                  type="button"
+                  onClick={() => setSellOpen(true)}
+                  className={`w-full flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs font-medium border transition-colors ${theme.card} ${theme.cardBorder} ${theme.textSecondary} ${theme.textHover} hover:border-white/20`}
+                >
+                  Sell
+                  <ChevronRight size={12} className="opacity-50" />
+                </button>
+              )}
 
-              {/* Sell overlay — slides in below image, never stretches the grid row */}
+              {/* Sell form — flows below name */}
               {sellOpen && (
-                <div className={`absolute top-24 inset-x-0 bottom-0 z-10 flex flex-col p-3 ${theme.panel} border-t ${theme.cardBorder}`}>
-                  <div className="space-y-1.5">
+                <div className="space-y-1.5">
                     <SellPlatformPicker
                       value={sellPlatform[item.id] || 'csfloat'}
                       onChange={(val) => { setSellPlatform(prev => ({ ...prev, [item.id]: val })); setCustomFee(val === 'other' ? '0' : ''); }}
@@ -513,7 +514,6 @@ function ItemCard({
                         <span className="opacity-60 ml-1">({estProfitPct >= 0 ? '+' : ''}{estProfitPct.toFixed(0)}%)</span>
                       </div>
                     )}
-                  </div>
                 </div>
               )}
             </>
