@@ -107,7 +107,7 @@ function IncomingRow({ entry, onAdd, onDismiss, theme, exchangeRate, currencySym
   const [cnyPrice, setCnyPrice] = useState('');
   const [platform, setPlatform] = useState('csfloat');
   const [customFee, setCustomFee] = useState('');
-  const [onHold, setOnHold] = useState(false);
+  const [onHold, setOnHold] = useState(true);
   const [notes, setNotes] = useState('');
   const [confirming, setConfirming] = useState(false);
 
@@ -226,7 +226,7 @@ function GroupedIncomingRow({ entries, onAddAll, onDismissAll, theme, exchangeRa
   const [cnyPrice, setCnyPrice] = useState('');
   const [platform, setPlatform] = useState('csfloat');
   const [customFee, setCustomFee] = useState('');
-  const [onHold, setOnHold] = useState(false);
+  const [onHold, setOnHold] = useState(true);
   const [notes, setNotes] = useState('');
   const [confirming, setConfirming] = useState(false);
   const rep = entries[0];
